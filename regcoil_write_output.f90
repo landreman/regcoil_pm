@@ -86,7 +86,8 @@ subroutine regcoil_write_output
        vn_g = "g", &
        vn_matrix_B = "matrix_B", &
        vn_matrix_K = "matrix_K", &
-       vn_single_valued_current_potential_mn = "single_valued_current_potential_mn"
+       vn_single_valued_current_potential_mn = "single_valued_current_potential_mn", &
+       vn_mean_curvature_coil = "mean_curvature_coil"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -375,6 +376,8 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda), &
        dimname=basis_nlambda_dim)
 
+  call cdf_define(ncid, vn_mean_curvature_coil,  mean_curvature_coil,  dimname=ntheta_nzeta_plasma_dim)
+
   ! Arrays with dimension 3
 
   call cdf_define(ncid, vn_r_plasma,  r_plasma,  dimname=xyz_ntheta_nzetal_plasma_dim)
@@ -506,6 +509,7 @@ subroutine regcoil_write_output
   !call cdf_write(ncid, vn_matrix_B, matrix_B)
   !call cdf_write(ncid, vn_matrix_K, matrix_K)
   call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda))
+  call cdf_write(ncid, vn_mean_curvature_coil, mean_curvature_coil)
 
   ! Arrays with dimension 3
 

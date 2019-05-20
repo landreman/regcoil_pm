@@ -8,7 +8,7 @@ subroutine regcoil_evaluate_coil_surface()
   
   implicit none
   
-  integer :: imn, m, n, iflag, j
+  integer :: imn, m, n, iflag, j, js
   real(dp) :: rmnc, rmns, zmnc, zmns
   real(dp) :: angle, sinangle, cosangle, dsinangledtheta, dcosangledtheta, dsinangledzeta, dcosangledzeta
   real(dp) :: d2sinangledtheta2, d2sinangledthetadzeta, d2sinangledzeta2, d2cosangledtheta2, d2cosangledthetadzeta, d2cosangledzeta2
@@ -17,6 +17,10 @@ subroutine regcoil_evaluate_coil_surface()
   integer :: itheta, izeta
   integer :: tic, toc, countrate
   real(dp), dimension(:,:), allocatable :: sin_m_theta, cos_m_theta, sin_n_zeta, cos_n_zeta
+  real(dp), dimension(:,:), allocatable :: fundamental_form_E, fundamental_form_F, fundamental_form_G
+  real(dp), dimension(:,:), allocatable :: fundamental_form_L, fundamental_form_M, fundamental_form_P
+  real(dp), dimension(:), allocatable :: temp_array
+  real(dp), dimension(:,:), allocatable :: temp_matrix
 
   call system_clock(tic,countrate)
 
@@ -151,6 +155,64 @@ subroutine regcoil_evaluate_coil_surface()
        +  normal_coil(3,:,1:nzeta_coil)**2)
   
   area_coil = nfp * dtheta_coil * dzeta_coil * sum(norm_normal_coil)
+
+  ! Evaluate coefficients of the first and second fundamental forms:
+  allocate(fundamental_form_E(ntheta_coil, nzeta_coil))
+  allocate(fundamental_form_F(ntheta_coil, nzeta_coil))
+  allocate(fundamental_form_G(ntheta_coil, nzeta_coil))
+  allocate(fundamental_form_L(ntheta_coil, nzeta_coil))
+  allocate(fundamental_form_M(ntheta_coil, nzeta_coil))
+  allocate(fundamental_form_P(ntheta_coil, nzeta_coil))
+  fundamental_form_E = drdtheta_coil(1,:,1:nzeta_coil) * drdtheta_coil(1,:,1:nzeta_coil) + drdtheta_coil(2,:,1:nzeta_coil) * drdtheta_coil(2,:,1:nzeta_coil) + drdtheta_coil(3,:,1:nzeta_coil) * drdtheta_coil(3,:,1:nzeta_coil)
+  fundamental_form_F = drdtheta_coil(1,:,1:nzeta_coil) *  drdzeta_coil(1,:,1:nzeta_coil) + drdtheta_coil(2,:,1:nzeta_coil) *  drdzeta_coil(2,:,1:nzeta_coil) + drdtheta_coil(3,:,1:nzeta_coil) *  drdzeta_coil(3,:,1:nzeta_coil)
+  fundamental_form_G =  drdzeta_coil(1,:,1:nzeta_coil) *  drdzeta_coil(1,:,1:nzeta_coil) +  drdzeta_coil(2,:,1:nzeta_coil) *  drdzeta_coil(2,:,1:nzeta_coil) +  drdzeta_coil(3,:,1:nzeta_coil) *  drdzeta_coil(3,:,1:nzeta_coil)
+  fundamental_form_L = (normal_coil(1,:,1:nzeta_coil) *     d2rdtheta2_coil(1,:,:) + normal_coil(2,:,1:nzeta_coil) *     d2rdtheta2_coil(2,:,:) + normal_coil(3,:,1:nzeta_coil) *     d2rdtheta2_coil(3,:,:)) / norm_normal_coil
+  fundamental_form_M = (normal_coil(1,:,1:nzeta_coil) * d2rdthetadzeta_coil(1,:,:) + normal_coil(2,:,1:nzeta_coil) * d2rdthetadzeta_coil(2,:,:) + normal_coil(3,:,1:nzeta_coil) * d2rdthetadzeta_coil(3,:,:)) / norm_normal_coil
+  fundamental_form_P = (normal_coil(1,:,1:nzeta_coil) *      d2rdzeta2_coil(1,:,:) + normal_coil(2,:,1:nzeta_coil) *      d2rdzeta2_coil(2,:,:) + normal_coil(3,:,1:nzeta_coil) *      d2rdzeta2_coil(3,:,:)) / norm_normal_coil
+
+  mean_curvature_coil = (fundamental_form_L * fundamental_form_G + fundamental_form_P * fundamental_form_E - 2 * fundamental_form_M * fundamental_form_F) &
+       / (2 * (fundamental_form_E * fundamental_form_G - fundamental_form_F * fundamental_form_F))
+
+  ! Initialize s arrays
+  allocate(s_integration(  ns_integration))
+  allocate(s_magnetization(ns_magnetization))
+  allocate(temp_matrix(ns_integration,ns_integration))
+  call regcoil_Chebyshev_grid(ns_integration,   0.0_dp, 1.0_dp, s_integration, s_weights, temp_matrix)
+  deallocate(temp_matrix)
+  allocate(temp_matrix(ns_magnetization,ns_magnetization))
+  allocate(temp_array(ns_magnetization))
+  call regcoil_Chebyshev_grid(ns_magnetization, 0.0_dp, 1.0_dp, s_magnetization, temp_array, temp_matrix)
+  deallocate(temp_array, temp_matrix)
+  allocate(interpolate_magnetization_to_integration(ns_integration,ns_magnetization))
+  call regcoil_Chebyshev_interpolation_matrix(ns_magnetization, ns_integration, s_magnetization, s_integration, interpolate_magnetization_to_integration)
+  print *,"s_integration:",s_integration
+  print *,"s_weights:",s_weights
+  print *,"s_magnetization",s_magnetization
+  print *,"interpolate_magnetization_to_integration:"
+  do j = 1,ns_integration
+     print *,interpolate_magnetization_to_integration(j,:)
+  end do
+
+  ! For now, just set d=constant. We'll improve this eventually.
+  allocate(d(ntheta_coil, nzeta_coil))
+  d = d_initial
+
+  ! Generate Jacobian of the (s, theta, zeta) coordinates in the magnetization region:
+  allocate(temp_matrix(ntheta_coil, nzeta_coil))
+  temp_matrix = d * d * (fundamental_form_M * fundamental_form_M - fundamental_form_L * fundamental_form_P) / norm_normal_coil
+  allocate(Jacobian_coil(ntheta_coil, nzeta_coil, ns_integration))
+  do js = 1, ns_integration
+     Jacobian_coil(:,:,js) = d * (-norm_normal_coil + s_integration(js) * d * 2 * norm_normal_coil * mean_curvature_coil + s_integration(js) * s_integration(js) * temp_matrix)
+  end do
+  deallocate(temp_matrix)
+  if (any(Jacobian_coil >= 0)) then
+     print *,"Error! Jacobian for the magnetization region is not negative-definite."
+     print *,Jacobian_coil
+     stop
+  end if
+  Jacobian_coil = abs(Jacobian_coil) ! When we do volume integrals later, we want the absolute value of the Jacobian.
+
+  deallocate(fundamental_form_E, fundamental_form_F, fundamental_form_G, fundamental_form_L, fundamental_form_M, fundamental_form_P)
   
   ! Compute coil surface volume using \int (1/2) R^2 dZ dzeta.
   ! These quantities will be evaluated on the half theta grid, which is the natural grid for dZ,

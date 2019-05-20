@@ -110,6 +110,15 @@ module regcoil_variables
   integer :: exit_code = 0
   real(dp) :: chi2_B_target = 0
 
+  real(dp), dimension(:,:,:), allocatable :: Jacobian_coil
+  real(dp), dimension(:,:), allocatable :: mean_curvature_coil
+  real(dp), dimension(:,:), allocatable :: d
+  integer :: ns_magnetization = 1
+  integer :: ns_integration = 5
+  real(dp) :: d_initial = 0.01d+0
+  real(dp), dimension(:), allocatable :: s_integration, s_weights, s_magnetization
+  real(dp), dimension(:,:), allocatable :: interpolate_magnetization_to_integration
+
   character(len=*), parameter :: &
        target_option_max_K = "max_K", &
        target_option_rms_K = "rms_K", &
@@ -130,7 +139,8 @@ module regcoil_variables
        net_poloidal_current_Amperes, net_toroidal_current_Amperes, &
        load_bnorm, bnorm_filename, &
        shape_filename_plasma, nlambda, lambda_min, lambda_max, general_option, regularization_term_option, verbose, nescout_filename, &
-       target_option, target_value, lambda_search_tolerance
+       target_option, target_value, lambda_search_tolerance, &
+       ns_magnetization, ns_integration, d_initial
 
 end module regcoil_variables
 

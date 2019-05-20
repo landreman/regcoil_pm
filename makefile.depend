@@ -3,6 +3,8 @@
 OBJ_FILES =  \
 	regcoil_auto_regularization_solve.o \
 	regcoil_build_matrices.o \
+	regcoil_Chebyshev_grid.o \
+	regcoil_Chebyshev_interpolation_matrix.o \
 	regcoil_compute_diagnostics_for_nescout_potential.o \
 	regcoil_compute_lambda.o \
 	regcoil_compute_offset_surface_mod.o \
@@ -32,6 +34,8 @@ OBJ_FILES =  \
 regcoil.o: regcoil_variables.o regcoil_init_plasma_mod.o
 regcoil_auto_regularization_solve.o: regcoil_variables.o
 regcoil_build_matrices.o: regcoil_variables.o regcoil_init_Fourier_modes_mod.o
+regcoil_Chebyshev_grid.o:
+regcoil_Chebyshev_interpolation_matrix.o:
 regcoil_compute_diagnostics_for_nescout_potential.o: regcoil_variables.o
 regcoil_compute_lambda.o: regcoil_variables.o
 regcoil_compute_offset_surface_mod.o: regcoil_variables.o

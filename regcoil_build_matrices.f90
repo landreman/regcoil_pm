@@ -23,6 +23,8 @@ subroutine regcoil_build_matrices()
   real(dp), dimension(:,:), allocatable :: d_g_zeta_zeta_d_theta, d_g_zeta_zeta_d_zeta
   real(dp), dimension(:,:), allocatable :: d_N_d_theta, d_N_d_zeta
   real(dp), dimension(:,:), allocatable :: Laplace_Beltrami_d_Phi_d_theta_coefficient, Laplace_Beltrami_d_Phi_d_zeta_coefficient
+  integer :: js, ks, ls, row_offset, col_offset, j_RPhiZ
+  real(dp), dimension(:,:), allocatable :: regularization_block, temp_matrix, Jacobian_coil_2D, regularization_without_RPhiZ
   
   ! Variables needed by BLAS DGEMM:
   character :: TRANSA, TRANSB
@@ -468,96 +470,33 @@ subroutine regcoil_build_matrices()
   deallocate(g_over_N_plasma)
     
 
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+  ! Assemble the matrix for the regularization term
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+
+  call system_clock(tic)
   matrix_regularization = 0
-     
-  select case (trim(regularization_term_option))
-  case (regularization_term_option_chi2_K, regularization_term_option_K_xy)
-  
-     call system_clock(tic)
-     ! Here we carry out matrix_regularization += dtheta*dzeta*(f_x ^ T) * f_x_over_N_coil
-     ! A = f_x
-     ! B = f_x_over_N_plasma
-     ! C = matrix_regularization
-     M = num_basis_functions ! # rows of A^T
-     N = num_basis_functions ! # cols of B
-     K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
-     LDA = K ! Would be M if not taking the transpose.
-     LDB = K
-     LDC = M
-     TRANSA = 'T' ! DO take a transpose!
-     TRANSB = 'N'
-     BLAS_ALPHA = dtheta_coil*dzeta_coil
-     BLAS_BETA=1
-     call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_x,LDA,f_x_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
-     
-     call system_clock(toc)
-     if (verbose) print *,"matmul 1 for matrix_regularization:",real(toc-tic)/countrate,"sec."
-     
-     call system_clock(tic)
-     ! Here we carry out matrix_regularization += dtheta*dzeta*(f_y ^ T) * f_y_over_N_coil
-     ! A = f_y
-     ! B = f_y_over_N_plasma
-     ! C = matrix_regularization
-     M = num_basis_functions ! # rows of A^T
-     N = num_basis_functions ! # cols of B
-     K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
-     LDA = K ! Would be M if not taking the transpose.
-     LDB = K
-     LDC = M
-     TRANSA = 'T' ! DO take a transpose!
-     TRANSB = 'N'
-     BLAS_ALPHA = dtheta_coil*dzeta_coil
-     BLAS_BETA=1
-     call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_y,LDA,f_y_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
-     
-     call system_clock(toc)
-     if (verbose) print *,"matmul 2 for matrix_regularization:",real(toc-tic)/countrate,"sec."
-     
-     if (trim(regularization_term_option) == regularization_term_option_chi2_K) then
-        call system_clock(tic)
-        ! Here we carry out matrix_regularization += dtheta*dzeta*(f_z ^ T) * f_z_over_N_coil
-        ! A = f_z
-        ! B = f_z_over_N_plasma
-        ! C = matrix_regularization
-        M = num_basis_functions ! # rows of A^T
-        N = num_basis_functions ! # cols of B
-        K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
-        LDA = K ! Would be M if not taking the transpose.
-        LDB = K
-        LDC = M
-        TRANSA = 'T' ! DO take a transpose!
-        TRANSB = 'N'
-        BLAS_ALPHA = dtheta_coil*dzeta_coil
-        BLAS_BETA=1
-        call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_z,LDA,f_z_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
-        
-        call system_clock(toc)
-        if (verbose) print *,"matmul 3 for matrix_regularization:",real(toc-tic)/countrate,"sec."
-     end if
-     
-     
-     call system_clock(tic)
-     
-     if (trim(regularization_term_option) == regularization_term_option_chi2_K) then     
-        RHS_regularization = (matmul(d_x, f_x_over_N_coil) + matmul(d_y, f_y_over_N_coil) + matmul(d_z, f_z_over_N_coil)) &
-             * (dtheta_coil*dzeta_coil)
-     else
-        RHS_regularization = (matmul(d_x, f_x_over_N_coil) + matmul(d_y, f_y_over_N_coil)) &
-             * (dtheta_coil*dzeta_coil)
-     end if
-     
-     call system_clock(toc)
-     if (verbose) print *,"Matmuls for RHS_regularization:",real(toc-tic)/countrate,"sec."
 
-  case (regularization_term_option_Laplace_Beltrami)
-     ! ------------------------------------------------------------------
-     ! Laplace-Beltrami matrix and RHS:
-     
-     call system_clock(tic)
-     ! Here we carry out matrix = dtheta*dzeta*(f ^ T) * f_over_N_coil
-     ! A = f
-     ! B = f_over_N_plasma
-     ! C = matrix
+  allocate(regularization_block(num_basis_functions,num_basis_functions))
+  allocate(temp_matrix(ntheta_coil*nzeta_coil,num_basis_functions))
+  allocate(Jacobian_coil_2D(ntheta_coil*nzeta_coil,ns_integration))
+  allocate(regularization_without_RPhiZ(num_basis_functions*ns_magnetization, num_basis_functions*ns_magnetization))
+  do js = 1, ns_integration
+     Jacbian_coil_2D(:,js) = reshape(Jacobian_coil(:,:,js), (/ ntheta_coil*nzeta_coil /))
+  end do
+
+  ! Add contributions from each integration point in s:
+  do ls = 1, ns_integration
+     regularization_block = 0
+     ! Form basis_functions^T * sqrt(g) * basis_functions, to do the (theta,zeta) integrations.
+     do j = 1, ntheta_coil*nzeta_coil
+        temp_matrix(j,:) = Jacobian_coil_2D(:,ls) * basis_functions(j,:)
+     end do
+     ! A = basis_functions
+     ! B = temp_matrix
+     ! C = regularization_block
      M = num_basis_functions ! # rows of A^T
      N = num_basis_functions ! # cols of B
      K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
@@ -566,23 +505,154 @@ subroutine regcoil_build_matrices()
      LDC = M
      TRANSA = 'T' ! DO take a transpose!
      TRANSB = 'N'
-     BLAS_ALPHA = dtheta_coil*dzeta_coil
-     BLAS_BETA=1
-     call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_Laplace_Beltrami,LDA,f_Laplace_Beltrami_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
-     
-     call system_clock(toc)
-     if (verbose) print *,"matmul for matrix_regularization:",real(toc-tic)/countrate,"sec."
-     
-     call system_clock(tic)
-     
-     RHS_regularization = matmul(d_Laplace_Beltrami, f_Laplace_Beltrami_over_N_coil) * (dtheta_coil*dzeta_coil)
-     
-     call system_clock(toc)
-     if (verbose) print *,"Matmul for RHS_regularization:",real(toc-tic)/countrate,"sec."
+     BLAS_ALPHA = dtheta_coil * dzeta_coil * s_weights(ls)
+     BLAS_BETA=0
+     call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,basis_functions,LDA,temp_matrix,LDB,BLAS_BETA,regularization_block,LDC)           
+     do js = 1, ns_magnetization
+        do ks = 1, js
+           row_offset = (js-1)*num_basis_functions
+           col_offset = (ks-1)*num_basis_functions
+           regularization_without_RPhiZ(row_offset+1:row_offset+num_basis_functions, col_offset+1:col_offset+num_basis_functions) &
+                = regularization_without_RPhiZ(row_offset+1:row_offset+num_basis_functions, col_offset+1:col_offset+num_basis_functions) &
+                + regularization_block * interpolate_magnetization_to_integration(ls,js) * interpolate_magnetization_to_integration(ls,ks)
+           if (ks .ne. js) then
+              ! For off-diagonal-in-s blocks, populate the symmetric block.
+              ! Should I take a transpose of regularization_block in the next line? I think it doesn't matter, and it's already symmetric.
+              regularization_without_RPhiZ(col_offset+1:col_offset+num_basis_functions, row_offset+1:row_offset+num_basis_functions) &
+                   = regularization_without_RPhiZ(col_offset+1:col_offset+num_basis_functions, row_offset+1:row_offset+num_basis_functions) &
+                   + regularization_block * interpolate_magnetization_to_integration(ls,js) * interpolate_magnetization_to_integration(ls,ks)
+           end if
+        end do
+     end do
+  end do
+  deallocate(regularization_block, temp_matrix, Jacobian_coil_2D)
 
-  case default
-     print *,"Error! Unrecognized regularization_term_option: ",regularization_term_option
-  end select
+  ! Make copies for (R,Phi,Z) components of the magnetization:
+  block_size = ns_magnetization*num_basis_functions
+  do j_RPhiZ = 0,2
+     row_offset = j_RPhiZ*block_size
+     matrix_regularization(row_offset+1,row_offset+block_size, row_offset+1,row_offset+block_size) = regularization_without_RPhiZ
+  end do
+  deallocate(regularization_without_RPhiZ)
+
+  call system_clock(toc)
+  if (verbose) print *,"Regularization term:",real(toc-tic)/countrate,"sec."
+
+
+  ! Regularization term for standard regcoil
+!!$  select case (trim(regularization_term_option))
+!!$  case (regularization_term_option_chi2_K, regularization_term_option_K_xy)
+!!$  
+!!$     call system_clock(tic)
+!!$     ! Here we carry out matrix_regularization += dtheta*dzeta*(f_x ^ T) * f_x_over_N_coil
+!!$     ! A = f_x
+!!$     ! B = f_x_over_N_plasma
+!!$     ! C = matrix_regularization
+!!$     M = num_basis_functions ! # rows of A^T
+!!$     N = num_basis_functions ! # cols of B
+!!$     K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
+!!$     LDA = K ! Would be M if not taking the transpose.
+!!$     LDB = K
+!!$     LDC = M
+!!$     TRANSA = 'T' ! DO take a transpose!
+!!$     TRANSB = 'N'
+!!$     BLAS_ALPHA = dtheta_coil*dzeta_coil
+!!$     BLAS_BETA=1
+!!$     call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_x,LDA,f_x_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
+!!$     
+!!$     call system_clock(toc)
+!!$     if (verbose) print *,"matmul 1 for matrix_regularization:",real(toc-tic)/countrate,"sec."
+!!$     
+!!$     call system_clock(tic)
+!!$     ! Here we carry out matrix_regularization += dtheta*dzeta*(f_y ^ T) * f_y_over_N_coil
+!!$     ! A = f_y
+!!$     ! B = f_y_over_N_plasma
+!!$     ! C = matrix_regularization
+!!$     M = num_basis_functions ! # rows of A^T
+!!$     N = num_basis_functions ! # cols of B
+!!$     K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
+!!$     LDA = K ! Would be M if not taking the transpose.
+!!$     LDB = K
+!!$     LDC = M
+!!$     TRANSA = 'T' ! DO take a transpose!
+!!$     TRANSB = 'N'
+!!$     BLAS_ALPHA = dtheta_coil*dzeta_coil
+!!$     BLAS_BETA=1
+!!$     call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_y,LDA,f_y_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
+!!$     
+!!$     call system_clock(toc)
+!!$     if (verbose) print *,"matmul 2 for matrix_regularization:",real(toc-tic)/countrate,"sec."
+!!$     
+!!$     if (trim(regularization_term_option) == regularization_term_option_chi2_K) then
+!!$        call system_clock(tic)
+!!$        ! Here we carry out matrix_regularization += dtheta*dzeta*(f_z ^ T) * f_z_over_N_coil
+!!$        ! A = f_z
+!!$        ! B = f_z_over_N_plasma
+!!$        ! C = matrix_regularization
+!!$        M = num_basis_functions ! # rows of A^T
+!!$        N = num_basis_functions ! # cols of B
+!!$        K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
+!!$        LDA = K ! Would be M if not taking the transpose.
+!!$        LDB = K
+!!$        LDC = M
+!!$        TRANSA = 'T' ! DO take a transpose!
+!!$        TRANSB = 'N'
+!!$        BLAS_ALPHA = dtheta_coil*dzeta_coil
+!!$        BLAS_BETA=1
+!!$        call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_z,LDA,f_z_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
+!!$        
+!!$        call system_clock(toc)
+!!$        if (verbose) print *,"matmul 3 for matrix_regularization:",real(toc-tic)/countrate,"sec."
+!!$     end if
+!!$     
+!!$     
+!!$     call system_clock(tic)
+!!$     
+!!$     if (trim(regularization_term_option) == regularization_term_option_chi2_K) then     
+!!$        RHS_regularization = (matmul(d_x, f_x_over_N_coil) + matmul(d_y, f_y_over_N_coil) + matmul(d_z, f_z_over_N_coil)) &
+!!$             * (dtheta_coil*dzeta_coil)
+!!$     else
+!!$        RHS_regularization = (matmul(d_x, f_x_over_N_coil) + matmul(d_y, f_y_over_N_coil)) &
+!!$             * (dtheta_coil*dzeta_coil)
+!!$     end if
+!!$     
+!!$     call system_clock(toc)
+!!$     if (verbose) print *,"Matmuls for RHS_regularization:",real(toc-tic)/countrate,"sec."
+!!$
+!!$  case (regularization_term_option_Laplace_Beltrami)
+!!$     ! ------------------------------------------------------------------
+!!$     ! Laplace-Beltrami matrix and RHS:
+!!$     
+!!$     call system_clock(tic)
+!!$     ! Here we carry out matrix = dtheta*dzeta*(f ^ T) * f_over_N_coil
+!!$     ! A = f
+!!$     ! B = f_over_N_plasma
+!!$     ! C = matrix
+!!$     M = num_basis_functions ! # rows of A^T
+!!$     N = num_basis_functions ! # cols of B
+!!$     K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
+!!$     LDA = K ! Would be M if not taking the transpose.
+!!$     LDB = K
+!!$     LDC = M
+!!$     TRANSA = 'T' ! DO take a transpose!
+!!$     TRANSB = 'N'
+!!$     BLAS_ALPHA = dtheta_coil*dzeta_coil
+!!$     BLAS_BETA=1
+!!$     call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,f_Laplace_Beltrami,LDA,f_Laplace_Beltrami_over_N_coil,LDB,BLAS_BETA,matrix_regularization,LDC)
+!!$     
+!!$     call system_clock(toc)
+!!$     if (verbose) print *,"matmul for matrix_regularization:",real(toc-tic)/countrate,"sec."
+!!$     
+!!$     call system_clock(tic)
+!!$     
+!!$     RHS_regularization = matmul(d_Laplace_Beltrami, f_Laplace_Beltrami_over_N_coil) * (dtheta_coil*dzeta_coil)
+!!$     
+!!$     call system_clock(toc)
+!!$     if (verbose) print *,"Matmul for RHS_regularization:",real(toc-tic)/countrate,"sec."
+!!$
+!!$  case default
+!!$     print *,"Error! Unrecognized regularization_term_option: ",regularization_term_option
+!!$  end select
 
   ! ------------------------------------------------------------------
 
