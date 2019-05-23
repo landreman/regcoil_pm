@@ -7,15 +7,15 @@ subroutine regcoil_prepare_solve()
   integer :: iflag
 
   if (allocated(matrix)) deallocate(matrix)
-  allocate(matrix(num_basis_functions, num_basis_functions), stat=iflag)
+  allocate(matrix(system_size, system_size), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 1!'
 
   if (allocated(RHS)) deallocate(RHS)
-  allocate(RHS(num_basis_functions), stat=iflag)
+  allocate(RHS(system_size), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 2!'
 
   if (allocated(solution)) deallocate(solution)
-  allocate(solution(num_basis_functions), stat=iflag)
+  allocate(solution(system_size), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 3!'
 
   if (allocated(LAPACK_WORK)) deallocate(LAPACK_WORK)
@@ -30,20 +30,16 @@ subroutine regcoil_prepare_solve()
   allocate(chi2_B(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 6!'
 
-  if (allocated(chi2_K)) deallocate(chi2_K)
-  allocate(chi2_K(nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 7!'
-
-  if (allocated(chi2_Laplace_Beltrami)) deallocate(chi2_Laplace_Beltrami)
-  allocate(chi2_Laplace_Beltrami(nlambda), stat=iflag)
+  if (allocated(chi2_M)) deallocate(chi2_M)
+  allocate(chi2_M(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 7!'
 
   if (allocated(max_Bnormal)) deallocate(max_Bnormal)
   allocate(max_Bnormal(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 8!'
 
-  if (allocated(max_K)) deallocate(max_K)
-  allocate(max_K(nlambda), stat=iflag)
+  if (allocated(max_M)) deallocate(max_M)
+  allocate(max_M(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 9!'
 
   if (allocated(current_potential)) deallocate(current_potential)
@@ -102,7 +98,7 @@ subroutine regcoil_prepare_solve()
 
 
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
-  call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, LAPACK_IPIV, RHS, num_basis_functions, LAPACK_WORK, -1, LAPACK_INFO)
+  call DSYSV('U',system_size, 1, matrix, system_size, LAPACK_IPIV, RHS, system_size, LAPACK_WORK, -1, LAPACK_INFO)
   LAPACK_LWORK = int(LAPACK_WORK(1))
   if (verbose) print *,"Optimal LWORK:",LAPACK_LWORK
   deallocate(LAPACK_WORK)

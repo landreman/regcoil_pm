@@ -34,19 +34,16 @@ module regcoil_variables
   real(dp), dimension(:), allocatable :: theta_plasma, zeta_plasma, zetal_plasma
   real(dp), dimension(:,:,:), allocatable :: r_plasma, drdtheta_plasma, drdzeta_plasma, normal_plasma
 
-  real(dp), dimension(:,:), allocatable :: g, f_x, f_y, f_z, f_Laplace_Beltrami
-  real(dp), dimension(:), allocatable :: h, d_x, d_y, d_z, d_Laplace_Beltrami
+  real(dp), dimension(:,:,:,:), allocatable :: g, inductance
 
-  real(dp), dimension(:,:), allocatable :: Bnormal_from_plasma_current
-  real(dp), dimension(:,:), allocatable :: Bnormal_from_net_coil_currents
-  real(dp), dimension(:,:), allocatable :: matrix_B, matrix_regularization, inductance
-  real(dp), dimension(:,:), allocatable :: single_valued_current_potential_mn
-  real(dp), dimension(:,:,:), allocatable :: single_valued_current_potential_thetazeta
-  real(dp), dimension(:,:,:), allocatable :: current_potential
+  real(dp), dimension(:,:), allocatable :: Bnormal_from_TF_and_plasma_current
+  real(dp), dimension(:,:), allocatable :: matrix_B, matrix_regularization
   real(dp), dimension(:), allocatable :: RHS_B, RHS_regularization
   real(dp), dimension(:,:,:), allocatable :: Bnormal_total
   real(dp), dimension(:,:,:), allocatable :: K2, Laplace_Beltrami2
-  real(dp), dimension(:), allocatable :: chi2_B, chi2_K, max_Bnormal, max_K, chi2_Laplace_Beltrami
+  real(dp), dimension(:), allocatable :: chi2_B, chi2_M, max_Bnormal, max_M
+  real(dp), dimension(:,:,:,:), allocatable :: M_R, M_zeta, M_Z, abs_M
+  real(dp), dimension(:,:,:), allocatable :: M_R_mn, M_zeta_mn, M_Z_mn
 
   real(dp), dimension(:), allocatable :: theta_coil, zeta_coil, zetal_coil
   real(dp), dimension(:,:,:), allocatable :: r_coil, drdtheta_coil, drdzeta_coil, normal_coil
@@ -60,7 +57,7 @@ module regcoil_variables
   integer :: mpol_potential=12
   integer :: ntor_potential=12
   integer :: mnmax_plasma, mnmax_coil, mnmax_potential
-  integer :: num_basis_functions
+  integer :: num_basis_functions, system_size
   integer, dimension(:), allocatable :: xm_plasma, xn_plasma, xm_coil, xn_coil, xm_potential, xn_potential
   real(dp), dimension(:), allocatable :: rmns_plasma, zmnc_plasma, rmnc_plasma, zmns_plasma
   real(dp), dimension(:), allocatable :: rmns_coil, zmnc_coil, rmnc_coil, zmns_coil
@@ -95,7 +92,7 @@ module regcoil_variables
   real(dp) :: lambda_min = 1.0d-19, lambda_max = 1.0d-13
   real(dp), dimension(:), allocatable :: lambda
 
-  real(dp), dimension(:,:), allocatable :: matrix, this_current_potential
+  real(dp), dimension(:,:), allocatable :: matrix
   real(dp), dimension(:), allocatable :: RHS, solution
   real(dp), dimension(:), allocatable :: KDifference_x, KDifference_y, KDifference_z, KDifference_Laplace_Beltrami
   real(dp), dimension(:,:), allocatable :: this_K2_times_N, this_Laplace_Beltrami2_times_N
