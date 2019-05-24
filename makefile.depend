@@ -5,7 +5,6 @@ OBJ_FILES =  \
 	regcoil_build_matrices.o \
 	regcoil_Chebyshev_grid.o \
 	regcoil_Chebyshev_interpolation_matrix.o \
-	regcoil_compute_diagnostics_for_nescout_potential.o \
 	regcoil_compute_lambda.o \
 	regcoil_compute_offset_surface_mod.o \
 	regcoil_diagnostics.o \
@@ -23,7 +22,6 @@ OBJ_FILES =  \
 	regcoil_read_nescin.o \
 	regcoil_solve.o \
 	regcoil_splines.o \
-	regcoil_svd_scan.o \
 	regcoil_validate_input.o \
 	regcoil_variables.o \
 	regcoil_write_input.o \
@@ -36,7 +34,6 @@ regcoil_auto_regularization_solve.o: regcoil_variables.o
 regcoil_build_matrices.o: regcoil_variables.o regcoil_init_Fourier_modes_mod.o
 regcoil_Chebyshev_grid.o:
 regcoil_Chebyshev_interpolation_matrix.o:
-regcoil_compute_diagnostics_for_nescout_potential.o: regcoil_variables.o
 regcoil_compute_lambda.o: regcoil_variables.o
 regcoil_compute_offset_surface_mod.o: regcoil_variables.o
 regcoil_diagnostics.o: regcoil_variables.o
@@ -54,7 +51,6 @@ regcoil_read_input.o: regcoil_variables.o
 regcoil_read_nescin.o: regcoil_variables.o
 regcoil_solve.o: regcoil_variables.o
 regcoil_splines.o:
-regcoil_svd_scan.o: regcoil_variables.o
 regcoil_validate_input.o: regcoil_variables.o
 regcoil_variables.o: 
 regcoil_write_input.o: regcoil_variables.o

@@ -497,18 +497,16 @@ contains
     case (2,3,4)
        ! A VMEC wout file is available
        ! VMEC stores the toroidal Boozer component B_zeta as "bvco", using the HALF mesh
-       net_poloidal_current_Amperes = 2*pi/mu0*(1.5_dp*bvco(ns)-0.5_dp*bvco(ns-1))
+       !net_poloidal_current_Amperes = 2*pi/mu0*(1.5_dp*bvco(ns)-0.5_dp*bvco(ns-1))
        ! curpol is a number which multiplies the data in the bnorm file.
        curpol = (2*pi/nfp)*(1.5_dp*bsubvmnc(1,ns) - 0.5_dp*bsubvmnc(1,ns-1))
 
-       if (verbose) print *,"Overriding net_poloidal_current_Amperes with value from the VMEC wout file."
-       if (verbose) print *,"G = ", net_poloidal_current_Amperes, " ; curpol = ", curpol
     case default
-       if (abs(net_poloidal_current_Amperes-1)<1e-12) then
-          if (verbose) print *,"No VMEC file is available, and the default value of net_poloidal_current_Amperes (=1) will be used."
-       else
-          if (verbose) print *,"No VMEC file is available, so net_poloidal_current_Amperes will be taken from the bdistrib input file."
-       end if
+!!$       if (abs(net_poloidal_current_Amperes-1)<1e-12) then
+!!$          if (verbose) print *,"No VMEC file is available, and the default value of net_poloidal_current_Amperes (=1) will be used."
+!!$       else
+!!$          if (verbose) print *,"No VMEC file is available, so net_poloidal_current_Amperes will be taken from the bdistrib input file."
+!!$       end if
     end select
 
     call system_clock(toc)

@@ -9,8 +9,8 @@ program regcoil
 
   integer :: tic, toc, countrate
 
-  print *,"This is REGCOIL,"
-  print *,"a regularized least-squares method for computing stellarator coil shapes."
+  print *,"This is REGCOIL_PM,"
+  print *,"a regularized least-squares method for designing permanent magnets for stellarators."
   call system_clock(tic,countrate)
 
   call regcoil_read_input()
@@ -30,9 +30,9 @@ program regcoil
   case (1)
      call regcoil_lambda_scan()
   case (2)
-     call regcoil_compute_diagnostics_for_nescout_potential()
+     !call regcoil_compute_diagnostics_for_nescout_potential()
   case (3)
-     call regcoil_svd_scan()
+     !call regcoil_svd_scan()
   case (4,5)
      call regcoil_auto_regularization_solve()
   case default
@@ -45,7 +45,7 @@ program regcoil
 
   call regcoil_write_output()
  
-  print *,"REGCOIL complete. Total time=",total_time,"sec."
+  print *,"REGCOIL_PM complete. Total time=",total_time,"sec."
   print *,"You can run regcoilPlot ",trim(output_filename)," to plot results."
 
 end program regcoil

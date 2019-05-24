@@ -42,60 +42,22 @@ subroutine regcoil_prepare_solve()
   allocate(max_M(nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 9!'
 
-  if (allocated(current_potential)) deallocate(current_potential)
-  allocate(current_potential(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 10!'
-
-  if (allocated(single_valued_current_potential_thetazeta)) &
-        deallocate(single_valued_current_potential_thetazeta)
-  allocate(single_valued_current_potential_thetazeta(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 11!'
-
-  if (allocated(this_current_potential)) deallocate(this_current_potential)
-  allocate(this_current_potential(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 12!'
-
-  if (allocated(single_valued_current_potential_mn)) &
-        deallocate(single_valued_current_potential_mn)
-  allocate(single_valued_current_potential_mn(num_basis_functions,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 13!'
+  if (allocated(min_M)) deallocate(min_M)
+  allocate(min_M(nlambda), stat=iflag)
+  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 9!'
 
   if (allocated(Bnormal_total)) deallocate(Bnormal_total)
   allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 14!'
 
-  if (allocated(K2)) deallocate(K2)
-  allocate(K2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 15!'
+  allocate(M_R_mn(   num_basis_functions,ns_magnetization,nlambda))
+  allocate(M_zeta_mn(num_basis_functions,ns_magnetization,nlambda))
+  allocate(M_Z_mn(   num_basis_functions,ns_magnetization,nlambda))
 
-  if (allocated(Laplace_Beltrami2)) deallocate(Laplace_Beltrami2)
-  allocate(Laplace_Beltrami2(ntheta_coil,nzeta_coil,nlambda), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 15!'
-
-  if (allocated(KDifference_x)) deallocate(KDifference_x)
-  allocate(KDifference_x(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 16!'
-
-  if (allocated(KDifference_y)) deallocate(KDifference_y)
-  allocate(KDifference_y(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 17!'
-
-  if (allocated(KDifference_z)) deallocate(KDifference_z)
-  allocate(KDifference_z(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 18!'
-
-  if (allocated(KDifference_Laplace_Beltrami)) deallocate(KDifference_Laplace_Beltrami)
-  allocate(KDifference_Laplace_Beltrami(ntheta_coil*nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 18!'
-
-  if (allocated(this_K2_times_N)) deallocate(this_K2_times_N)
-  allocate(this_K2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 19!'
-
-  if (allocated(this_Laplace_Beltrami2_times_N)) deallocate(this_Laplace_Beltrami2_times_N)
-  allocate(this_Laplace_Beltrami2_times_N(ntheta_coil,nzeta_coil), stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 19!'
-
+  allocate(M_R(   ntheta_coil, nzeta_coil, ns_magnetization, nlambda))
+  allocate(M_zeta(ntheta_coil, nzeta_coil, ns_magnetization, nlambda))
+  allocate(M_Z(   ntheta_coil, nzeta_coil, ns_magnetization, nlambda))
+  allocate(abs_M( ntheta_coil, nzeta_coil, ns_magnetization, nlambda))
 
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
   call DSYSV('U',system_size, 1, matrix, system_size, LAPACK_IPIV, RHS, system_size, LAPACK_WORK, -1, LAPACK_INFO)

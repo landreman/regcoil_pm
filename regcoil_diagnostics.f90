@@ -9,13 +9,12 @@ subroutine regcoil_diagnostics(ilambda)
   integer, intent(in) :: ilambda
   integer :: tic, toc, countrate
   integer :: itheta, izeta, js, offset
-  real(dp), dimension(:,:), allocatable :: temp_3D
-  real(dp) :: chi2_M_alt
+  real(dp) :: chi2_M_alt, chi2_B_alt
+  real(dp), dimension(:), allocatable :: temp_array
 
   call system_clock(tic,countrate)
 
   ! Unpack the solution vector.
-  abs_M(:,:,:,ilambda) = 0
   do js = 1, ns_magnetization
      offset = 0*ns_magnetization*num_basis_functions + (js-1) * num_basis_functions
      M_R_mn(:,js,ilambda) = solution(offset+1:offset+num_basis_functions)
@@ -32,39 +31,46 @@ subroutine regcoil_diagnostics(ilambda)
      abs_M(:,:,js,ilambda) = sqrt(M_R(:,:,js,ilambda) * M_R(:,:,js,ilambda) + M_zeta(:,:,js,ilambda) * M_zeta(:,:,js,ilambda) + M_Z(:,:,js,ilambda) * M_Z(:,:,js,ilambda))
   end do
 
-  KDifference_x = d_x - matmul(f_x, solution)
-  KDifference_y = d_y - matmul(f_y, solution)
-  KDifference_z = d_z - matmul(f_z, solution)
-  KDifference_Laplace_Beltrami = d_Laplace_Beltrami - matmul(f_Laplace_Beltrami, solution)
-  this_K2_times_N = reshape(KDifference_x*KDifference_x + KDifference_y*KDifference_y + KDifference_z*KDifference_z, (/ ntheta_coil, nzeta_coil /)) &
-       / norm_normal_coil
-  chi2_K(ilambda) = nfp * dtheta_coil * dzeta_coil * sum(this_K2_times_N)
-  K2(:,:,ilambda) = this_K2_times_N / norm_normal_coil
-
   chi2_M(ilambda) = dot_product(solution, matmul(matrix_regularization, solution)) * nfp
-  ! Compute chi2_M a second way, as a sanity test:
-  allocate(temp_3D(ntheta_coil, nzeta_coil, ns_magnetization))
-  temp_3D = abs_M(:,:,:,ilambda) * abs_M(:,:,:,ilambda) * Jacobian_coil
+  ! Compute chi2_M a second way, as a sanity test. This second method is probably slower, so it could eventually be commented out.
   chi2_M_alt = 0
-  do js = 1, ns_magnetization
-     ! I NEED TO COMPLETE THIS NEXT BIT.
-     chi2_M_alt = chi2_M_alt + sum(temp_3D(:,:,js))
+  do itheta = 1, ntheta_coil
+     do izeta = 1, nzeta_coil
+        chi2_M_alt = chi2_M_alt + d(itheta,izeta) * dot_product(s_weights * Jacobian_coil(itheta,izeta,:), &
+             matmul(interpolate_magnetization_to_integration, M_R(itheta,izeta,:,ilambda)) ** 2 &
+             + matmul(interpolate_magnetization_to_integration, M_zeta(itheta,izeta,:,ilambda)) ** 2 &
+             + matmul(interpolate_magnetization_to_integration, M_Z(itheta,izeta,:,ilambda)) ** 2)
+     end do
   end do
+  chi2_M_alt = chi2_M_alt * nfp * dtheta_coil * dzeta_coil
   if (verbose) print "(3(a,es22.14))","2 methods of computing chi2_M that should agree: method 1 =",chi2_M(ilambda),", method 2 =",chi2_M_alt,", difference =",chi2_M(ilambda) - chi2_M_alt
 
-  Bnormal_total(:,:,ilambda) = (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
-       + Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
-  
+
+  allocate(temp_array(ntheta_plasma * nzeta_plasma))
+  temp_array = 0
+  do js = 1, ns_magnetization
+     temp_array = temp_array + matmul(g(:,:,js,1), M_R_mn(:,js,ilambda)) + matmul(g(:,:,js,2), M_zeta_mn(:,js,ilambda)) + matmul(g(:,:,js,3), M_Z_mn(:,js,ilambda))
+  end do
+  !Bnormal_total(:,:,ilambda) = (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
+  Bnormal_total(:,:,ilambda) = (reshape(temp_array,(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
+       + Bnormal_from_TF_and_plasma_current
+  deallocate(temp_array)
+
   max_Bnormal(ilambda) = maxval(abs(Bnormal_total(:,:,ilambda)))
   max_M(ilambda) = maxval(abs_M(:,:,:,ilambda))
+  min_M(ilambda) = minval(abs_M(:,:,:,ilambda))
   
   chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
        * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
+  ! Compute chi2_B a second way, as a sanity test.
+  chi2_B_alt = nfp * dot_product(solution, matmul(matrix_B, solution)) - 2 * nfp * dot_product(RHS_B, solution) &
+       + nfp * dtheta_plasma * dzeta_plasma * sum(norm_normal_plasma * Bnormal_from_TF_and_plasma_current * Bnormal_from_TF_and_plasma_current)
+  if (verbose) print "(3(a,es22.14))","2 methods of computing chi2_B that should agree: method 1 =",chi2_B(ilambda),", method 2 =",chi2_B_alt,", difference =",chi2_B(ilambda) - chi2_B_alt
   
   call system_clock(toc)
   if (verbose) print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
-  if (verbose) print "(a,es10.3,a,es10.3)","   chi2_B:",chi2_B(ilambda),",  chi2_M:",chi2_M(ilambda)
-  if (verbose) print "(a,es10.3,a,es10.3,a,es10.3)","   max(B_n):",max_Bnormal(ilambda),",  max(M):",max_M(ilambda),",  rms M:",sqrt(chi2_M(ilambda)/area_coil)
+  if (verbose) print "(2(a,es10.3))","   chi2_B:",chi2_B(ilambda),",  chi2_M:",chi2_M(ilambda)
+  if (verbose) print "(3(a,es10.3))","   max(B_n):",max_Bnormal(ilambda),",  max(M):",max_M(ilambda),",  min(M):",min_M(ilambda)
 
 
 end subroutine regcoil_diagnostics

@@ -16,7 +16,7 @@ subroutine regcoil_build_matrices()
   real(dp) :: angle, sinangle, cosangle, factor, constants
   real(dp), dimension(:,:,:,:), allocatable :: g_over_N_plasma
   real(dp), dimension(:), allocatable :: norm_normal_plasma_inv1D
-  integer :: js, ks, ls, row_offset, col_offset, j_RZetaZ
+  integer :: js, ks, ls, row_offset, col_offset, j_RZetaZ, k_RZetaZ, block_size
   real(dp), dimension(:,:), allocatable :: regularization_block, temp_matrix, Jacobian_coil_2D, regularization_without_RZetaZ
   real(dp), dimension(:,:), allocatable :: basis_functions_times_d
   real(dp), dimension(:), allocatable :: cos_zetal, sin_zetal, Bnormal_to_cancel_1D
@@ -33,14 +33,14 @@ subroutine regcoil_build_matrices()
   if (verbose) print *,"Initializing basis functions and f"
 
   ! Initialize Fourier arrays
-  call regcoil_init_Fourier_modes(mpol_potential, ntor_potential, mnmax_potential, xm_potential, xn_potential, .false.)
-  xn_potential = xn_potential * nfp
+  call regcoil_init_Fourier_modes(mpol_magnetization, ntor_magnetization, mnmax_magnetization, xm_magnetization, xn_magnetization, .false.)
+  xn_magnetization = xn_magnetization * nfp
   
   select case (symmetry_option)
   case (1,2)
-     num_basis_functions = mnmax_potential
+     num_basis_functions = mnmax_magnetization
   case (3)
-     num_basis_functions = mnmax_potential * 2
+     num_basis_functions = mnmax_magnetization * 2
   case default
      print *,"Error! Invalid setting for symmetry_option:",symmetry_option
      stop
@@ -71,7 +71,7 @@ subroutine regcoil_build_matrices()
   do whichSymmetry = minSymmetry, maxSymmetry
      
      if (whichSymmetry==2 .and. symmetry_option==3) then
-        offset = mnmax_potential
+        offset = mnmax_magnetization
      else
         offset = 0
      end if
@@ -79,8 +79,8 @@ subroutine regcoil_build_matrices()
      do izeta_coil = 1, nzeta_coil
         do itheta_coil = 1, ntheta_coil
            index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-           do imn = 1, mnmax_potential
-              angle = xm_potential(imn)*theta_coil(itheta_coil)-xn_potential(imn)*zeta_coil(izeta_coil)
+           do imn = 1, mnmax_magnetization
+              angle = xm_magnetization(imn)*theta_coil(itheta_coil)-xn_magnetization(imn)*zeta_coil(izeta_coil)
               sinangle = sin(angle)
               cosangle = cos(angle)
               if (whichSymmetry==1) then
@@ -130,7 +130,7 @@ subroutine regcoil_build_matrices()
   allocate(d_times_unit_normal_coil(3,ntheta_coil,nzetal_coil))
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! Now compute g and h
+  ! Now compute g
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   inductance = 0
@@ -138,8 +138,8 @@ subroutine regcoil_build_matrices()
   allocate(cos_zetal(nzetal_coil))
   allocate(sin_zetal(nzetal_coil))
   do izetal_coil = 1, nzetal_coil
-     cos_zetal(izetal_coil) = cos(zetal_coil(izetal))
-     sin_zetal(izetal_coil) = sin(zetal_coil(izetal))
+     cos_zetal(izetal_coil) = cos(zetal_coil(izetal_coil))
+     sin_zetal(izetal_coil) = sin(zetal_coil(izetal_coil))
   end do
   constants = mu0 / (4 * pi)
 
@@ -153,7 +153,7 @@ subroutine regcoil_build_matrices()
   end do
 
   call system_clock(tic,countrate)
-  if (verbose) print *,"Building inductance matrix and h."
+  if (verbose) print *,"Building inductance matrix."
   !$OMP PARALLEL
 
   !$OMP MASTER
@@ -289,7 +289,7 @@ subroutine regcoil_build_matrices()
            g_over_N_plasma(:,j,js,j_RZetaZ) = g(:,j,js,j_RZetaZ) * norm_normal_plasma_inv1D
         end do
 
-        offset = (j_RZetaZ - 1)*ns_magnetization*num_basis_functions + (ks-1)*num_basis_functions
+        offset = (j_RZetaZ - 1)*ns_magnetization*num_basis_functions + (js-1)*num_basis_functions
         RHS_B(offset+1:offset+num_basis_functions) = -dtheta_plasma*dzeta_plasma*matmul(Bnormal_to_cancel_1D, g(:,:,js,j_RZetaZ))
 
         call system_clock(toc2)
@@ -298,7 +298,7 @@ subroutine regcoil_build_matrices()
      end do
   end do
 
-  deallocate(Bnormal_to_cancel)
+  deallocate(Bnormal_to_cancel_1D)
   deallocate(norm_normal_plasma_inv1D)
 
   call system_clock(toc)
@@ -368,7 +368,7 @@ subroutine regcoil_build_matrices()
   allocate(Jacobian_coil_2D(ntheta_coil*nzeta_coil,ns_integration))
   allocate(regularization_without_RZetaZ(num_basis_functions*ns_magnetization, num_basis_functions*ns_magnetization))
   do js = 1, ns_integration
-     Jacbian_coil_2D(:,js) = reshape(Jacobian_coil(:,:,js), (/ ntheta_coil*nzeta_coil /))
+     Jacobian_coil_2D(:,js) = reshape(Jacobian_coil(:,:,js), (/ ntheta_coil*nzeta_coil /))
   end do
 
   allocate(basis_functions_times_d(ntheta_coil*nzeta_coil,num_basis_functions))
@@ -383,8 +383,8 @@ subroutine regcoil_build_matrices()
   do ls = 1, ns_integration
      regularization_block = 0
      ! Form basis_functions^T * d * sqrt(g) * basis_functions, to do the (theta,zeta) integrations.
-     do j = 1, ntheta_coil*nzeta_coil
-        temp_matrix(j,:) = Jacobian_coil_2D(:,ls) * basis_functions(j,:)
+     do j = 1, num_basis_functions
+        temp_matrix(:,j) = Jacobian_coil_2D(:,ls) * basis_functions(:,j)
      end do
      ! A = basis_functions_times_d
      ! B = temp_matrix
@@ -423,7 +423,7 @@ subroutine regcoil_build_matrices()
   block_size = ns_magnetization*num_basis_functions
   do j_RZetaZ = 0,2
      row_offset = j_RZetaZ*block_size
-     matrix_regularization(row_offset+1,row_offset+block_size, row_offset+1,row_offset+block_size) = regularization_without_RZetaZ
+     matrix_regularization(row_offset+1:row_offset+block_size, row_offset+1:row_offset+block_size) = regularization_without_RZetaZ
   end do
   deallocate(regularization_without_RZetaZ)
 

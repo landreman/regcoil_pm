@@ -24,8 +24,8 @@ subroutine regcoil_write_input(proc_string,iunit,istat)
   write(iunit, OUTINT) 'nzeta_plasma', nzeta_plasma
   write(iunit, OUTINT) 'ntheta_coil', ntheta_coil
   write(iunit, OUTINT) 'nzeta_coil', nzeta_coil
-  write(iunit, OUTINT) 'mpol_potential', mpol_potential
-  write(iunit, OUTINT) 'ntor_potential', ntor_potential
+  write(iunit, OUTINT) 'mpol_magnetization', mpol_magnetization
+  write(iunit, OUTINT) 'ntor_magnetization', ntor_magnetization
   write(iunit, OUTINT) 'target_option', target_option
   !write(iunit, OUTFLT) 'current_density_target', current_density_target
   write(iunit, OUTINT) 'geometry_option_plasma', geometry_option_plasma

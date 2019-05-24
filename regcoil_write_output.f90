@@ -21,13 +21,16 @@ subroutine regcoil_write_output
        vn_ntheta_coil = "ntheta_coil", &
        vn_nzeta_coil = "nzeta_coil", &
        vn_nzetal_coil = "nzetal_coil", &
+       vn_ns_magnetization = "ns_magnetization", &
+       vn_ns_integration = "ns_integration", &
+       vn_system_size = "system_size", &
        vn_a_plasma  = "a_plasma", &
        vn_a_coil  = "a_coil", &
        vn_R0_plasma  = "R0_plasma", &
        vn_R0_coil  = "R0_coil", &
-       vn_mpol_potential = "mpol_potential", &
-       vn_ntor_potential = "ntor_potential", &
-       vn_mnmax_potential = "mnmax_potential", &
+       vn_mpol_magnetization = "mpol_magnetization", &
+       vn_ntor_magnetization = "ntor_magnetization", &
+       vn_mnmax_magnetization = "mnmax_magnetization", &
        vn_mnmax_plasma = "mnmax_plasma", &
        vn_mnmax_coil = "mnmax_coil", &
        vn_num_basis_functions = "num_basis_functions", &
@@ -36,8 +39,6 @@ subroutine regcoil_write_output
        vn_area_coil = "area_coil", &
        vn_volume_plasma = "volume_plasma", &
        vn_volume_coil = "volume_coil", &
-       vn_net_poloidal_current_Amperes = "net_poloidal_current_Amperes", &
-       vn_net_toroidal_current_Amperes = "net_toroidal_current_Amperes", &
        vn_curpol = "curpol", &
        vn_nlambda = "nlambda", &
        vn_total_time = "total_time", &
@@ -52,8 +53,11 @@ subroutine regcoil_write_output
        vn_theta_coil = "theta_coil", &
        vn_zeta_coil = "zeta_coil", &
        vn_zetal_coil = "zetal_coil", &
-       vn_xm_potential = "xm_potential", &
-       vn_xn_potential = "xn_potential", &
+       vn_s_magnetization = "s_magnetization", &
+       vn_s_integration = "s_integration", &
+       vn_s_weights = "s_weights", &
+       vn_xm_magnetization = "xm_magnetization", &
+       vn_xn_magnetization = "xn_magnetization", &
        vn_xm_plasma = "xm_plasma", &
        vn_xn_plasma = "xn_plasma", &
        vn_xm_coil = "xm_coil", &
@@ -66,27 +70,21 @@ subroutine regcoil_write_output
        vn_rmns_coil = "rmns_coil", &
        vn_zmnc_coil = "zmnc_coil", &
        vn_zmns_coil = "zmns_coil", &
-       vn_h = "h", &
        vn_RHS_B = "RHS_B", &
-       vn_RHS_regularization = "RHS_regularization", &
        vn_lambda = "lambda", &
        vn_chi2_B = "chi2_B", &
-       vn_chi2_K = "chi2_K", &
-       vn_chi2_Laplace_Beltrami = "chi2_Laplace_Beltrami", &
+       vn_chi2_M = "chi2_M", &
        vn_max_Bnormal = "max_Bnormal", &
-       vn_max_K = "max_K"
+       vn_max_M = "max_M", &
+       vn_min_M = "min_M"
 
   ! Arrays with dimension 2
   character(len=*), parameter :: &
        vn_norm_normal_plasma  = "norm_normal_plasma", &
        vn_norm_normal_coil  = "norm_normal_coil", &
-       vn_Bnormal_from_plasma_current = "Bnormal_from_plasma_current", &
-       vn_Bnormal_from_net_coil_currents = "Bnormal_from_net_coil_currents", &
-       vn_inductance = "inductance", &
-       vn_g = "g", &
+       vn_Bnormal_from_TF_and_plasma_current = "Bnormal_from_TF_and_plasma_current", &
        vn_matrix_B = "matrix_B", &
        vn_matrix_K = "matrix_K", &
-       vn_single_valued_current_potential_mn = "single_valued_current_potential_mn", &
        vn_mean_curvature_coil = "mean_curvature_coil"
 
   ! Arrays with dimension 3
@@ -99,11 +97,7 @@ subroutine regcoil_write_output
        vn_drdzeta_coil  = "drdzeta_coil", &
        vn_normal_plasma = "normal_plasma", &
        vn_normal_coil = "normal_coil", &
-       vn_single_valued_current_potential_thetazeta = "single_valued_current_potential_thetazeta", &
-       vn_current_potential = "current_potential", &
-       vn_Bnormal_total = "Bnormal_total", &
-       vn_K2 = "K2", &
-       vn_Laplace_Beltrami2 = "Laplace_Beltrami2"
+       vn_Bnormal_total = "Bnormal_total"
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Now create variables that name the dimensions.
@@ -117,12 +111,15 @@ subroutine regcoil_write_output
        ntheta_coil_dim = (/'ntheta_coil'/), &
        nzeta_coil_dim = (/'nzeta_coil'/), &
        nzetal_coil_dim = (/'nzetal_coil'/), &
-       mnmax_potential_dim = (/'mnmax_potential'/), &
+       mnmax_magnetization_dim = (/'mnmax_magnetization'/), &
        mnmax_plasma_dim = (/'mnmax_plasma'/), &
        mnmax_coil_dim = (/'mnmax_coil'/), &
        nthetanzeta_plasma_dim = (/'ntheta_nzeta_plasma'/), &
        num_basis_functions_dim = (/'num_basis_functions'/), &
-       nlambda_dim = (/'nlambda'/)
+       nlambda_dim = (/'nlambda'/), &
+       system_size_dim = (/'system_size'/), &
+       ns_magnetization_dim = (/'ns_magnetization'/), &
+       ns_integration_dim = (/'ns_integration'/)
 
   ! Arrays with dimension 2:
   ! The form of the array declarations here is inspired by
@@ -184,20 +181,29 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_nzetal_coil, nzetal_coil)
   call cdf_setatt(ncid, vn_nzetal_coil, 'Number of grid points used in the toridal angle, including all the nfp identical toroidal periods, on the coil surface.')
 
+  call cdf_define(ncid, vn_ns_magnetization, ns_magnetization)
+  call cdf_setatt(ncid, vn_ns_magnetization, 'Number of grid points in the radial (s) direction used to discretize the magnetization.')
+
+  call cdf_define(ncid, vn_ns_integration, ns_integration)
+  call cdf_setatt(ncid, vn_ns_integration, 'Number of grid points in the radial (s) direction used for integration over the magnetization volume.')
+
+  call cdf_define(ncid, vn_system_size, system_size)
+  call cdf_setatt(ncid, vn_system_size, 'Size of the right-hand-side and solution vector for the normal equations, i.e. the number of discrete degrees of freedom in the magnetization.')
+
   call cdf_define(ncid, vn_a_plasma, a_plasma)
   call cdf_define(ncid, vn_a_coil, a_coil)
   call cdf_define(ncid, vn_R0_plasma, R0_plasma)
   call cdf_define(ncid, vn_R0_coil, R0_coil)
 
-  call cdf_define(ncid, vn_mpol_potential, mpol_potential)
-  call cdf_setatt(ncid, vn_mpol_potential, 'The maximum poloidal mode number retained in the current potential.' // input_parameter_text)
+  call cdf_define(ncid, vn_mpol_magnetization, mpol_magnetization)
+  call cdf_setatt(ncid, vn_mpol_magnetization, 'The maximum poloidal mode number retained in the magnetization.' // input_parameter_text)
 
-  call cdf_define(ncid, vn_ntor_potential, ntor_potential)
-  call cdf_setatt(ncid, vn_ntor_potential, 'ntor_potential * nfp is the maximum toroidal mode number retained in the current potential.' // input_parameter_text)
+  call cdf_define(ncid, vn_ntor_magnetization, ntor_magnetization)
+  call cdf_setatt(ncid, vn_ntor_magnetization, 'ntor_magnetization * nfp is the maximum toroidal mode number retained in the magnetization.' // input_parameter_text)
 
-  call cdf_define(ncid, vn_mnmax_potential, mnmax_potential)
-  call cdf_setatt(ncid, vn_mnmax_potential, 'Number of unique (m,n) pairs for the Fourier modes retained in the single-valued part of the current potential. ' // &
-       'Equal to mpol_potential*(ntor_potential*2+1) + ntor_potential.')
+  call cdf_define(ncid, vn_mnmax_magnetization, mnmax_magnetization)
+  call cdf_setatt(ncid, vn_mnmax_magnetization, 'Number of unique (m,n) pairs for the Fourier modes of the magnetization. ' // &
+       'Equal to mpol_magnetization*(ntor_magnetization*2+1) + ntor_magnetization.')
 
   call cdf_define(ncid, vn_mnmax_plasma, mnmax_plasma)
   call cdf_setatt(ncid, vn_mnmax_plasma, 'Number of unique (m,n) pairs for the Fourier modes retained in the plasma surface.')
@@ -206,13 +212,13 @@ subroutine regcoil_write_output
   call cdf_setatt(ncid, vn_mnmax_coil, 'Number of unique (m,n) pairs for the Fourier modes retained in the coil winding surface.')
 
   call cdf_define(ncid, vn_num_basis_functions, num_basis_functions)
-  call cdf_setatt(ncid, vn_num_basis_functions, 'Number of cos(m*theta-n*zeta) and/or sin(m*theta-n*zeta) Fourier modes retained ' // &
-       'in the single-valued part of the current potential. Equal to mnmax_potential * 1 or 2, depending on symmetry_option.')
+  call cdf_setatt(ncid, vn_num_basis_functions, 'Number of cos(m*theta-n*zeta) and/or sin(m*theta-n*zeta) Fourier modes ' // &
+       'of the magnetization. Equal to mnmax_magnetization * 1 or 2, depending on symmetry_option.')
 
   call cdf_define(ncid, vn_symmetry_option, symmetry_option)
-  call cdf_setatt(ncid, vn_symmetry_option, '1 = The single-valued part of the current potential was forced to be stellarator-symmetric. ' // &
-       '2 = The single-valued part of the current potential was forced to be stellarator-antisymmetric. ' // &
-       '3 = The single-valued part of the current potential was allowed to have both stellarator-symmetric and antisymmetric components')
+  call cdf_setatt(ncid, vn_symmetry_option, '1 = The magnetization was forced to be stellarator-symmetric. ' // &
+       '2 = The magnetization was forced to be stellarator-antisymmetric. ' // &
+       '3 = The magnetization was allowed to have both stellarator-symmetric and antisymmetric components')
 
   call cdf_define(ncid, vn_area_plasma, area_plasma)
   call cdf_setatt(ncid, vn_area_plasma, 'Area of the plasma surface in meters^2')
@@ -225,15 +231,6 @@ subroutine regcoil_write_output
 
   call cdf_define(ncid, vn_volume_coil, volume_coil)
   call cdf_setatt(ncid, vn_volume_coil, 'Volume of the coil winding surface in meters^3')
-
-  call cdf_define(ncid, vn_net_poloidal_current_Amperes, net_poloidal_current_Amperes)
-  call cdf_setatt(ncid, vn_net_poloidal_current_Amperes, 'Net current (in Amperes) that flows on the coil winding surface in the poloidal direction. ' // &
-       'This quantity corresponds to G in the 2017 Nuclear Fusion paper. For modular coils (as opposed to helical or wavy-PF coils), ' // &
-       'this quantity is then the sum of the currents in all the modular coils.')
-
-  call cdf_define(ncid, vn_net_toroidal_current_Amperes, net_toroidal_current_Amperes)
-  call cdf_setatt(ncid, vn_net_toroidal_current_Amperes, 'Net current (in Amperes) that flows on the coil winding surface in the toroidal direction. ' // &
-       'This quantity corresponds to I in the 2017 Nuclear Fusion paper. For modular coils, this quantity is 0.')
 
   call cdf_define(ncid, vn_curpol, curpol)
 
@@ -278,10 +275,19 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_zetal_coil, zetal_coil, dimname=nzetal_coil_dim)
   call cdf_setatt(ncid, vn_theta_coil, 'Grid points of the toroidal angle on the coil surface, including all nfp toroidal periods.')
 
-  call cdf_define(ncid, vn_xm_potential, xm_potential, dimname=mnmax_potential_dim)
-  call cdf_setatt(ncid, vn_xm_potential, 'Values of poloidal mode number m used in the Fourier representation of the single-valued part of the current potential.')
-  call cdf_define(ncid, vn_xn_potential, xn_potential, dimname=mnmax_potential_dim)
-  call cdf_setatt(ncid, vn_xm_potential, 'Values of toroidal mode number n used in the Fourier representation of the single-valued part of the current potential.')
+  call cdf_define(ncid, vn_s_magnetization, s_magnetization, dimname=ns_magnetization_dim)
+  call cdf_setatt(ncid, vn_s_magnetization, 'Grid points in the radial (s) direction in the discrete representation of the magnetization.')
+
+  call cdf_define(ncid, vn_s_integration, s_integration, dimname=ns_integration_dim)
+  call cdf_setatt(ncid, vn_s_integration, 'Grid points in the radial (s) direction used for integration over the magnetization region.')
+
+  call cdf_define(ncid, vn_s_weights, s_weights, dimname=ns_integration_dim)
+  call cdf_setatt(ncid, vn_s_weights, 'Integration weights used for integration over the radial (s) direction of the magnetization region.')
+
+  call cdf_define(ncid, vn_xm_magnetization, xm_magnetization, dimname=mnmax_magnetization_dim)
+  call cdf_setatt(ncid, vn_xm_magnetization, 'Values of poloidal mode number m used in the Fourier representation of the magnetization.')
+  call cdf_define(ncid, vn_xn_magnetization, xn_magnetization, dimname=mnmax_magnetization_dim)
+  call cdf_setatt(ncid, vn_xm_magnetization, 'Values of toroidal mode number n used in the Fourier representation of the magnetization.')
 
   call cdf_define(ncid, vn_xm_plasma, xm_plasma, dimname=mnmax_plasma_dim)
   call cdf_setatt(ncid, vn_xm_plasma, 'Values of poloidal mode number m used in the Fourier representation of the plasma surface.')
@@ -323,9 +329,7 @@ subroutine regcoil_write_output
   call cdf_setatt(ncid, vn_zmns_coil, 'Amplitudes of the sine(m*theta-n*zeta) terms in a Fourier expansion of the coordinate ' // &
        'Z(theta,zeta) defining the coil surface. The corresponding mode numbers (m,n) are stored in xm_coil and xn_coil.')
 
-  call cdf_define(ncid, vn_h, h, dimname=nthetanzeta_plasma_dim)
-  call cdf_define(ncid, vn_RHS_B, RHS_B, dimname=num_basis_functions_dim)
-  call cdf_define(ncid, vn_RHS_regularization, RHS_regularization, dimname=num_basis_functions_dim)
+  call cdf_define(ncid, vn_RHS_B, RHS_B, dimname=system_size_dim)
 
   call cdf_define(ncid, vn_lambda, lambda(1:Nlambda), dimname=nlambda_dim)
   call cdf_setatt(ncid, vn_lambda, 'Values of the regularization parameter that were used, in SI units (Tesla^2 meter^2 / Ampere^2)')
@@ -333,17 +337,17 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_chi2_B, chi2_B(1:Nlambda), dimname=nlambda_dim)
   call cdf_setatt(ncid, vn_chi2_B, 'Values of chi^2_B (the area integral over the plasma surface of |B_normal|^2) that resulted for each value of lambda, in SI units (Tesla^2 meter^2)')
 
-  call cdf_define(ncid, vn_chi2_K, chi2_K(1:Nlambda), dimname=nlambda_dim)
-  call cdf_setatt(ncid, vn_chi2_K, 'Values of chi^2_K (the area integral over the coil winding surface of current density squared) that resulted for each value of lambda, in SI units (Ampere^2)')
-
-  call cdf_define(ncid, vn_chi2_Laplace_Beltrami, chi2_Laplace_Beltrami(1:Nlambda), dimname=nlambda_dim)
-  call cdf_setatt(ncid, vn_chi2_Laplace_Beltrami, '')
+  call cdf_define(ncid, vn_chi2_M, chi2_M(1:Nlambda), dimname=nlambda_dim)
+  call cdf_setatt(ncid, vn_chi2_M, 'Values of chi^2_M (the volume integral over the magnetization region of magnetization density squared times thickness d) that resulted for each value of lambda, in SI units')
 
   call cdf_define(ncid, vn_max_Bnormal, max_Bnormal(1:Nlambda), dimname=nlambda_dim)
   call cdf_setatt(ncid, vn_max_Bnormal, 'Maximum (over the plasma surface) magnetic field normal to the target plasma shape that resulted for each value of lambda, in Tesla.')
 
-  call cdf_define(ncid, vn_max_K, max_K(1:Nlambda), dimname=nlambda_dim) ! We only write elements 1:Nlambda in case of a lambda search.
-  call cdf_setatt(ncid, vn_max_K, 'Maximum (over the coil surface) current density that resulted for each value of lambda, in Amperes/meter.')
+  call cdf_define(ncid, vn_max_M, max_M(1:Nlambda), dimname=nlambda_dim) ! We only write elements 1:Nlambda in case of a lambda search.
+  call cdf_setatt(ncid, vn_max_M, 'Maximum (over the magnetization region) magnitude of the magnetization that resulted for each value of lambda, in SI units.')
+
+  call cdf_define(ncid, vn_min_M, min_M(1:Nlambda), dimname=nlambda_dim) ! We only write elements 1:Nlambda in case of a lambda search.
+  call cdf_setatt(ncid, vn_min_M, 'Minimum (over the magnetization region) magnitude of the magnetization that resulted for each value of lambda, in SI units.')
 
   ! Arrays with dimension 2
 
@@ -357,24 +361,9 @@ subroutine regcoil_write_output
        'and r is the posiiton vector, for the coil surface. This quantity is the Jacobian appearing in area integrals: ' // &
        'int d^2a = int dtheta int dzeta |N|. Units = meters^2.')
 
-  call cdf_define(ncid, vn_Bnormal_from_plasma_current, Bnormal_from_plasma_current, dimname=ntheta_nzeta_plasma_dim)
-  call cdf_setatt(ncid, vn_Bnormal_from_plasma_current, 'Contribution to the magnetic field normal to the plasma surface from currents inside the plasma. ' // &
-       'This is the quantity named B_{normal}^{plasma} in the 2017 Nuclear Fusion paper. Units = Tesla.')
-
-  call cdf_define(ncid, vn_Bnormal_from_net_coil_currents, Bnormal_from_net_coil_currents, dimname=ntheta_nzeta_plasma_dim)
-  call cdf_setatt(ncid, vn_Bnormal_from_plasma_current, 'Contribution to the magnetic field normal to the plasma surface from the secular (nonperiodic) ' // &
-       'part of the current potential. This is the quantity named B_{normal}^{GI} in the 2017 Nuclear Fusion paper. Units = Tesla.')
-
-  if (save_level<1) then
-     call cdf_define(ncid, vn_inductance, inductance, dimname=nthetanzeta_plasma_nthetanzeta_coil_dim)
-  end if
-  if (save_level<2) then
-     call cdf_define(ncid, vn_g, g, dimname=nthetanzeta_plasma_basis_dim)
-  end if
-  !call cdf_define(ncid, vn_matrix_B, matrix_B, dimname=basis_basis_dim)
-  !call cdf_define(ncid, vn_matrix_K, matrix_K, dimname=basis_basis_dim)
-  call cdf_define(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda), &
-       dimname=basis_nlambda_dim)
+  call cdf_define(ncid, vn_Bnormal_from_TF_and_plasma_current, Bnormal_from_TF_and_plasma_current, dimname=ntheta_nzeta_plasma_dim)
+  call cdf_setatt(ncid, vn_Bnormal_from_TF_and_plasma_current, 'Contribution to the magnetic field normal to the plasma surface from currents inside the plasma ' // &
+       'and any electromagnetic coils, such as planar TF coils that generate the net toroidal flux. Units = Tesla.')
 
   call cdf_define(ncid, vn_mean_curvature_coil,  mean_curvature_coil,  dimname=ntheta_nzeta_plasma_dim)
 
@@ -400,25 +389,9 @@ subroutine regcoil_write_output
 
   end if
 
-  call cdf_define(ncid, vn_single_valued_current_potential_thetazeta, single_valued_current_potential_thetazeta(:,:,1:Nlambda), &
-       dimname=ntheta_nzeta_coil_nlambda_dim)
-  call cdf_setatt(ncid, vn_single_valued_current_potential_thetazeta, 'Periodic (single-valued) term in the current potential on the coil winding surface, in units of Amperes, ' // &
-       'for each value of the regularization parameter lambda considered.')
-
-  call cdf_define(ncid, vn_current_potential, current_potential(:,:,1:Nlambda), dimname=ntheta_nzeta_coil_nlambda_dim)
-  call cdf_setatt(ncid, vn_current_potential, 'Total (multiple-valued) current potential on the coil winding surface, in units of Amperes, ' // &
-       'for each value of the regularization parameter lambda considered.')
-
   call cdf_define(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:Nlambda), dimname=ntheta_nzeta_plasma_nlambda_dim)
   call cdf_setatt(ncid, vn_Bnormal_total, 'Residual magnetic field normal to the plasma surface, in units of Tesla, ' // &
        'for each value of the regularization parameter lambda considered.')
-
-  call cdf_define(ncid, vn_K2, K2(:,:,1:Nlambda), dimname=ntheta_nzeta_coil_nlambda_dim)
-  call cdf_setatt(ncid, vn_K2, 'Squared current density on the coil winding surface, in units of Amperes^2/meter^2, ' // &
-       'for each value of the regularization parameter lambda considered.')
-
-  call cdf_define(ncid, vn_Laplace_Beltrami2, Laplace_Beltrami2(:,:,1:Nlambda), dimname=ntheta_nzeta_coil_nlambda_dim)
-  call cdf_setatt(ncid, vn_Laplace_Beltrami2, '')
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
   ! Done with cdf_define calls. Now write the data.
@@ -435,13 +408,16 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_ntheta_coil, ntheta_coil)
   call cdf_write(ncid, vn_nzeta_coil, nzeta_coil)
   call cdf_write(ncid, vn_nzetal_coil, nzetal_coil)
+  call cdf_write(ncid, vn_ns_magnetization, ns_magnetization)
+  call cdf_write(ncid, vn_ns_integration, ns_integration)
+  call cdf_write(ncid, vn_system_size, system_size)
   call cdf_write(ncid, vn_a_plasma, a_plasma)
   call cdf_write(ncid, vn_a_coil, a_coil)
   call cdf_write(ncid, vn_R0_plasma, R0_plasma)
   call cdf_write(ncid, vn_R0_coil, R0_coil)
-  call cdf_write(ncid, vn_mpol_potential, mpol_potential)
-  call cdf_write(ncid, vn_ntor_potential, ntor_potential)
-  call cdf_write(ncid, vn_mnmax_potential, mnmax_potential)
+  call cdf_write(ncid, vn_mpol_magnetization, mpol_magnetization)
+  call cdf_write(ncid, vn_ntor_magnetization, ntor_magnetization)
+  call cdf_write(ncid, vn_mnmax_magnetization, mnmax_magnetization)
   call cdf_write(ncid, vn_mnmax_plasma, mnmax_plasma)
   call cdf_write(ncid, vn_mnmax_coil, mnmax_coil)
   call cdf_write(ncid, vn_num_basis_functions, num_basis_functions)
@@ -450,8 +426,6 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_area_coil, area_coil)
   call cdf_write(ncid, vn_volume_plasma, volume_plasma)
   call cdf_write(ncid, vn_volume_coil, volume_coil)
-  call cdf_write(ncid, vn_net_poloidal_current_Amperes, net_poloidal_current_Amperes)
-  call cdf_write(ncid, vn_net_toroidal_current_Amperes, net_toroidal_current_Amperes)
   call cdf_write(ncid, vn_curpol, curpol)
   call cdf_write(ncid, vn_nlambda, nlambda)
   call cdf_write(ncid, vn_total_time, total_time)
@@ -466,8 +440,11 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_theta_coil, theta_coil)
   call cdf_write(ncid, vn_zeta_coil, zeta_coil)
   call cdf_write(ncid, vn_zetal_coil, zetal_coil)
-  call cdf_write(ncid, vn_xm_potential, xm_potential)
-  call cdf_write(ncid, vn_xn_potential, xn_potential)
+  call cdf_write(ncid, vn_s_magnetization, s_magnetization)
+  call cdf_write(ncid, vn_s_integration, s_integration)
+  call cdf_write(ncid, vn_s_weights, s_weights)
+  call cdf_write(ncid, vn_xm_magnetization, xm_magnetization)
+  call cdf_write(ncid, vn_xn_magnetization, xn_magnetization)
   call cdf_write(ncid, vn_xm_plasma, xm_plasma)
   call cdf_write(ncid, vn_xn_plasma, xn_plasma)
   call cdf_write(ncid, vn_xm_coil, xm_coil)
@@ -484,31 +461,19 @@ subroutine regcoil_write_output
      call cdf_write(ncid, vn_zmnc_coil, zmnc_coil)
   end if
   call cdf_write(ncid, vn_zmns_coil, zmns_coil)
-  call cdf_write(ncid, vn_h, h)
   call cdf_write(ncid, vn_RHS_B, RHS_B)
-  call cdf_write(ncid, vn_RHS_regularization, RHS_regularization)
   call cdf_write(ncid, vn_lambda, lambda(1:Nlambda))
   call cdf_write(ncid, vn_chi2_B, chi2_B(1:Nlambda))
-  call cdf_write(ncid, vn_chi2_K, chi2_K(1:Nlambda))
-  call cdf_write(ncid, vn_chi2_Laplace_Beltrami, chi2_Laplace_Beltrami(1:Nlambda))
+  call cdf_write(ncid, vn_chi2_M, chi2_M(1:Nlambda))
   call cdf_write(ncid, vn_max_Bnormal, max_Bnormal(1:Nlambda))
-  call cdf_write(ncid, vn_max_K, max_K(1:Nlambda))
+  call cdf_write(ncid, vn_max_M, max_M(1:Nlambda))
+  call cdf_write(ncid, vn_min_M, min_M(1:Nlambda))
 
   ! Arrays with dimension 2
 
   call cdf_write(ncid, vn_norm_normal_plasma,  norm_normal_plasma)
   call cdf_write(ncid, vn_norm_normal_coil,  norm_normal_coil)
-  call cdf_write(ncid, vn_Bnormal_from_plasma_current, Bnormal_from_plasma_current)
-  call cdf_write(ncid, vn_Bnormal_from_net_coil_currents, Bnormal_from_net_coil_currents)
-  if (save_level<1) then
-     call cdf_write(ncid, vn_inductance, inductance)
-  end if
-  if (save_level<2) then
-     call cdf_write(ncid, vn_g, g)
-  end if
-  !call cdf_write(ncid, vn_matrix_B, matrix_B)
-  !call cdf_write(ncid, vn_matrix_K, matrix_K)
-  call cdf_write(ncid, vn_single_valued_current_potential_mn, single_valued_current_potential_mn(:,1:Nlambda))
+  call cdf_write(ncid, vn_Bnormal_from_TF_and_plasma_current, Bnormal_from_TF_and_plasma_current)
   call cdf_write(ncid, vn_mean_curvature_coil, mean_curvature_coil)
 
   ! Arrays with dimension 3
@@ -528,11 +493,7 @@ subroutine regcoil_write_output
 
   end if
 
-  call cdf_write(ncid, vn_single_valued_current_potential_thetazeta, single_valued_current_potential_thetazeta(:,:,1:Nlambda))
-  call cdf_write(ncid, vn_current_potential, current_potential(:,:,1:Nlambda))
   call cdf_write(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:Nlambda))
-  call cdf_write(ncid, vn_K2, K2(:,:,1:Nlambda))
-  call cdf_write(ncid, vn_Laplace_Beltrami2, Laplace_Beltrami2(:,:,1:Nlambda))
 
   ! Finish up:
   call cdf_close(ncid)

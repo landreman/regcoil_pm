@@ -40,8 +40,7 @@ module regcoil_variables
   real(dp), dimension(:,:), allocatable :: matrix_B, matrix_regularization
   real(dp), dimension(:), allocatable :: RHS_B, RHS_regularization
   real(dp), dimension(:,:,:), allocatable :: Bnormal_total
-  real(dp), dimension(:,:,:), allocatable :: K2, Laplace_Beltrami2
-  real(dp), dimension(:), allocatable :: chi2_B, chi2_M, max_Bnormal, max_M
+  real(dp), dimension(:), allocatable :: chi2_B, chi2_M, max_Bnormal, max_M, min_M
   real(dp), dimension(:,:,:,:), allocatable :: M_R, M_zeta, M_Z, abs_M
   real(dp), dimension(:,:,:), allocatable :: M_R_mn, M_zeta_mn, M_Z_mn
 
@@ -54,11 +53,11 @@ module regcoil_variables
 
   real(dp) :: dtheta_plasma, dzeta_plasma, dtheta_coil, dzeta_coil
 
-  integer :: mpol_potential=12
-  integer :: ntor_potential=12
-  integer :: mnmax_plasma, mnmax_coil, mnmax_potential
+  integer :: mpol_magnetization=12
+  integer :: ntor_magnetization=12
+  integer :: mnmax_plasma, mnmax_coil, mnmax_magnetization
   integer :: num_basis_functions, system_size
-  integer, dimension(:), allocatable :: xm_plasma, xn_plasma, xm_coil, xn_coil, xm_potential, xn_potential
+  integer, dimension(:), allocatable :: xm_plasma, xn_plasma, xm_coil, xn_coil, xm_magnetization, xn_magnetization
   real(dp), dimension(:), allocatable :: rmns_plasma, zmnc_plasma, rmnc_plasma, zmns_plasma
   real(dp), dimension(:), allocatable :: rmns_coil, zmnc_coil, rmnc_coil, zmns_coil
   integer :: nfp
@@ -79,9 +78,7 @@ module regcoil_variables
   real(dp) :: mpol_transform_refinement=5, ntor_transform_refinement=1
   real(dp) :: area_plasma, area_coil, volume_plasma, volume_coil
 
-  real(dp) :: net_poloidal_current_Amperes = 1
-  real(dp) :: net_toroidal_current_Amperes = 0
-  logical :: load_bnorm = .false.
+  logical :: load_bnorm = .true.
   character(len=200) :: bnorm_filename=""
   real(dp) :: curpol = 1  ! number which multiplies data in bnorm file.
   integer :: nbf ! number of Fourier harmonics in FOCUS format boundary.
@@ -94,8 +91,6 @@ module regcoil_variables
 
   real(dp), dimension(:,:), allocatable :: matrix
   real(dp), dimension(:), allocatable :: RHS, solution
-  real(dp), dimension(:), allocatable :: KDifference_x, KDifference_y, KDifference_z, KDifference_Laplace_Beltrami
-  real(dp), dimension(:,:), allocatable :: this_K2_times_N, this_Laplace_Beltrami2_times_N
 
   ! Variables needed by LAPACK:
   integer :: LAPACK_INFO, LAPACK_LWORK
@@ -117,23 +112,22 @@ module regcoil_variables
   real(dp), dimension(:,:), allocatable :: interpolate_magnetization_to_integration
 
   character(len=*), parameter :: &
-       target_option_max_K = "max_K", &
-       target_option_rms_K = "rms_K", &
-       target_option_chi2_K = "chi2_K", &
+       target_option_max_M = "max_M", &
+       target_option_rms_M = "rms_M", &
+       target_option_chi2_M = "chi2_M", &
        target_option_max_Bnormal = "max_Bnormal", &
        target_option_rms_Bnormal = "rms_Bnormal", &
        target_option_chi2_B = "chi2_B"
-  character(len=200) :: target_option = target_option_max_K
+  character(len=200) :: target_option = target_option_max_M
 
   namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &
        R0_plasma, R0_coil, a_plasma, a_coil, &
        separation, wout_filename, &
        save_level, nfp_imposed, symmetry_option, &
-       mpol_potential, ntor_potential, mpol_coil_filter, ntor_coil_filter, &
+       mpol_magnetization, ntor_magnetization, mpol_coil_filter, ntor_coil_filter, &
        nescin_filename, efit_filename, efit_psiN, efit_num_modes, &
        mpol_transform_refinement, ntor_transform_refinement, max_mpol_coil, max_ntor_coil, &
-       net_poloidal_current_Amperes, net_toroidal_current_Amperes, &
        load_bnorm, bnorm_filename, &
        shape_filename_plasma, nlambda, lambda_min, lambda_max, general_option, regularization_term_option, verbose, nescout_filename, &
        target_option, target_value, lambda_search_tolerance, &

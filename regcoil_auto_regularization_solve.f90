@@ -27,21 +27,24 @@ subroutine regcoil_auto_regularization_solve()
         ! guess lambda = chi^2_B / chi^2_K, where the right hand side is evaluated taking the
         ! single-valued part of the current potential to be 0.
 
-        KDifference_x = d_x !- matmul(f_x, solution)
-        KDifference_y = d_y !- matmul(f_y, solution)
-        KDifference_z = d_z !- matmul(f_z, solution)
-        this_K2_times_N = reshape(KDifference_x*KDifference_x + KDifference_y*KDifference_y + KDifference_z*KDifference_z, (/ ntheta_coil, nzeta_coil /)) &
-             / norm_normal_coil
-        chi2_K(ilambda) = nfp * dtheta_coil * dzeta_coil * sum(this_K2_times_N)
+!!$        KDifference_x = d_x !- matmul(f_x, solution)
+!!$        KDifference_y = d_y !- matmul(f_y, solution)
+!!$        KDifference_z = d_z !- matmul(f_z, solution)
+!!$        this_K2_times_N = reshape(KDifference_x*KDifference_x + KDifference_y*KDifference_y + KDifference_z*KDifference_z, (/ ntheta_coil, nzeta_coil /)) &
+!!$             / norm_normal_coil
+!!$        chi2_K(ilambda) = nfp * dtheta_coil * dzeta_coil * sum(this_K2_times_N)
+!!$
+!!$        Bnormal_total(:,:,ilambda) = & ! (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) +
+!!$             Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
+!!$
+!!$        chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
+!!$             * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
+!!$        ! chi2_B, chi2_K, and Bnormal_total for this ilambda will be over-written with the real values below.
+!!$
+!!$        lambda(ilambda) = chi2_B(ilambda) / chi2_K(ilambda) / 1000
 
-        Bnormal_total(:,:,ilambda) = & ! (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) +
-             Bnormal_from_plasma_current + Bnormal_from_net_coil_currents
+        lambda(ilambda) = 1 ! Silly guess.
 
-        chi2_B(ilambda) = nfp * dtheta_plasma * dzeta_plasma &
-             * sum(Bnormal_total(:,:,ilambda) * Bnormal_total(:,:,ilambda) * norm_normal_plasma)
-        ! chi2_B, chi2_K, and Bnormal_total for this ilambda will be over-written with the real values below.
-
-        lambda(ilambda) = chi2_B(ilambda) / chi2_K(ilambda) / 1000
         next_stage = 2
 
      case (2)
@@ -233,16 +236,16 @@ contains
     target_function = 0
     select case (trim(target_option))
 
-    case (target_option_max_K)
-       target_function = max_K(jlambda)
+    case (target_option_max_M)
+       target_function = max_M(jlambda)
        targeted_quantity_increases_with_lambda = .false.
 
-    case (target_option_rms_K)
-       target_function = sqrt(chi2_K(jlambda) / area_coil)
+    case (target_option_rms_M)
+       target_function = sqrt(chi2_M(jlambda) / area_coil)
        targeted_quantity_increases_with_lambda = .false.
 
-    case (target_option_chi2_K)
-       target_function = chi2_K(jlambda)
+    case (target_option_chi2_M)
+       target_function = chi2_M(jlambda)
        targeted_quantity_increases_with_lambda = .false.
 
     case (target_option_max_Bnormal)

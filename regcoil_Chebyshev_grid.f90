@@ -40,6 +40,14 @@ subroutine regcoil_Chebyshev_grid(N, xMin, xMax, x, weights, D)
      stop
   end if
 
+  if (N == 1) then
+     ! Handle this special case
+     x = (xMax + xMin) / 2;
+     weights = xMax - xMin
+     D = 0
+     return
+  end if
+
   ! ****************************************************
   ! First, build abscissae and differentiation matrix
   ! ****************************************************

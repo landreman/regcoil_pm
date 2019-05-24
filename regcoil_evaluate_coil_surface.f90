@@ -143,6 +143,7 @@ subroutine regcoil_evaluate_coil_surface()
 !!$     print *,r_coil(3,j,:)
 !!$  end do
   
+
   ! Evaluate cross product:
   normal_coil(1,:,:) = drdzeta_coil(2,:,:) * drdtheta_coil(3,:,:) - drdtheta_coil(2,:,:) * drdzeta_coil(3,:,:)
   normal_coil(2,:,:) = drdzeta_coil(3,:,:) * drdtheta_coil(1,:,:) - drdtheta_coil(3,:,:) * drdzeta_coil(1,:,:)
@@ -174,7 +175,8 @@ subroutine regcoil_evaluate_coil_surface()
        / (2 * (fundamental_form_E * fundamental_form_G - fundamental_form_F * fundamental_form_F))
 
   ! Initialize s arrays
-  allocate(s_integration(  ns_integration))
+  allocate(s_integration(ns_integration))
+  allocate(s_weights(ns_integration))
   allocate(s_magnetization(ns_magnetization))
   allocate(temp_matrix(ns_integration,ns_integration))
   call regcoil_Chebyshev_grid(ns_integration,   0.0_dp, 1.0_dp, s_integration, s_weights, temp_matrix)

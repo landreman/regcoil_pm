@@ -29,13 +29,13 @@ subroutine regcoil_validate_input
   end if
 
 
-  if (mpol_potential < 0) then
-     stop "Error! mpol_potential must be >= 0."
+  if (mpol_magnetization < 0) then
+     stop "Error! mpol_magnetization must be >= 0."
   end if
 
 
-  if (ntor_potential < 0) then
-     stop "Error! ntor_potential must be >= 0."
+  if (ntor_magnetization < 0) then
+     stop "Error! ntor_magnetization must be >= 0."
   end if
 
 
@@ -113,24 +113,25 @@ subroutine regcoil_validate_input
      stop "general_option must be no more than 5."
   end if
 
-  if (general_option==2) then
-     ! Replace nlambda with the number of current potentials saved in the nescout file.
-     if (verbose) print *,"Opening nescout file",nescout_filename
-     call safe_open(iunit, istat, trim(nescout_filename), 'old', 'formatted')
-     if (istat .ne. 0) then
-        stop 'Error opening nescout file'
-     endif
-     j = 0
-     do
-        read (iunit,"(a)",iostat=istat) myline
-        if (istat<0) exit
-        if (myline(:len(matchString)) == matchString) then
-           j = j + 1
-        end if
-     end do
-     if (verbose) print *,"Detected",j,"current potentials in the nescout file."
-     nlambda = j
-  end if
+  ! General_option=2 does not make sense for permanent magnets
+!!$  if (general_option==2) then
+!!$     ! Replace nlambda with the number of current potentials saved in the nescout file.
+!!$     if (verbose) print *,"Opening nescout file",nescout_filename
+!!$     call safe_open(iunit, istat, trim(nescout_filename), 'old', 'formatted')
+!!$     if (istat .ne. 0) then
+!!$        stop 'Error opening nescout file'
+!!$     endif
+!!$     j = 0
+!!$     do
+!!$        read (iunit,"(a)",iostat=istat) myline
+!!$        if (istat<0) exit
+!!$        if (myline(:len(matchString)) == matchString) then
+!!$           j = j + 1
+!!$        end if
+!!$     end do
+!!$     if (verbose) print *,"Detected",j,"current potentials in the nescout file."
+!!$     nlambda = j
+!!$  end if
 
   if (target_value<=0) then
      stop "target_value must be positive."
@@ -143,10 +144,10 @@ subroutine regcoil_validate_input
 
   if (general_option==4 .or. general_option==5) then
      select case (trim(target_option))
-     case (target_option_max_K,target_option_rms_K)
+     case (target_option_max_M,target_option_rms_M)
         typical_target_min = 1e5
         typical_target_max = 3e8
-     case (target_option_chi2_K)
+     case (target_option_chi2_M)
         typical_target_min = 1e14
         typical_target_max = 1e17
      case (target_option_max_Bnormal,target_option_rms_Bnormal)

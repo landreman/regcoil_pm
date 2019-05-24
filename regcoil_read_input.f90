@@ -50,8 +50,10 @@ subroutine regcoil_read_input
      print "(a,i5)","   ntheta_coil    =",ntheta_coil
      print "(a,i5)","   nzeta_plasma   =",nzeta_plasma
      print "(a,i5)","   nzeta_coil     =",nzeta_coil
-     print "(a,i5)","   mpol_potential =",mpol_potential
-     print "(a,i5)","   ntor_potential =",ntor_potential
+     print "(a,i5)","   mpol_magnetization =",mpol_magnetization
+     print "(a,i5)","   ntor_magnetization =",ntor_magnetization
+     print "(a,i5)","   ns_magnetization =",ns_magnetization
+     print "(a,i5)","   ns_integration   =",ns_integration
      
      select case (symmetry_option)
      case (1)
