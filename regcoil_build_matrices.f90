@@ -13,7 +13,7 @@ subroutine regcoil_build_matrices()
   integer :: index_plasma, index_coil, j, imn
   integer :: tic, toc, tic1, toc1, toc2, countrate, iflag
   integer :: minSymmetry, maxSymmetry, whichSymmetry, offset
-  real(dp) :: angle, sinangle, cosangle, factor, constants
+  real(dp) :: angle, sinangle, cosangle, factor, constants, normal_plasma_dot_dr
   real(dp), dimension(:,:,:,:), allocatable :: g_over_N_plasma
   real(dp), dimension(:), allocatable :: norm_normal_plasma_inv1D
   integer :: js, ks, ls, row_offset, col_offset, j_RZetaZ, k_RZetaZ, block_size
@@ -198,15 +198,16 @@ subroutine regcoil_build_matrices()
 !!$                      +normal_coil(2,itheta_coil,izetal_coil)*dy &
 !!$                      +normal_coil(3,itheta_coil,izetal_coil)*dz)) * dr32inv
 
+                       normal_plasma_dot_dr = normal_plasma(1,itheta_plasma,izeta_plasma)*dx &
+                            + normal_plasma(2,itheta_plasma,izeta_plasma)*dy &
+                            + normal_plasma(3,itheta_plasma,izeta_plasma)*dz
+
                        ! R component of magnetization
                        ! e_R = e_X * cos(zeta) + e_Y * sin(zeta)
                        inductance(index_plasma,index_coil,ks,1) = inductance(index_plasma,index_coil,ks,1) - &
                             (normal_plasma(1,itheta_plasma,izeta_plasma)*cos_zetal(izetal_coil) &
                             +normal_plasma(2,itheta_plasma,izeta_plasma)*sin_zetal(izetal_coil) &
-                            - (3*dr2inv) * &
-                            (normal_plasma(1,itheta_plasma,izeta_plasma)*dx &
-                            + normal_plasma(2,itheta_plasma,izeta_plasma)*dy &
-                            + normal_plasma(3,itheta_plasma,izeta_plasma)*dz) * &
+                            - (3*dr2inv) * normal_plasma_dot_dr * &
                             (cos_zetal(izetal_coil)*dx &
                             +sin_zetal(izetal_coil)*dy )) * factor
 
@@ -215,20 +216,14 @@ subroutine regcoil_build_matrices()
                        inductance(index_plasma,index_coil,ks,2) = inductance(index_plasma,index_coil,ks,2) - &
                             (normal_plasma(1,itheta_plasma,izeta_plasma)*(-sin_zetal(izetal_coil)) &
                             +normal_plasma(2,itheta_plasma,izeta_plasma)*  cos_zetal(izetal_coil) &
-                            - (3*dr2inv) * &
-                            (normal_plasma(1,itheta_plasma,izeta_plasma)*dx &
-                            + normal_plasma(2,itheta_plasma,izeta_plasma)*dy &
-                            + normal_plasma(3,itheta_plasma,izeta_plasma)*dz) * &
+                            - (3*dr2inv) * normal_plasma_dot_dr * &
                             (-sin_zetal(izetal_coil)*dx &
                             + cos_zetal(izetal_coil)*dy )) * factor
 
                        ! Z component of magnetization
                        inductance(index_plasma,index_coil,ks,3) = inductance(index_plasma,index_coil,ks,3) - &
                             (normal_plasma(3,itheta_plasma,izeta_plasma) &
-                            - (3*dr2inv) * &
-                            (normal_plasma(1,itheta_plasma,izeta_plasma)*dx &
-                            + normal_plasma(2,itheta_plasma,izeta_plasma)*dy &
-                            + normal_plasma(3,itheta_plasma,izeta_plasma)*dz) * &
+                            - (3*dr2inv) * normal_plasma_dot_dr * &
                             dz) * factor
                  
                     end do
@@ -322,7 +317,7 @@ subroutine regcoil_build_matrices()
               ! Here we carry out matrix_B = (dtheta*dzeta)*(g ^ T) * g_over_N_plasma
               ! A = g
               ! B = g_over_N_plasma
-              ! C = inductance
+              ! C = contribution to matrix_B
               M = num_basis_functions ! # rows of A^T
               N = num_basis_functions ! # cols of B
               K = ntheta_plasma*nzeta_plasma ! Common dimension of A^T and B
@@ -337,7 +332,8 @@ subroutine regcoil_build_matrices()
 
               matrix_B(row_offset+1:row_offset+num_basis_functions, col_offset+1:col_offset+num_basis_functions) = temp_matrix
               if ((js.ne.ks) .or. (j_RZetaZ.ne.k_RZetaZ)) then
-                 matrix_B(col_offset+1:col_offset+num_basis_functions, row_offset+1:row_offset+num_basis_functions) = temp_matrix
+                 !matrix_B(col_offset+1:col_offset+num_basis_functions, row_offset+1:row_offset+num_basis_functions) = temp_matrix
+                 matrix_B(col_offset+1:col_offset+num_basis_functions, row_offset+1:row_offset+num_basis_functions) = transpose(temp_matrix)
               end if
               call system_clock(toc1)
 
@@ -379,6 +375,7 @@ subroutine regcoil_build_matrices()
      end do
   end do
 
+  regularization_without_RZetaZ = 0
   ! Add contributions from each integration point in s:
   do ls = 1, ns_integration
      regularization_block = 0

@@ -1,4 +1,4 @@
-function regcoil()
+function regcoil_pm()
 
 % This matlab script performs the same steps to the fortran program. The
 % fortran and matlab versions are completely independent of each other. For
@@ -12,59 +12,33 @@ symmetry_option = 3;
 % 2 = cosines only
 % 3 = both sines and cosines
 
-%load_bnorm = true;
-load_bnorm = false;
+load_bnorm = true;
+%load_bnorm = false;
 
 bnorm_filename = '/Users/mattland/Box Sync/MATLAB/bnorm.d23p4_tm';
-
-% This next value will be over-written if a VMEC equilibrium is used:
-net_poloidal_current_Amperes = 1.4;
-%net_toroidal_current_Amperes = 0.3;
-net_toroidal_current_Amperes = 0.3;
 
 % Resolution parameters:
 % **********************************
 
-ntheta_plasma = 32;
-ntheta_coil   = 33;
-nzeta_plasma = 34;
-nzeta_coil   = 35;
-mpol_coil  = 15;
-ntor_coil  = 8;
+ntheta_plasma = 30;
+ntheta_coil   = 4; %33;
+nzeta_plasma = 36;
+nzeta_coil   = 3; %38;
+mpol_magnetization  = 6;
+ntor_magnetization  = 8;
+ns_magnetization = 1;
+ns_integration = 5;
 
-%{
-ntheta_plasma = 35;
-ntheta_coil   = 34;
-nzeta_plasma = 33;
-nzeta_coil   = 32;
-mpol_coil  = 16;
-ntor_coil  = 15;
-%}
-%{
-ntheta_plasma = 32;
-ntheta_coil   = 32;
-nzeta_plasma = 32;
-nzeta_coil   = 32;
-mpol_coil  = 8;
-ntor_coil  = 8;
-%}
-%{
-ntheta_plasma = 128;
-ntheta_coil   = 128;
-nzeta_plasma = 128;
-nzeta_coil   = 128;
-mpol_coil  = 32;
-ntor_coil  = 32;
-%}
 % Options for the shape of the plasma surface:
 % **********************************
-geometry_option_plasma = 2;
+geometry_option_plasma = 7;
 R0_plasma = 3.0;
 a_plasma = 1.0;
 nfp_imposed = 1;
 %woutFilename = 'C:\Users\landreman\Box Sync\MATLAB\20150601-01 Sfincs version 3\equilibria\wout_w7x_standardConfig.nc';
 %woutFilename = '/Users/mattland/Box Sync/MATLAB/wout_d23p4_tm.nc';
-woutFilename = 'equilibria/wout_d23p4_tm.nc';
+%woutFilename = 'equilibria/wout_d23p4_tm.nc';
+shape_filename_plasma = 'examples/NCSX_low_resolution/tf_only_half_tesla.plasma';
 
 % Options for the shape of the coil surface:
 % **********************************
@@ -74,13 +48,16 @@ a_coil = 1.7;
 separation = 0.35;
 %nescin_filename = 'nescin.w7x_standardConfig_separation0.3';
 %nescin_filename = '/Users/mattland/Box Sync/MATLAB/nescin.w7x_winding_surface_from_Drevlak';
-nescin_filename = 'equilibria/nescin.w7x_winding_surface_from_Drevlak';
+%nescin_filename = 'equilibria/nescin.w7x_winding_surface_from_Drevlak';
+nescin_filename = 'examples/NCSX_low_resolution/surf.vv';
+
+d_initial = 0.01;
 
 % Options for the regularization parameter:
 % **********************************
-nlambda = 5;
-lambda_min = 1e-30;
-lambda_max = 1;
+nlambda = 20;
+lambda_min = 1e-24;
+lambda_max = 1e20;
 
 % Plotting options:
 % **********************************
@@ -113,7 +90,7 @@ compareToFortran = true;
 
 %fortranNcFilename = 'C:\Users\landreman\Box Sync\MATLAB\bdistrib_out.compareToMatlab.nc';
 %fortranNcFilename = '/Users/mattland/regcoil/examples/compareToMatlab1/regcoil_out.compareToMatlab1.nc';
-fortranNcFilename = 'examples/compareToMatlab2/regcoil_out.compareToMatlab2.nc';
+fortranNcFilename = 'examples/NCSX_low_resolution/regcoil_out.NCSX_low_resolution.nc';
 
 fortranComparisonThreshhold_abs = 1e-11;
 
@@ -172,6 +149,10 @@ compareVariableToFortran('nzeta_plasma')
 compareVariableToFortran('nzeta_coil')
 compareVariableToFortran('geometry_option_plasma')
 compareVariableToFortran('geometry_option_coil')
+compareVariableToFortran('mpol_magnetization')
+compareVariableToFortran('ntor_magnetization')
+compareVariableToFortran('ns_magnetization')
+compareVariableToFortran('ns_integration')
 
 % *********************************************
 % Set up range of lambda to try
@@ -184,9 +165,55 @@ compareVariableToFortran('nlambda')
 compareVariableToFortran('lambda')
 
 % *********************************************
+% Initialize s grids:
+% *********************************************
+
+    function [x,w]=clencurt(N1,a,b)
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %
+        % clencurt.m - Fast Clenshaw Curtis Quadrature
+        %
+        % Compute the N nodes and weights for Clenshaw-Curtis
+        % Quadrature on the interval [a,b]. Unlike Gauss
+        % quadratures, Clenshaw-Curtis is only exact for
+        % polynomials up to order N, however, using the FFT
+        % algorithm, the weights and nodes are computed in linear
+        % time. This script will calculate for N=2^20+1 (1048577
+        % points) in about 5 seconds on a normal laptop computer.
+        %
+        % Written by: Greg von Winckel - 02/12/2005
+        % Contact: gregvw(at)chtm(dot)unm(dot)edu
+        %
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        if N1==1
+            x=(a+b)/2;
+            w=a-b;
+            return
+        end
+        N=N1-1; bma=b-a;
+        c=zeros(N1,2);
+        c(1:2:N1,1)=(2./[1 1-(2:2:N).^2 ])'; c(2,2)=1;
+        f=real(ifft([c(1:N1,:);c(N:-1:2,:)]));
+        w=bma*([f(1,1); 2*f(2:N,1); f(N1,1)])/2;
+        x=0.5*((b+a)+N*bma*f(1:N1,2));
+        x=x(end:-1:1);
+        w=w(end:-1:1);
+    end
+
+[s_magnetization, ~] = clencurt(ns_magnetization, 0, 1);
+[s_integration, s_weights] = clencurt(ns_integration, 0, 1);
+interpolate_magnetization_to_integration = m20130215_01_makeChebyshevInterpolationMatrix(ns_magnetization, 0, 1, s_integration);
+
+compareVariableToFortran('s_magnetization')
+compareVariableToFortran('s_integration')
+compareVariableToFortran('s_weights')
+
+% *********************************************
 % Initialize the plasma surface:
 % *********************************************
 
+bfc = 0;
 switch geometry_option_plasma
     case {0,1}
         % Plain axisymmetric circular torus
@@ -219,7 +246,57 @@ switch geometry_option_plasma
         % Discard the other surfaces:
         rmnc = rmnc(:,whichSurface);
         zmns = zmns(:,whichSurface);
-        
+    case {7}
+        % FOCUS format
+        fid = fopen(shape_filename_plasma,'r');
+        if fid<0
+            fprintf('Error! Unable to open file %s\n',shape_filename_plasma)
+            return
+        end
+        line = fgetl(fid);
+        line = fgetl(fid);
+        data = sscanf(line,'%d %d %d');
+        mnmax_plasma = data(1);
+        nfp = data(2);
+        nbf = data(3);
+        line = fgetl(fid);
+        line = fgetl(fid);
+        xm_plasma = zeros(mnmax_plasma,1);
+        xn_plasma = zeros(mnmax_plasma,1);
+        rmnc = zeros(mnmax_plasma,1);
+        rmns = zeros(mnmax_plasma,1);
+        zmnc = zeros(mnmax_plasma,1);
+        zmns = zeros(mnmax_plasma,1);
+        for j = 1:mnmax_plasma
+            line = fgetl(fid);
+            data = sscanf(line,'%d %d %g %g %g %g');
+            xn_plasma(j) = data(1);
+            xm_plasma(j) = data(2);
+            rmnc(j) = data(3);
+            rmns(j) = data(4);
+            zmnc(j) = data(5);
+            zmns(j) = data(6);
+        end
+        xn_plasma = xn_plasma * nfp;
+        xm = xm_plasma;
+        xn = xn_plasma;
+        mnmax = mnmax_plasma;
+        line = fgetl(fid);
+        line = fgetl(fid);
+        bfc = zeros(nbf,1);
+        bfs = zeros(nbf,1);
+        bfn = zeros(nbf,1);
+        bfm = zeros(nbf,1);
+        for j = 1:nbf
+            line = fgetl(fid);
+            data = sscanf(line,'%d %d %g %g');
+            bfn(j) = data(1);
+            bfm(j) = data(2);
+            bfc(j) = data(3);
+            bfs(j) = data(4);
+        end
+        bfn = bfn * nfp;
+        fclose(fid);
     otherwise
         error('Invalid setting for geometry_option_plasma')
 end
@@ -240,8 +317,6 @@ switch geometry_option_plasma
         curpol = 1;
 end
 
-compareVariableToFortran('net_poloidal_current_Amperes')
-compareVariableToFortran('net_toroidal_current_Amperes')
 
 nzetal_plasma = nzeta_plasma * nfp;
 nzetal_coil   = nzeta_coil   * nfp;
@@ -328,7 +403,7 @@ compareVariableToFortran('area_plasma')
 % Initialize the coil surface:
 % *********************************************
 
-    function [theta, zeta, zetal, theta_2D, zetal_2D, r, drdtheta, drdzeta, d2rdtheta2, d2rdthetadzeta, d2rdzeta2, normal, norm_normal, area] ...
+    function [theta, zeta, zetal, theta_2D, zetal_2D, r, drdtheta, drdzeta, d2rdtheta2, d2rdthetadzeta, d2rdzeta2, normal, norm_normal, area, mean_curvature, Jacobian_coefficient] ...
             = initSurface(ntheta, nzeta, geometry_option, R0, a, separation, nescin_filename)
         
         nzetal = nzeta*nfp;
@@ -352,17 +427,15 @@ compareVariableToFortran('area_plasma')
         dxdzeta = zeros(size(theta_2D));
         dydzeta = zeros(size(theta_2D));
         dzdzeta = zeros(size(theta_2D));
-        if false
-            d2xdtheta2 = zeros(size(theta_2D));
-            d2ydtheta2 = zeros(size(theta_2D));
-            d2zdtheta2 = zeros(size(theta_2D));
-            d2xdthetadzeta = zeros(size(theta_2D));
-            d2ydthetadzeta = zeros(size(theta_2D));
-            d2zdthetadzeta = zeros(size(theta_2D));
-            d2xdzeta2 = zeros(size(theta_2D));
-            d2ydzeta2 = zeros(size(theta_2D));
-            d2zdzeta2 = zeros(size(theta_2D));
-        end
+        d2xdtheta2 = zeros(size(theta_2D));
+        d2ydtheta2 = zeros(size(theta_2D));
+        d2zdtheta2 = zeros(size(theta_2D));
+        d2xdthetadzeta = zeros(size(theta_2D));
+        d2ydthetadzeta = zeros(size(theta_2D));
+        d2zdthetadzeta = zeros(size(theta_2D));
+        d2xdzeta2 = zeros(size(theta_2D));
+        d2ydzeta2 = zeros(size(theta_2D));
+        d2zdzeta2 = zeros(size(theta_2D));
         
         switch(geometry_option)
             case {0,1}
@@ -434,22 +507,46 @@ compareVariableToFortran('area_plasma')
                                 
                 for i = 1:mnmax_nescin
                     angle = xm_nescin(i)*theta_2D + xn_nescin(i)*zetal_2D*nfp;
-                    angle2 = zetal_2D;
+                    sinangle = sin(angle);
+                    cosangle = cos(angle);
+                    sinzeta = sin(zetal_2D);
+                    coszeta = cos(zetal_2D);
                     
-                    x = x + rmnc_nescin(i)*cos(angle).*cos(angle2);
-                    y = y + rmnc_nescin(i)*cos(angle).*sin(angle2);
-                    z = z + zmns_nescin(i)*sin(angle);
+                    x = x + rmnc_nescin(i)*cosangle.*coszeta;
+                    y = y + rmnc_nescin(i)*cosangle.*sinzeta;
+                    z = z + zmns_nescin(i)*sinangle;
                     
-                    dxdtheta = dxdtheta - xm_nescin(i)*rmnc_nescin(i)*sin(angle).*cos(angle2);
-                    dydtheta = dydtheta - xm_nescin(i)*rmnc_nescin(i)*sin(angle).*sin(angle2);
-                    dzdtheta = dzdtheta + xm_nescin(i)*zmns_nescin(i)*cos(angle);
+                    dxdtheta = dxdtheta - xm_nescin(i)*rmnc_nescin(i)*sinangle.*coszeta;
+                    dydtheta = dydtheta - xm_nescin(i)*rmnc_nescin(i)*sinangle.*sinzeta;
+                    dzdtheta = dzdtheta + xm_nescin(i)*zmns_nescin(i)*cosangle;
                     
-                    dxdzeta = dxdzeta - nfp*xn_nescin(i)*rmnc_nescin(i)*sin(angle).*cos(angle2) ...
-                        - rmnc_nescin(i)*cos(angle).*sin(angle2);
-                    dydzeta = dydzeta - nfp*xn_nescin(i)*rmnc_nescin(i)*sin(angle).*sin(angle2) ...
-                        + rmnc_nescin(i)*cos(angle).*cos(angle2);
-                    dzdzeta = dzdzeta + nfp*xn_nescin(i)*zmns_nescin(i)*cos(angle);
+                    dxdzeta = dxdzeta - nfp*xn_nescin(i)*rmnc_nescin(i)*sinangle.*coszeta ...
+                        - rmnc_nescin(i)*cosangle.*sinzeta;
+                    dydzeta = dydzeta - nfp*xn_nescin(i)*rmnc_nescin(i)*sinangle.*sinzeta ...
+                        + rmnc_nescin(i)*cosangle.*coszeta;
+                    dzdzeta = dzdzeta + nfp*xn_nescin(i)*zmns_nescin(i)*cosangle;
                     
+                    d2xdtheta2 = d2xdtheta2 - xm_nescin(i)*xm_nescin(i)*rmnc_nescin(i)*cosangle.*coszeta;
+                    d2ydtheta2 = d2ydtheta2 - xm_nescin(i)*xm_nescin(i)*rmnc_nescin(i)*cosangle.*sinzeta;
+                    d2zdtheta2 = d2zdtheta2 - xm_nescin(i)*xm_nescin(i)*zmns_nescin(i)*sinangle;
+
+                    d2xdzeta2 = d2xdzeta2 - nfp*xn_nescin(i)*(nfp*xn_nescin(i))*rmnc_nescin(i)*cosangle.*coszeta ...
+                        + 2*nfp*xn_nescin(i)*rmnc_nescin(i)*sinangle.*sinzeta ...
+                        - rmnc_nescin(i)*cosangle.*coszeta;
+
+                    d2xdthetadzeta = d2xdthetadzeta - nfp*xn_nescin(i)*xm_nescin(i)*rmnc_nescin(i)*cosangle.*coszeta ...
+                         + xm_nescin(i)*rmnc_nescin(i)*sinangle.*sinzeta;
+                    
+                    d2ydzeta2 = d2ydzeta2 - nfp*xn_nescin(i)*nfp*xn_nescin(i)*rmnc_nescin(i)*cosangle.*sinzeta ...
+                         - 2*nfp*xn_nescin(i)*rmnc_nescin(i)*sinangle.*coszeta ...
+                         - rmnc_nescin(i)*cosangle.*sinzeta;
+                     
+                    d2ydthetadzeta = d2ydthetadzeta - nfp*xn_nescin(i)*xm_nescin(i)*rmnc_nescin(i)*cosangle.*sinzeta ...
+                        - xm_nescin(i)*rmnc_nescin(i)*sinangle.*coszeta;
+                    
+                    d2zdzeta2 = d2zdzeta2 - nfp*xn_nescin(i)*nfp*xn_nescin(i)*zmns_nescin(i)*sinangle;
+                    
+                    d2zdthetadzeta = d2zdthetadzeta - nfp*xn_nescin(i)*xm_nescin(i)*zmns_nescin(i)*sinangle;
                 end
                 
             otherwise
@@ -501,17 +598,48 @@ compareVariableToFortran('area_plasma')
         end
         
         norm_normal = sqrt(Nx.*Nx + Ny.*Ny + Nz.*Nz);
-        norm_normal = norm_normal(:,1:nzeta);
         dtheta = theta(2)-theta(1);
         dzeta  = zeta(2)-zeta(1);
+        
+        nX = Nx ./ norm_normal;
+        nY = Ny ./ norm_normal;
+        nZ = Nz ./ norm_normal;
+        
+        E = dxdtheta .* dxdtheta + dydtheta .* dydtheta + dzdtheta .* dzdtheta;
+        F = dxdtheta .* dxdzeta  + dydtheta .* dydzeta  + dzdtheta .* dzdzeta;
+        G = dxdzeta  .* dxdzeta  + dydzeta  .* dydzeta  + dzdzeta  .* dzdzeta;
+        
+        L = d2xdtheta2     .* nX + d2ydtheta2     .* nY + d2zdtheta2     .* nZ;
+        M = d2xdthetadzeta .* nX + d2ydthetadzeta .* nY + d2zdthetadzeta .* nZ;
+        P = d2xdzeta2      .* nX + d2ydzeta2      .* nY + d2zdzeta2      .* nZ;
+        
+        mean_curvature = (E.*P + G.*L - 2*F.*M) ./ (2*(E.*G - F.*F));
+        Jacobian_coefficient = (M .* M - L .* P) ./ (norm_normal .* norm_normal);
+        
+        norm_normal = norm_normal(:,1:nzeta);
+        mean_curvature = mean_curvature(:,1:nzeta);
+        Jacobian_coefficient = Jacobian_coefficient(:,1:nzeta);
         area = sum(sum(norm_normal)) * dtheta * dzeta * nfp;
+
     end
 
 tic
 fprintf('Initializing coil surface.\n')
 [theta_coil, zeta_coil, zetal_coil, theta_coil_2D, zetal_coil_2D, r_coil, drdtheta_coil, drdzeta_coil, ...
-    d2rdtheta2_coil, d2rdthetadzeta_coil, d2rdzeta2_coil, normal_coil, norm_normal_coil, area_coil] ...
+    d2rdtheta2_coil, d2rdthetadzeta_coil, d2rdzeta2_coil, normal_coil, norm_normal_coil, area_coil, mean_curvature_coil, Jacobian_coefficient] ...
     = initSurface(ntheta_coil, nzeta_coil, geometry_option_coil, R0_coil, a_coil, separation, nescin_filename);
+
+d = d_initial * ones(ntheta_coil, nzeta_coil);
+Jacobian_coil = zeros(ntheta_coil, nzeta_coil, ns_integration);
+for js = 1:ns_integration
+    Jacobian_coil(:,:,js) = d .* norm_normal_coil .* (-1 + 2 * s_integration(js) * d .* mean_curvature_coil ...
+        + s_integration(js) * s_integration(js) * d .* d .* Jacobian_coefficient);
+end
+if any(any(Jacobian_coil >= 0)) 
+    error('Jacobian_coil is not negative-definite!')
+end
+Jacobian_coil = abs(Jacobian_coil);
+
 fprintf('Done. Took %g seconds.\n',toc)
 
 compareVariableToFortran('theta_coil')
@@ -522,6 +650,8 @@ compareVariableToFortran('drdtheta_coil')
 compareVariableToFortran('drdzeta_coil')
 compareVariableToFortran('normal_coil')
 compareVariableToFortran('norm_normal_coil')
+compareVariableToFortran('mean_curvature_coil')
+compareVariableToFortran('Jacobian_coil')
 
 % *********************************************
 % Make 3D figure of surfaces
@@ -617,41 +747,44 @@ end
         
     end
 
-[mnmax_coil, xm_coil, xn_coil] = setupFourierArrays(mpol_coil, ntor_coil);
+[mnmax_coil, xm_coil, xn_coil] = setupFourierArrays(mpol_magnetization, ntor_magnetization);
 xn_coil = xn_coil * nfp;
 
-compareVariableToFortran('mpol_coil')
-compareVariableToFortran('ntor_coil')
-compareVariableToFortran('mnmax_coil')
-compareVariableToFortran('xm_coil')
-compareVariableToFortran('xn_coil')
 compareVariableToFortran('symmetry_option')
 
 % *********************************************
 % Load BNORM data.
 % *********************************************
 
-Bnormal_from_plasma_current = zeros(ntheta_plasma,nzeta_plasma);
+Bnormal_from_TF_and_plasma_current = zeros(ntheta_plasma,nzeta_plasma);
 [zeta_plasma_2D, theta_plasma_2D] = meshgrid(zeta_plasma, theta_plasma);
-if load_bnorm
-    fid = fopen(bnorm_filename,'r');
-    if fid<0
-        error('Unable to open BNORM file %s.\n',bnorm_filename)
-    end
-    while ~ feof(fid);
-        [fileline,count] = fscanf(fid,'%f %f %f\n',3);
-        if count == 3
-            mm  = fileline(1);
-            nn  = fileline(2);
-            amp = fileline(3);
-            Bnormal_from_plasma_current = Bnormal_from_plasma_current + amp*sin(mm*theta_plasma_2D + nfp*nn*zeta_plasma_2D);
-        end
+if numel(bfc)>1
+    % Data must have been loaded from a FOCUS file.
+    for j = 1:numel(bfc)
+        angle = bfm(j) * theta_plasma_2D - bfn(j) * zeta_plasma_2D;
+        Bnormal_from_TF_and_plasma_current = Bnormal_from_TF_and_plasma_current + bfc(j) * cos(angle) + bfs(j) * sin(angle);
     end
 else
+    if load_bnorm
+        fid = fopen(bnorm_filename,'r');
+        if fid<0
+            error('Unable to open BNORM file %s.\n',bnorm_filename)
+        end
+        while ~ feof(fid);
+            [fileline,count] = fscanf(fid,'%f %f %f\n',3);
+            if count == 3
+                mm  = fileline(1);
+                nn  = fileline(2);
+                amp = fileline(3);
+                Bnormal_from_TF_and_plasma_current = Bnormal_from_TF_and_plasma_current + amp*sin(mm*theta_plasma_2D + nfp*nn*zeta_plasma_2D);
+            end
+        end
+    else
+    end
+    Bnormal_from_TF_and_plasma_current = Bnormal_from_TF_and_plasma_current * curpol;
 end
-Bnormal_from_plasma_current = Bnormal_from_plasma_current * curpol;
-Bnormal_from_plasma_current_1D = reshape(Bnormal_from_plasma_current, [ntheta_plasma*nzeta_plasma,1]);
-compareVariableToFortran('Bnormal_from_plasma_current')
+Bnormal_from_plasma_current_1D = reshape(Bnormal_from_TF_and_plasma_current, [ntheta_plasma*nzeta_plasma,1]);
+compareVariableToFortran('Bnormal_from_TF_and_plasma_current')
 
 % *********************************************
 % Compute h
@@ -874,7 +1007,7 @@ for ilambda=1:nlambda
         + zeta_coil_2D * (net_poloidal_current_Amperes/(2*pi)) ...
         + theta_coil_2D * (net_toroidal_current_Amperes/(2*pi));
     
-    this_Bnormal = Bnormal_from_plasma_current + Bnormal_from_net_coil_currents ...
+    this_Bnormal = Bnormal_from_TF_and_plasma_current + Bnormal_from_net_coil_currents ...
         + reshape(g*solution, [ntheta_plasma,nzeta_plasma]) ./ norm_normal_plasma;
     Bnormal_total(:,:,ilambda) = this_Bnormal;
     chi2_B(ilambda) = nfp*dtheta_plasma*dzeta_plasma*sum(sum(this_Bnormal .* this_Bnormal .* norm_normal_plasma));
@@ -1004,7 +1137,7 @@ numCols=ceil(sqrt(numPlots+2));
 numRows=ceil((numPlots+2) / numCols);
 
 subplot(numRows,numCols,1)
-contourf(zeta_plasma_2D, theta_plasma_2D, Bnormal_from_plasma_current, numContours,'EdgeColor','none')
+contourf(zeta_plasma_2D, theta_plasma_2D, Bnormal_from_TF_and_plasma_current, numContours,'EdgeColor','none')
 colorbar
 xlabel('zeta')
 ylabel('theta')

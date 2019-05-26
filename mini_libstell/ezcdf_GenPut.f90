@@ -14,7 +14,8 @@ MODULE ezcdf_GenPut
   ! C. Ludescher/A. Pletzer Tue Apr  4 10:11:33 EDT 2000
   !
   ! added support (ap) Wed May 16 15:06:34 EDT 2001
-  PUBLIC :: cdfw_3i, cdfw_3l, cdfw_3d, cdfw_3c16, cdfw_3f, cdfw_3c8,  &
+  PUBLIC :: cdfw_5d, cdfw_4d, &
+       & cdfw_3i, cdfw_3l, cdfw_3d, cdfw_3c16, cdfw_3f, cdfw_3c8,  &
        & cdfw_2i, cdfw_2l, cdfw_2d, cdfw_2c16, cdfw_2f, cdfw_2c8, cdfw_2c, &
        & cdfw_1i, cdfw_1l, cdfw_1d, cdfw_1c16, cdfw_1f, cdfw_1c8, cdfw_1c, &
        & cdfw_0i, cdfw_0l, cdfw_0d, cdfw_0c16, cdfw_0f, cdfw_0c8,          &
@@ -22,7 +23,8 @@ MODULE ezcdf_GenPut
 
   ! cdf_write is an alias of cdfPutVar (required by ifc compiler)
   INTERFACE cdf_write
-     MODULE PROCEDURE cdfw_3i, cdfw_3l, cdfw_3d, cdfw_3c16, cdfw_3f, cdfw_3c8, &
+     MODULE PROCEDURE cdfw_5d, cdfw_4d, &
+          cdfw_3i, cdfw_3l, cdfw_3d, cdfw_3c16, cdfw_3f, cdfw_3c8, &
           cdfw_2i, cdfw_2l, cdfw_2d, cdfw_2c16, cdfw_2f, cdfw_2c8, cdfw_2c, &
           cdfw_1i, cdfw_1l, cdfw_1d, cdfw_1c16, cdfw_1f, cdfw_1c8, cdfw_1c, &
           cdfw_0i, cdfw_0l, cdfw_0d, cdfw_0c16, cdfw_0f, cdfw_0c8
@@ -30,13 +32,15 @@ MODULE ezcdf_GenPut
 
   ! same as above (Intel compiler does not handle well aliases)
   INTERFACE cdfPutVar
-     MODULE PROCEDURE cdfw_3i, cdfw_3l, cdfw_3d, cdfw_3c16, cdfw_3f, cdfw_3c8, &
+     MODULE PROCEDURE cdfw_5d, cdfw_4d, &
+          cdfw_3i, cdfw_3l, cdfw_3d, cdfw_3c16, cdfw_3f, cdfw_3c8, &
           cdfw_2i, cdfw_2l, cdfw_2d, cdfw_2c16, cdfw_2f, cdfw_2c8, cdfw_2c, &
           cdfw_1i, cdfw_1l, cdfw_1d, cdfw_1c16, cdfw_1f, cdfw_1c8, cdfw_1c, &
           cdfw_0i, cdfw_0l, cdfw_0d, cdfw_0c16, cdfw_0f, cdfw_0c8
   END INTERFACE
 
   PUBLIC :: cdfDefVar, cdf_define,                                          &
+       & cdfd_5d, cdfd_4d, &
        & cdfd_3i, cdfd_3l, cdfd_3d, cdfd_3c16, cdfd_3f, cdfd_3c8,          &
        & cdfd_2i, cdfd_2l, cdfd_2d, cdfd_2c16, cdfd_2f, cdfd_2c8, cdfd_2c, &
        & cdfd_1i, cdfd_1l, cdfd_1d, cdfd_1c16, cdfd_1f, cdfd_1c8, cdfd_1c, &
@@ -44,6 +48,7 @@ MODULE ezcdf_GenPut
 
   INTERFACE cdf_define
      MODULE PROCEDURE cdfDefVar,                                            &
+          cdfd_5d, cdfd_4d, &
           cdfd_3i, cdfd_3l, cdfd_3d, cdfd_3c16, cdfd_3f, cdfd_3c8,          &
           cdfd_2i, cdfd_2l, cdfd_2d, cdfd_2c16, cdfd_2f, cdfd_2c8, cdfd_2c, &
           cdfd_1i, cdfd_1l, cdfd_1d, cdfd_1c16, cdfd_1f, cdfd_1c8, cdfd_1c, &
@@ -124,6 +129,62 @@ CONTAINS
 
     DEALLOCATE (varval_i)
   END SUBROUTINE cdfw_3l
+
+  SUBROUTINE cdfw_5d(ncid,varnam,varval,ier)
+    !     Write 5 dimensional 64-bit Real data array
+    !     Use cdfDefVar to define the Variable
+    implicit none
+    ! Input
+    integer,                         intent(in) :: ncid
+    character*(*),                   intent(in) :: varnam
+    REAL(KIND=r8), dimension(:,:,:,:,:), intent(in) :: varval
+    ! Output
+    integer, optional,      intent(out) :: ier
+    ! Local
+    integer, dimension(5) :: st = (/1,1,1,1,1/)
+    integer, dimension(5) :: dimlens
+    integer               :: varid, ndims, sts
+    if (PRESENT (ier)) ier = 1
+    sts= nf_enddef(ncid)
+    call cdfInqV(ncid,varnam,varid,dimlens,ndims,sts)
+    if (sts .ne. 0)  return
+    if (ndims .ne. 5) then
+       print "('% cdfPutVar_5d: --E-- The variable ',a,               &
+            &         ' was defined as',i2,' dimensional')",varnam,ndims
+       return
+    end if
+    sts = nf_put_vara_double(ncid,varid,st,dimlens,varval)
+    call handle_err(sts,varnam,'cdf_5d','nf_put_vara_double')
+    if (PRESENT (ier)) ier = sts
+  END SUBROUTINE cdfw_5d
+
+  SUBROUTINE cdfw_4d(ncid,varnam,varval,ier)
+    !     Write 4 dimensional 64-bit Real data array
+    !     Use cdfDefVar to define the Variable
+    implicit none
+    ! Input
+    integer,                         intent(in) :: ncid
+    character*(*),                   intent(in) :: varnam
+    REAL(KIND=r8), dimension(:,:,:,:), intent(in) :: varval
+    ! Output
+    integer, optional,      intent(out) :: ier
+    ! Local
+    integer, dimension(4) :: st = (/1,1,1,1/)
+    integer, dimension(4) :: dimlens
+    integer               :: varid, ndims, sts
+    if (PRESENT (ier)) ier = 1
+    sts= nf_enddef(ncid)
+    call cdfInqV(ncid,varnam,varid,dimlens,ndims,sts)
+    if (sts .ne. 0)  return
+    if (ndims .ne. 4) then
+       print "('% cdfPutVar_4d: --E-- The variable ',a,               &
+            &         ' was defined as',i2,' dimensional')",varnam,ndims
+       return
+    end if
+    sts = nf_put_vara_double(ncid,varid,st,dimlens,varval)
+    call handle_err(sts,varnam,'cdf_4d','nf_put_vara_double')
+    if (PRESENT (ier)) ier = sts
+  END SUBROUTINE cdfw_4d
 
   SUBROUTINE cdfw_3d(ncid,varnam,varval,ier)
     !     Write 3 dimensional 64-bit Real data array
@@ -816,15 +877,15 @@ CONTAINS
     ! Local
     integer                 :: ndims, varid, vartype, maxdims
     integer                 :: i,     n,     status
-    integer, dimension(3)   :: dimids
-    character*(nf_max_name) :: dimnams(3)
+    integer, dimension(5)   :: dimids ! MJL 20190526 Changed 3 -> 5.
+    character*(nf_max_name) :: dimnams(5) ! MJL 20190526 Changed 3 -> 5.
     character*(5)           :: zdim
     character*(9)           :: zdim1
     character*(*), parameter :: cmplx_name = '__CmPlx_Re_Im'
     character*(*), parameter :: logical_name = '__logical__'
     logical :: is_complex, is_logical
 
-    integer dims(3)
+    integer dims(5)  ! MJL 20190526 Changed 3 -> 5.
     integer flag
 
     is_complex=.FALSE.
@@ -878,7 +939,7 @@ CONTAINS
     if (xtype .eq. 'CHAR' .or. xtype .eq. 'char') then
        maxdims = 2
     else
-       maxdims = 3
+       maxdims = 5 ! MJL 20190526 Changed 3 -> 5.
     endif
     if (ndims .gt. maxdims) then
        WRITE(*,10)ndims,xtype
@@ -938,10 +999,10 @@ CONTAINS
     integer, optional,        intent(out) :: ier
     ! Local
     character*3             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='INT'
-    dims = -shape(varval)
+    dims = (/ -shape(varval), 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_3i
@@ -959,10 +1020,10 @@ CONTAINS
     integer, optional,       intent(out) :: ier
     ! Local
     character*3             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='INT'
-    dims = (/ -shape(varval), 1 /)
+    dims = (/ -shape(varval), 1, 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_2i
@@ -980,10 +1041,10 @@ CONTAINS
     integer, optional,     intent(out) :: ier
     ! Local
     character*3             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='INT'
-    dims = (/ -shape(varval), 1, 1 /)
+    dims = (/ -shape(varval), 1, 1, 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_1i
@@ -1001,7 +1062,7 @@ CONTAINS
     integer, optional,  intent(out) :: ier
     ! Local
     character*3             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='INT'
     dims = 0
@@ -1022,10 +1083,10 @@ CONTAINS
     integer, optional,        intent(out) :: ier
     ! Local
     character*4             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='LOG'
-    dims = -shape(varval)
+    dims = (/ -shape(varval), 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_3l
@@ -1043,10 +1104,10 @@ CONTAINS
     integer, optional,       intent(out) :: ier
     ! Local
     character*3            :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='LOG'
-    dims = (/ -shape(varval), 1 /)
+    dims = (/ -shape(varval), 1, 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_2l
@@ -1064,10 +1125,10 @@ CONTAINS
     integer, optional,     intent(out) :: ier
     ! Local
     character*3            :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='LOG'
-    dims = (/ -shape(varval), 1, 1 /)
+    dims = (/ -shape(varval), 1, 1, 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_1l
@@ -1085,13 +1146,55 @@ CONTAINS
     integer, optional,  intent(out) :: ier
     ! Local
     character*3            :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='LOG'
     dims = 0
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_0l
+
+  SUBROUTINE cdfd_5d(ncid,varnam,varval,ier,dimname)
+    !     define 5 dimensional double data array
+    implicit none
+!!$  include "netcdf.inc"
+    ! Input
+    integer,                   intent(in) :: ncid
+    character*(*),             intent(in) :: varnam
+    REAL(kind=r8), dimension(:,:,:,:,:), intent(in) :: varval
+    character*(*), optional, dimension(:), intent(in) :: dimname
+    ! Output
+    integer, optional,        intent(out) :: ier
+    ! Local
+    character*2             :: vartype
+    integer                 :: dims(5)
+
+    vartype='R8'
+    dims = -shape(varval)
+    call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
+
+  END SUBROUTINE cdfd_5d
+
+  SUBROUTINE cdfd_4d(ncid,varnam,varval,ier,dimname)
+    !     define 4 dimensional double data array
+    implicit none
+!!$  include "netcdf.inc"
+    ! Input
+    integer,                   intent(in) :: ncid
+    character*(*),             intent(in) :: varnam
+    REAL(kind=r8), dimension(:,:,:,:), intent(in) :: varval
+    character*(*), optional, dimension(:), intent(in) :: dimname
+    ! Output
+    integer, optional,        intent(out) :: ier
+    ! Local
+    character*2             :: vartype
+    integer                 :: dims(5)
+
+    vartype='R8'
+    dims = (/ -shape(varval), 1 /)
+    call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
+
+  END SUBROUTINE cdfd_4d
 
   SUBROUTINE cdfd_3d(ncid,varnam,varval,ier,dimname)
     !     define 3 dimensional double data array
@@ -1106,10 +1209,10 @@ CONTAINS
     integer, optional,        intent(out) :: ier
     ! Local
     character*2             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='R8'
-    dims = -shape(varval)
+    dims = (/ -shape(varval), 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_3d
@@ -1127,10 +1230,10 @@ CONTAINS
     integer, optional,       intent(out) :: ier
     ! Local
     character*2             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='R8'
-    dims = (/ -shape(varval), 1 /)
+    dims = (/ -shape(varval), 1, 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_2d
@@ -1148,10 +1251,10 @@ CONTAINS
     integer, optional,     intent(out) :: ier
     ! Local
     character*2             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='R8'
-    dims = (/ -shape(varval), 1, 1 /)
+    dims = (/ -shape(varval), 1, 1, 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_1d
@@ -1169,7 +1272,7 @@ CONTAINS
     integer, optional,  intent(out) :: ier
     ! Local
     character*2             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='R8'
     dims = 0
@@ -1190,10 +1293,10 @@ CONTAINS
     integer, optional,        intent(out) :: ier
     ! Local
     character*2             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='R4'
-    dims = -shape(varval)
+    dims = (/ -shape(varval), 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_3f
@@ -1211,10 +1314,10 @@ CONTAINS
     integer, optional,       intent(out) :: ier
     ! Local
     character*2             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='R4'
-    dims = (/ -shape(varval), 1 /)
+    dims = (/ -shape(varval), 1, 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_2f
@@ -1232,10 +1335,10 @@ CONTAINS
     integer, optional,     intent(out) :: ier
     ! Local
     character*2             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='R4'
-    dims = (/ -shape(varval), 1, 1 /)
+    dims = (/ -shape(varval), 1, 1, 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_1f
@@ -1253,7 +1356,7 @@ CONTAINS
     integer, optional,  intent(out) :: ier
     ! Local
     character*2             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='R4'
     dims = 0
@@ -1274,10 +1377,10 @@ CONTAINS
     integer, optional,        intent(out) :: ier
     ! Local
     character*3             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='C16'
-    dims = -shape(varval)
+    dims = (/ -shape(varval), 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_3c16
@@ -1295,10 +1398,10 @@ CONTAINS
     integer, optional,       intent(out) :: ier
     ! Local
     character*3             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='C16'
-    dims = (/ -shape(varval), 1 /)
+    dims = (/ -shape(varval), 1, 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_2c16
@@ -1316,10 +1419,10 @@ CONTAINS
     integer, optional,     intent(out) :: ier
     ! Local
     character*3             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='C16'
-    dims = (/ -shape(varval), 1, 1 /)
+    dims = (/ -shape(varval), 1, 1, 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_1c16
@@ -1337,7 +1440,7 @@ CONTAINS
     integer, optional,  intent(out) :: ier
     ! Local
     character*3             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='C16'
     dims = 0
@@ -1358,10 +1461,10 @@ CONTAINS
     integer, optional,        intent(out) :: ier
     ! Local
     character*2             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='C8'
-    dims = -shape(varval)
+    dims = (/ -shape(varval), 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_3c8
@@ -1379,10 +1482,10 @@ CONTAINS
     integer, optional,       intent(out) :: ier
     ! Local
     character*2             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='C8'
-    dims = (/ -shape(varval), 1 /)
+    dims = (/ -shape(varval), 1, 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_2c8
@@ -1400,10 +1503,10 @@ CONTAINS
     integer, optional,     intent(out) :: ier
     ! Local
     character*2             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='C8'
-    dims = (/ -shape(varval), 1, 1 /)
+    dims = (/ -shape(varval), 1, 1, 1, 1 /)
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_1c8
@@ -1421,7 +1524,7 @@ CONTAINS
     integer, optional,  intent(out) :: ier
     ! Local
     character*2             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='C8'
     dims = 0
@@ -1442,11 +1545,13 @@ CONTAINS
     integer, optional,       intent(out) :: ier
     ! Local
     character*4             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='CHAR'
     dims(1) = len(varval(1))
     dims(2) = size(varval);   dims(3) = 1
+    dims(4) = 1
+    dims(5) = 1
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 
   END SUBROUTINE cdfd_2c
@@ -1464,10 +1569,10 @@ CONTAINS
     integer, optional,     intent(out) :: ier
     ! Local
     character*4             :: vartype
-    integer                 :: dims(3)
+    integer                 :: dims(5)
 
     vartype='CHAR'
-    dims(1) = len(varval);  dims(2:3) = 1
+    dims(1) = len(varval);  dims(2:5) = 1
     if (dims(1) .le. 1) dims(1) = -1
     call cdfDefVar(ncid,varnam,dims,vartype,ier,dimname)
 

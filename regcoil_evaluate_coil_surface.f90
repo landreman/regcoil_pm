@@ -142,7 +142,45 @@ subroutine regcoil_evaluate_coil_surface()
 !!$  do j = 1,ntheta_coil
 !!$     print *,r_coil(3,j,:)
 !!$  end do
-  
+
+!!$  print *,"d2xdtheta2:"
+!!$  do j = 1,ntheta_coil
+!!$     print *,d2rdtheta2_coil(1,j,:)
+!!$  end do
+!!$  print *,"d2xdthetadzeta:"
+!!$  do j = 1,ntheta_coil
+!!$     print *,d2rdthetadzeta_coil(1,j,:)
+!!$  end do
+!!$  print *,"d2xdzeta2:"
+!!$  do j = 1,ntheta_coil
+!!$     print *,d2rdzeta2_coil(1,j,:)
+!!$  end do
+!!$
+!!$  print *,"d2ydtheta2:"
+!!$  do j = 1,ntheta_coil
+!!$     print *,d2rdtheta2_coil(2,j,:)
+!!$  end do
+!!$  print *,"d2ydthetadzeta:"
+!!$  do j = 1,ntheta_coil
+!!$     print *,d2rdthetadzeta_coil(2,j,:)
+!!$  end do
+!!$  print *,"d2ydzeta2:"
+!!$  do j = 1,ntheta_coil
+!!$     print *,d2rdzeta2_coil(2,j,:)
+!!$  end do
+!!$
+!!$  print *,"d2zdtheta2:"
+!!$  do j = 1,ntheta_coil
+!!$     print *,d2rdtheta2_coil(3,j,:)
+!!$  end do
+!!$  print *,"d2zdthetadzeta:"
+!!$  do j = 1,ntheta_coil
+!!$     print *,d2rdthetadzeta_coil(3,j,:)
+!!$  end do
+!!$  print *,"d2zdzeta2:"
+!!$  do j = 1,ntheta_coil
+!!$     print *,d2rdzeta2_coil(3,j,:)
+!!$  end do
 
   ! Evaluate cross product:
   normal_coil(1,:,:) = drdzeta_coil(2,:,:) * drdtheta_coil(3,:,:) - drdtheta_coil(2,:,:) * drdzeta_coil(3,:,:)

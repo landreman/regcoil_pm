@@ -32,7 +32,7 @@ subroutine cdfInqVar(ncid,varnam,dimlens,eztype,ier)
   ! Local
   integer                 :: ndims, varid, natts, xtype
   integer                 :: status, i
-  integer, dimension(3)   :: dimids
+  integer, dimension(5)   :: dimids ! MJL 20190526 Changed 3 -> 5.
   character*(nf_max_name) :: name
   integer, parameter      :: cmplx_len = 13
   character(cmplx_len), parameter :: cmplx_name = '__CmPlx_Re_Im'
@@ -122,7 +122,7 @@ end subroutine cdfInqVar
     integer                 :: varid, status
     ! Local
     integer                 :: i, vartyp, ndims, atts, rank
-    integer, dimension(3)   :: dimids
+    integer, dimension(5)   :: dimids ! MJL 20190526 Changed 3 -> 5.
     character*(nf_max_name) :: name
 
 !   replace any non-alphanumeric characters with underscores
@@ -248,7 +248,7 @@ end subroutine cdfInqVar
     integer,               intent(out)   ::  status
     ! Local
     integer                 :: natts, xtype, i
-    integer, dimension(3)   :: dimids
+    integer, dimension(5)   :: dimids ! MJL 20190526 Changed 3 -> 5.
     character*(nf_max_name) :: name
     !---------------------------------------------------------------------------
 !   Initialize values SAL 07012014

@@ -83,9 +83,9 @@ subroutine regcoil_write_output
        vn_norm_normal_plasma  = "norm_normal_plasma", &
        vn_norm_normal_coil  = "norm_normal_coil", &
        vn_Bnormal_from_TF_and_plasma_current = "Bnormal_from_TF_and_plasma_current", &
+       vn_mean_curvature_coil = "mean_curvature_coil", &
        vn_matrix_B = "matrix_B", &
-       vn_matrix_K = "matrix_K", &
-       vn_mean_curvature_coil = "mean_curvature_coil"
+       vn_matrix_regularization = "matrix_regularization"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -97,7 +97,12 @@ subroutine regcoil_write_output
        vn_drdzeta_coil  = "drdzeta_coil", &
        vn_normal_plasma = "normal_plasma", &
        vn_normal_coil = "normal_coil", &
-       vn_Bnormal_total = "Bnormal_total"
+       vn_Bnormal_total = "Bnormal_total", &
+       vn_Jacobian_coil = "Jacobian_coil"
+
+  ! Arrays with dimension 4
+  character(len=*), parameter :: &
+       vn_g  = "g"
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Now create variables that name the dimensions.
@@ -130,15 +135,20 @@ subroutine regcoil_write_output
        nthetanzeta_plasma_nthetanzeta_coil_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','ntheta_nzeta_coil'/), &
        nthetanzeta_plasma_basis_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','num_basis_functions'/), &
        basis_basis_dim = (/ character(len=50) :: 'num_basis_functions','num_basis_functions'/), &
-       basis_nlambda_dim = (/ character(len=50) :: 'num_basis_functions','nlambda'/)
+       basis_nlambda_dim = (/ character(len=50) :: 'num_basis_functions','nlambda'/), &
+       system_size_system_size_dim = (/ character(len=50) :: 'system_size','system_size'/)
 
   ! Arrays with dimension 3:
   character(len=*), parameter, dimension(3) :: &
        xyz_ntheta_nzetal_plasma_dim = (/ character(len=50) :: 'xyz','ntheta_plasma','nzetal_plasma'/), &
        xyz_ntheta_nzetal_coil_dim = (/ character(len=50) :: 'xyz','ntheta_coil','nzetal_coil'/), &
        ntheta_nzeta_coil_nlambda_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil','nlambda'/), &
-       ntheta_nzeta_plasma_nlambda_dim = (/ character(len=50) :: 'ntheta_plasma','nzeta_plasma','nlambda'/)
+       ntheta_nzeta_plasma_nlambda_dim = (/ character(len=50) :: 'ntheta_plasma','nzeta_plasma','nlambda'/), &
+       ntheta_nzeta_coil_ns_integration_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil','ns_integration'/)
 
+  ! Arrays with dimension 4:
+  character(len=*), parameter, dimension(4) :: &
+       ntheta_nzeta_plasma_basis_ns_magnetization_RZetaZ_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','num_basis_functions','ns_magnetization','RZetaZ'/)
 
   character(len=*), parameter :: input_parameter_text = ' See the user manual documentation for the input parameter of the same name.'
 
@@ -365,7 +375,10 @@ subroutine regcoil_write_output
   call cdf_setatt(ncid, vn_Bnormal_from_TF_and_plasma_current, 'Contribution to the magnetic field normal to the plasma surface from currents inside the plasma ' // &
        'and any electromagnetic coils, such as planar TF coils that generate the net toroidal flux. Units = Tesla.')
 
-  call cdf_define(ncid, vn_mean_curvature_coil,  mean_curvature_coil,  dimname=ntheta_nzeta_plasma_dim)
+  call cdf_define(ncid, vn_mean_curvature_coil,  mean_curvature_coil,  dimname=ntheta_nzeta_coil_dim)
+
+  call cdf_define(ncid, vn_matrix_B,  matrix_B,  dimname=system_size_system_size_dim)
+  call cdf_define(ncid, vn_matrix_regularization,  matrix_regularization,  dimname=system_size_system_size_dim)
 
   ! Arrays with dimension 3
 
@@ -392,6 +405,12 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:Nlambda), dimname=ntheta_nzeta_plasma_nlambda_dim)
   call cdf_setatt(ncid, vn_Bnormal_total, 'Residual magnetic field normal to the plasma surface, in units of Tesla, ' // &
        'for each value of the regularization parameter lambda considered.')
+
+  call cdf_define(ncid, vn_Jacobian_coil, Jacobian_coil, dimname=ntheta_nzeta_coil_ns_integration_dim)
+
+  ! Arrays with dimension 4
+
+  call cdf_define(ncid, vn_g,  g,  dimname=ntheta_nzeta_plasma_basis_ns_magnetization_RZetaZ_dim)
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
   ! Done with cdf_define calls. Now write the data.
@@ -475,6 +494,8 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_norm_normal_coil,  norm_normal_coil)
   call cdf_write(ncid, vn_Bnormal_from_TF_and_plasma_current, Bnormal_from_TF_and_plasma_current)
   call cdf_write(ncid, vn_mean_curvature_coil, mean_curvature_coil)
+  call cdf_write(ncid, vn_matrix_B, matrix_B)
+  call cdf_write(ncid, vn_matrix_regularization, matrix_regularization)
 
   ! Arrays with dimension 3
 
@@ -494,6 +515,11 @@ subroutine regcoil_write_output
   end if
 
   call cdf_write(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:Nlambda))
+  call cdf_write(ncid, vn_Jacobian_coil, Jacobian_coil)
+
+  ! Arrays with dimension 4
+
+  call cdf_write(ncid, vn_g,  g)
 
   ! Finish up:
   call cdf_close(ncid)

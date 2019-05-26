@@ -17,16 +17,6 @@ if len(sys.argv) != 2:
     print "Error! You must specify 1 argument: the regcoil_out.XXX.nc file."
     exit(1)
 
-def maximizeWindow():
-    # Maximize window. The command for this depends on the backend.
-    mng = plt.get_current_fig_manager()
-    try:
-        mng.resize(*mng.window.maxsize())
-    except AttributeError:
-        try:
-            mng.window.showMaximized()
-        except AttributeError:
-            pass
 
 f = netcdf.netcdf_file(sys.argv[1],'r',mmap=False)
 nfp = f.variables['nfp'][()]
@@ -45,35 +35,19 @@ zetal_coil = f.variables['zetal_coil'][()]
 r_plasma  = f.variables['r_plasma'][()]
 r_coil  = f.variables['r_coil'][()]
 chi2_B = f.variables['chi2_B'][()]
-single_valued_current_potential_thetazeta = f.variables['single_valued_current_potential_thetazeta'][()]
-current_potential = f.variables['current_potential'][()]
-Bnormal_from_plasma_current = f.variables['Bnormal_from_plasma_current'][()]
-Bnormal_from_net_coil_currents = f.variables['Bnormal_from_net_coil_currents'][()]
+chi2_M = f.variables['chi2_M'][()]
+max_M = f.variables['max_M'][()]
+min_M = f.variables['min_M'][()]
+Bnormal_from_TF_and_plasma_current = f.variables['Bnormal_from_TF_and_plasma_current'][()]
 Bnormal_total = f.variables['Bnormal_total'][()]
-net_poloidal_current_Amperes = f.variables['net_poloidal_current_Amperes'][()]
 # = f.variables[''][()]
 
-# lambda used to be called alpha, so try both names for backward-compatibility.
-# Also, we used 'lambdas' instead of 'lambda' to avoid conflict with python's keyword lambda.
-try:
-    nlambda = f.variables['nlambda'][()]
-    lambdas = f.variables['lambda'][()]
-except:
-    nlambda = f.variables['nalpha'][()]
-    lambdas = f.variables['alpha'][()]
-
-# K used to be called J, so try both names for backward-compatibility.
-try:
-    chi2_K = f.variables['chi2_K'][()]
-    K2 = f.variables['K2'][()]
-except:
-    chi2_K = f.variables['chi2_J'][()]
-    K2 = f.variables['J2'][()]
+nlambda = f.variables['nlambda'][()]
+lambdas = f.variables['lambda'][()]
 
 print "ntheta_plasma: ",ntheta_plasma
 print "nzetal_plasma: ",nzetal_plasma
 print "r_plasma.shape: ",r_plasma.shape
-print "single_valued_current_potential_thetazeta.shape: ",single_valued_current_potential_thetazeta.shape
 print "Bnormal_total.shape: ",Bnormal_total.shape
 
 f.close()
@@ -89,12 +63,11 @@ if np.max(np.abs(lambdas)) < 1.0e-200:
 
 permutation = np.argsort(lambdas)
 lambdas = lambdas[permutation]
-chi2_K = chi2_K[permutation]
+chi2_M = chi2_M[permutation]
 chi2_B = chi2_B[permutation]
 Bnormal_total = Bnormal_total[permutation,:,:]
-single_valued_current_potential_thetazeta = single_valued_current_potential_thetazeta[permutation,:,:]
-K2 = K2[permutation,:,:]
-current_potential = current_potential[permutation,:,:]
+max_M = max_M[permutation]
+min_M = min_M[permutation]
 if lambdas[-1]>1.0e199:
     lambdas[-1] = np.inf
 
@@ -191,18 +164,18 @@ print "ilambda_to_plot:",ilambda_to_plot
 ########################################################
 
 figureNum += 1
-fig = plt.figure(figureNum)
+fig = plt.figure(figureNum,figsize=(14,7))
 fig.patch.set_facecolor('white')
 
 numRows = 2
 numCols = 3
 
 plt.subplot(numRows,numCols,1)
-plt.loglog(chi2_K,chi2_B,'.-r')
-plt.xlabel('chi2_K [A^2]')
+plt.loglog(chi2_M,chi2_B,'.-r')
+plt.xlabel('chi2_M [A^2]')
 plt.ylabel('chi2_B [T^2 m^2]')
 for j in range(numPlots):
-    plt.plot(chi2_K[ilambda_to_plot[j]-1], chi2_B[ilambda_to_plot[j]-1],'ob')
+    plt.plot(chi2_M[ilambda_to_plot[j]-1], chi2_B[ilambda_to_plot[j]-1],'ob')
 
 if nlambda>1:
     plt.subplot(numRows,numCols,2)
@@ -221,24 +194,24 @@ for j in range(numPlots):
 
 if nlambda>1:
     plt.subplot(numRows,numCols,5)
-    plt.loglog(lambdas,chi2_K,'.-r')
+    plt.loglog(lambdas,chi2_M,'.-r')
     plt.xlabel('lambda [T^2 m^2 / A^2]')
-    plt.ylabel('chi2_K [A^2]')
+    plt.ylabel('chi2_M [A^2]')
     for j in range(numPlots):
-        plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_K[ilambda_to_plot[j]-1],'ob')
+        plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_M[ilambda_to_plot[j]-1],'ob')
 
 plt.subplot(numRows,numCols,6)
-plt.semilogy(lambdas,chi2_K,'.-r')
+plt.semilogy(lambdas,chi2_M,'.-r')
 plt.xlabel('lambda [T^2 m^2 / A^2]')
-plt.ylabel('chi2_K [A^2]')
+plt.ylabel('chi2_M [A^2]')
 for j in range(numPlots):
-    plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_K[ilambda_to_plot[j]-1],'ob')
+    plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_M[ilambda_to_plot[j]-1],'ob')
 
 plt.tight_layout()
 plt.figtext(0.5,0.99,"Blue dots indicate the points in the lambda scan that are plotted in later figures",horizontalalignment='center',verticalalignment='top',fontsize='small')
 
 ########################################################
-# Prepare for plotting current potential
+# Prepare for future plots
 ########################################################
 
 numCols = int(np.ceil(np.sqrt(numPlots)))
@@ -250,115 +223,34 @@ mpl.rc('ytick',labelsize=7)
 numContours = 20
 
 ########################################################
-# Plot single-valued part of current potential
-########################################################
-
-figureNum += 1
-fig = plt.figure(figureNum)
-fig.patch.set_facecolor('white')
-
-for whichPlot in range(numPlots):
-    plt.subplot(numRows,numCols,whichPlot+1)
-    plt.contourf(zeta_coil, theta_coil, np.transpose(single_valued_current_potential_thetazeta[ilambda_to_plot[whichPlot]-1,:,:]), numContours)
-    plt.colorbar()
-    plt.xlabel('zeta',fontsize='x-small')
-    plt.ylabel('theta',fontsize='x-small')
-    plt.title('lambda='+str(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
-
-plt.tight_layout()
-plt.figtext(0.5,0.99,"Single-valued part of the current potential",horizontalalignment='center',verticalalignment='top',fontsize='small')
-
-########################################################
-# Plot total current potential
-########################################################
-
-figureNum += 1
-fig = plt.figure(figureNum)
-fig.patch.set_facecolor('white')
-
-# Set up contours at appropriate levels
-x = net_poloidal_current_Amperes/nfp
-if abs(x) > np.finfo(float).eps:  # if net_poloidal_current_Ampere presented
-    contours = np.linspace(-0.5*x,1.5*x,coilsPerHalfPeriod*2*2,endpoint=False)
-else:
-    x = np.max(current_potential) # some new value
-    contours = np.linspace(-0.5*x,1.5*x,coilsPerHalfPeriod*2*2,endpoint=False)
-d = contours[1]-contours[0]
-contours = contours + d/2
-
-zeta_coil_extended = np.concatenate((zeta_coil,[2*np.pi/nfp]))
-theta_coil_extended = np.concatenate((theta_coil,[2*np.pi]))
-
-for whichPlot in range(numPlots):
-    plt.subplot(numRows,numCols,whichPlot+1)
-    data = np.transpose(current_potential[ilambda_to_plot[whichPlot]-1,:,:])
-    data_extended = np.concatenate((data,data[0:1,:]),axis=0) # Add the repeated point in theta
-    data_extended = np.concatenate((data_extended,data_extended[:,0:1]+x),axis=1) # Add the repeated point in zeta +G
-    plt.contourf(zeta_coil_extended, theta_coil_extended, data_extended, contours)
-    plt.colorbar()
-    plt.xlabel('zeta',fontsize='x-small')
-    plt.ylabel('theta',fontsize='x-small')
-    plt.title('lambda='+str(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
-
-plt.tight_layout()
-plt.figtext(0.5,0.99,"Total current potential",horizontalalignment='center',verticalalignment='top',fontsize='small')
-
-########################################################
-# Plot the current density K
-########################################################
-
-figureNum += 1
-fig = plt.figure(figureNum)
-fig.patch.set_facecolor('white')
-
-for whichPlot in range(numPlots):
-    plt.subplot(numRows,numCols,whichPlot+1)
-    plt.contourf(zeta_coil, theta_coil, np.sqrt(np.transpose(K2[ilambda_to_plot[whichPlot]-1,:,:])), numContours)
-    plt.colorbar()
-    plt.xlabel('zeta',fontsize='x-small')
-    plt.ylabel('theta',fontsize='x-small')
-    plt.title('lambda='+str(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
-
-plt.tight_layout()
-plt.figtext(0.5,0.99,"K [A/m]",horizontalalignment='center',verticalalignment='top',fontsize='small')
-
-########################################################
 # Plot Bnormal
 ########################################################
 
 figureNum += 1
-fig = plt.figure(figureNum)
+fig = plt.figure(figureNum,figsize=(14,7))
 fig.patch.set_facecolor('white')
 
-numPlots += 2
+numPlots += 1
 
 numCols = int(np.ceil(np.sqrt(numPlots)))
 numRows = int(np.ceil(numPlots*1.0/numCols))
 
 plt.subplot(numRows,numCols,1)
-plt.contourf(zeta_plasma, theta_plasma, np.transpose(Bnormal_from_plasma_current), numContours)
+plt.contourf(zeta_plasma, theta_plasma, np.transpose(Bnormal_from_TF_and_plasma_current), numContours)
 plt.colorbar()
 plt.xlabel('zeta',fontsize='x-small')
 plt.ylabel('theta',fontsize='x-small')
-plt.title('From plasma current',fontsize='x-small')
+plt.title('From TF and plasma current',fontsize='x-small')
 
-plt.subplot(numRows,numCols,2)
-plt.contourf(zeta_plasma, theta_plasma, np.transpose(Bnormal_from_net_coil_currents), numContours)
-plt.colorbar()
-plt.xlabel('zeta',fontsize='x-small')
-plt.ylabel('theta',fontsize='x-small')
-plt.title('From net coil currents',fontsize='x-small')
-
-
-for whichPlot in range(numPlots-2):
-    plt.subplot(numRows,numCols,whichPlot+3)
+for whichPlot in range(numPlots-1):
+    plt.subplot(numRows,numCols,whichPlot+2)
     plt.contourf(zeta_plasma, theta_plasma, np.transpose(Bnormal_total[ilambda_to_plot[whichPlot]-1,:,:]), numContours)
     plt.colorbar()
     plt.xlabel('zeta',fontsize='x-small')
     plt.ylabel('theta',fontsize='x-small')
-    plt.title('Total, lambda='+str(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
+    plt.title('Total, lambda={:.2e}'.format(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
 
-#plt.tight_layout()
+plt.tight_layout()
 plt.figtext(0.5,0.99,"Bnormal [Tesla]",horizontalalignment='center',verticalalignment='top',fontsize='small')
 
 

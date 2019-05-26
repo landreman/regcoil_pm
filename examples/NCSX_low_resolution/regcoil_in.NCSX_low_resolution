@@ -7,16 +7,23 @@
 
   general_option = 1
 
-  nlambda = 10
+  nlambda = 20
   lambda_min = 1e-24
-  lambda_max = 1e-6
+  lambda_max = 1e+20
 
   ntheta_plasma = 30
-  ntheta_coil   = 33
+  ntheta_coil   = 4
   nzeta_plasma  = 36
-  nzeta_coil    = 38
+  nzeta_coil    = 3
   mpol_magnetization = 6
   ntor_magnetization = 8
+
+!  ntheta_plasma = 30
+!  ntheta_coil   = 33
+!  nzeta_plasma  = 36
+!  nzeta_coil    = 38
+!  mpol_magnetization = 6
+!  ntor_magnetization = 8
 
 !  ntheta_plasma = 64
 !  ntheta_coil   = 64
@@ -35,5 +42,8 @@
 
   symmetry_option = 3
 
-  save_level =  3 
+  save_level =  0
+
+  mpol_coil_filter = 999
+  ntor_coil_filter = 999
 /
