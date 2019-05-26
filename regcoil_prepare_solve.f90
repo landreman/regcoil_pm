@@ -23,7 +23,7 @@ subroutine regcoil_prepare_solve()
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 4!'
 
   if (allocated(LAPACK_IPIV)) deallocate(LAPACK_IPIV)
-  allocate(LAPACK_IPIV(num_basis_functions), stat=iflag)
+  allocate(LAPACK_IPIV(system_size), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 5!'
 
   if (allocated(chi2_B)) deallocate(chi2_B)

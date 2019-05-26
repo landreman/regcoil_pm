@@ -21,7 +21,7 @@ subroutine regcoil_solve(ilambda)
   ! Compute solution = matrix \ RHS.
   ! Use LAPACK's DSYSV since matrix is symmetric.
   ! Note: RHS will be over-written with the solution.
-  call DSYSV('U',num_basis_functions, 1, matrix, num_basis_functions, LAPACK_IPIV, RHS, num_basis_functions, LAPACK_WORK, LAPACK_LWORK, LAPACK_INFO)
+  call DSYSV('U',system_size, 1, matrix, system_size, LAPACK_IPIV, RHS, system_size, LAPACK_WORK, LAPACK_LWORK, LAPACK_INFO)
   if (LAPACK_INFO /= 0) then
      print *, "!!!!!! Error in LAPACK DSYSV: INFO = ", LAPACK_INFO
      !stop

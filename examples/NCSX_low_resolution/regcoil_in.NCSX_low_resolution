@@ -11,19 +11,19 @@
   lambda_min = 1e-24
   lambda_max = 1e+20
 
+!  ntheta_plasma = 5
+!  ntheta_coil   = 4
+!  nzeta_plasma  = 3
+!  nzeta_coil    = 6
+!  mpol_magnetization = 2
+!  ntor_magnetization = 3
+
   ntheta_plasma = 30
-  ntheta_coil   = 4
+  ntheta_coil   = 33
   nzeta_plasma  = 36
-  nzeta_coil    = 3
+  nzeta_coil    = 38
   mpol_magnetization = 6
   ntor_magnetization = 8
-
-!  ntheta_plasma = 30
-!  ntheta_coil   = 33
-!  nzeta_plasma  = 36
-!  nzeta_coil    = 38
-!  mpol_magnetization = 6
-!  ntor_magnetization = 8
 
 !  ntheta_plasma = 64
 !  ntheta_coil   = 64

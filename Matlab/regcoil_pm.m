@@ -21,13 +21,24 @@ bnorm_filename = '/Users/mattland/Box Sync/MATLAB/bnorm.d23p4_tm';
 % **********************************
 
 ntheta_plasma = 30;
-ntheta_coil   = 4; %33;
+ntheta_coil   = 33;
 nzeta_plasma = 36;
-nzeta_coil   = 3; %38;
+nzeta_coil   = 38;
 mpol_magnetization  = 6;
 ntor_magnetization  = 8;
 ns_magnetization = 1;
 ns_integration = 5;
+
+%{
+ntheta_plasma = 5;
+ntheta_coil   = 4; %33;
+nzeta_plasma = 3;
+nzeta_coil   = 6; %38;
+mpol_magnetization  = 2;
+ntor_magnetization  = 3;
+ns_magnetization = 1;
+ns_integration = 5;
+%}
 
 % Options for the shape of the plasma surface:
 % **********************************
@@ -38,7 +49,7 @@ nfp_imposed = 1;
 %woutFilename = 'C:\Users\landreman\Box Sync\MATLAB\20150601-01 Sfincs version 3\equilibria\wout_w7x_standardConfig.nc';
 %woutFilename = '/Users/mattland/Box Sync/MATLAB/wout_d23p4_tm.nc';
 %woutFilename = 'equilibria/wout_d23p4_tm.nc';
-shape_filename_plasma = 'examples/NCSX_low_resolution/tf_only_half_tesla.plasma';
+shape_filename_plasma = '../examples/NCSX_low_resolution/tf_only_half_tesla.plasma';
 
 % Options for the shape of the coil surface:
 % **********************************
@@ -49,9 +60,12 @@ separation = 0.35;
 %nescin_filename = 'nescin.w7x_standardConfig_separation0.3';
 %nescin_filename = '/Users/mattland/Box Sync/MATLAB/nescin.w7x_winding_surface_from_Drevlak';
 %nescin_filename = 'equilibria/nescin.w7x_winding_surface_from_Drevlak';
-nescin_filename = 'examples/NCSX_low_resolution/surf.vv';
+nescin_filename = '../examples/NCSX_low_resolution/surf.vv';
 
 d_initial = 0.01;
+
+s_integration_option = 'Gaussian';
+%s_integration_option = 'Chebyshev';
 
 % Options for the regularization parameter:
 % **********************************
@@ -90,7 +104,7 @@ compareToFortran = true;
 
 %fortranNcFilename = 'C:\Users\landreman\Box Sync\MATLAB\bdistrib_out.compareToMatlab.nc';
 %fortranNcFilename = '/Users/mattland/regcoil/examples/compareToMatlab1/regcoil_out.compareToMatlab1.nc';
-fortranNcFilename = 'examples/NCSX_low_resolution/regcoil_out.NCSX_low_resolution.nc';
+fortranNcFilename = '../examples/NCSX_low_resolution/regcoil_out.NCSX_low_resolution.nc';
 
 fortranComparisonThreshhold_abs = 1e-11;
 
@@ -168,41 +182,13 @@ compareVariableToFortran('lambda')
 % Initialize s grids:
 % *********************************************
 
-    function [x,w]=clencurt(N1,a,b)
-        
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %
-        % clencurt.m - Fast Clenshaw Curtis Quadrature
-        %
-        % Compute the N nodes and weights for Clenshaw-Curtis
-        % Quadrature on the interval [a,b]. Unlike Gauss
-        % quadratures, Clenshaw-Curtis is only exact for
-        % polynomials up to order N, however, using the FFT
-        % algorithm, the weights and nodes are computed in linear
-        % time. This script will calculate for N=2^20+1 (1048577
-        % points) in about 5 seconds on a normal laptop computer.
-        %
-        % Written by: Greg von Winckel - 02/12/2005
-        % Contact: gregvw(at)chtm(dot)unm(dot)edu
-        %
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if N1==1
-            x=(a+b)/2;
-            w=a-b;
-            return
-        end
-        N=N1-1; bma=b-a;
-        c=zeros(N1,2);
-        c(1:2:N1,1)=(2./[1 1-(2:2:N).^2 ])'; c(2,2)=1;
-        f=real(ifft([c(1:N1,:);c(N:-1:2,:)]));
-        w=bma*([f(1,1); 2*f(2:N,1); f(N1,1)])/2;
-        x=0.5*((b+a)+N*bma*f(1:N1,2));
-        x=x(end:-1:1);
-        w=w(end:-1:1);
-    end
-
 [s_magnetization, ~] = clencurt(ns_magnetization, 0, 1);
-[s_integration, s_weights] = clencurt(ns_integration, 0, 1);
+switch s_integration_option
+    case 'Gaussian'
+        [s_integration, s_weights] = glwt(ns_integration, 0, 1);
+    case 'Chebyshev'
+        [s_integration, s_weights] = clencurt(ns_integration, 0, 1);
+end
 interpolate_magnetization_to_integration = m20130215_01_makeChebyshevInterpolationMatrix(ns_magnetization, 0, 1, s_integration);
 
 compareVariableToFortran('s_magnetization')
@@ -403,7 +389,8 @@ compareVariableToFortran('area_plasma')
 % Initialize the coil surface:
 % *********************************************
 
-    function [theta, zeta, zetal, theta_2D, zetal_2D, r, drdtheta, drdzeta, d2rdtheta2, d2rdthetadzeta, d2rdzeta2, normal, norm_normal, area, mean_curvature, Jacobian_coefficient] ...
+    function [theta, zeta, zetal, theta_2D, zetal_2D, r, drdtheta, drdzeta, d2rdtheta2, d2rdthetadzeta, d2rdzeta2, ...
+            normal, norm_normal, area, mean_curvature, Jacobian_coefficient, nX, nY, nZ] ...
             = initSurface(ntheta, nzeta, geometry_option, R0, a, separation, nescin_filename)
         
         nzetal = nzeta*nfp;
@@ -626,8 +613,12 @@ compareVariableToFortran('area_plasma')
 tic
 fprintf('Initializing coil surface.\n')
 [theta_coil, zeta_coil, zetal_coil, theta_coil_2D, zetal_coil_2D, r_coil, drdtheta_coil, drdzeta_coil, ...
-    d2rdtheta2_coil, d2rdthetadzeta_coil, d2rdzeta2_coil, normal_coil, norm_normal_coil, area_coil, mean_curvature_coil, Jacobian_coefficient] ...
+    d2rdtheta2_coil, d2rdthetadzeta_coil, d2rdzeta2_coil, normal_coil, norm_normal_coil, area_coil, ...
+    mean_curvature_coil, Jacobian_coefficient, nX, nY, nZ] ...
     = initSurface(ntheta_coil, nzeta_coil, geometry_option_coil, R0_coil, a_coil, separation, nescin_filename);
+
+dtheta_coil = theta_coil(2)-theta_coil(1);
+dzeta_coil = zeta_coil(2)-zeta_coil(1);
 
 d = d_initial * ones(ntheta_coil, nzeta_coil);
 Jacobian_coil = zeros(ntheta_coil, nzeta_coil, ns_integration);
@@ -786,48 +777,6 @@ end
 Bnormal_from_plasma_current_1D = reshape(Bnormal_from_TF_and_plasma_current, [ntheta_plasma*nzeta_plasma,1]);
 compareVariableToFortran('Bnormal_from_TF_and_plasma_current')
 
-% *********************************************
-% Compute h
-% *********************************************
-tic
-fprintf('Computing h.\n')
-h = zeros(ntheta_plasma,nzeta_plasma);
-
-zeta_coil_indices = 1:nzeta_coil;
-G_drdtheta_minus_I_drdzeta_x = squeeze(net_poloidal_current_Amperes * drdtheta_coil(1,:,:) - net_toroidal_current_Amperes * drdzeta_coil(1,:,:));
-G_drdtheta_minus_I_drdzeta_y = squeeze(net_poloidal_current_Amperes * drdtheta_coil(2,:,:) - net_toroidal_current_Amperes * drdzeta_coil(2,:,:));
-G_drdtheta_minus_I_drdzeta_z = squeeze(net_poloidal_current_Amperes * drdtheta_coil(3,:,:) - net_toroidal_current_Amperes * drdzeta_coil(3,:,:));
-
-d_x = reshape(G_drdtheta_minus_I_drdzeta_x(:,zeta_coil_indices) / (2*pi), [ntheta_coil*nzeta_coil,1]);
-d_y = reshape(G_drdtheta_minus_I_drdzeta_y(:,zeta_coil_indices) / (2*pi), [ntheta_coil*nzeta_coil,1]);
-d_z = reshape(G_drdtheta_minus_I_drdzeta_z(:,zeta_coil_indices) / (2*pi), [ntheta_coil*nzeta_coil,1]);
-
-for itheta_plasma = 1:ntheta_plasma
-    for izeta_plasma = 1:nzeta_plasma
-        adx = r_plasma(1,itheta_plasma,izeta_plasma) - squeeze(r_coil(1,:,:));
-        ady = r_plasma(2,itheta_plasma,izeta_plasma) - squeeze(r_coil(2,:,:));
-        adz = r_plasma(3,itheta_plasma,izeta_plasma) - squeeze(r_coil(3,:,:));
-        adr2 = adx.*adx + ady.*ady + adz.*adz;
-        dr32 = adr2 .* sqrt(adr2);
-        tempMatrix = ( ...
-              G_drdtheta_minus_I_drdzeta_x.*ady*normal_plasma(3,itheta_plasma,izeta_plasma) ...
-            + G_drdtheta_minus_I_drdzeta_y.*adz*normal_plasma(1,itheta_plasma,izeta_plasma) ...
-            + G_drdtheta_minus_I_drdzeta_z.*adx*normal_plasma(2,itheta_plasma,izeta_plasma) ...
-            - G_drdtheta_minus_I_drdzeta_z.*ady*normal_plasma(1,itheta_plasma,izeta_plasma) ...
-            - G_drdtheta_minus_I_drdzeta_x.*adz*normal_plasma(2,itheta_plasma,izeta_plasma) ...
-            - G_drdtheta_minus_I_drdzeta_y.*adx*normal_plasma(3,itheta_plasma,izeta_plasma)) ./ dr32;
-        
-        h(itheta_plasma,izeta_plasma) = sum(sum(tempMatrix));
-    end
-end
-
-dtheta_coil = theta_coil(2)-theta_coil(1);
-dzeta_coil = zeta_coil(2)-zeta_coil(1);
-h = h * (dtheta_coil*dzeta_coil*mu0/(8*pi*pi));
-Bnormal_from_net_coil_currents = h ./ norm_normal_plasma;
-Bnormal_from_net_coil_currents_1D = reshape(Bnormal_from_net_coil_currents, [ntheta_plasma*nzeta_plasma,1]);
-fprintf('Done. Took %g seconds.\n',toc)
-compareVariableToFortran('Bnormal_from_net_coil_currents')
 
 % ***********************************************
 % Compute the basis functions and f on the (theta,zeta) grids.
@@ -842,11 +791,8 @@ switch symmetry_option
         error('Invalid value for symmetry_option')
 end
 basis_functions = zeros(ntheta_coil*nzeta_coil, num_basis_functions);
-f_x = zeros(ntheta_coil*nzeta_coil, num_basis_functions);
-f_y = zeros(ntheta_coil*nzeta_coil, num_basis_functions);
-f_z = zeros(ntheta_coil*nzeta_coil, num_basis_functions);
 
-fprintf('Computing Fourier functions and f.\n')
+fprintf('Computing Fourier functions.\n')
 tic
 [zeta_coil_2D, theta_coil_2D] = meshgrid(zeta_coil,theta_coil);
 zeta_coil_indices = 1:nzeta_coil;
@@ -858,9 +804,6 @@ switch symmetry_option
             cosangle = cos(angle);
             sinangle = sin(angle);
             basis_functions(:,imn) = reshape(sinangle, [ntheta_coil*nzeta_coil,1]);
-            f_x(:,imn) = reshape(cosangle.*squeeze(xn_coil(imn)*drdtheta_coil(1,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(1,:,zeta_coil_indices)), [ntheta_coil*nzeta_coil,1]);
-            f_y(:,imn) = reshape(cosangle.*squeeze(xn_coil(imn)*drdtheta_coil(2,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(2,:,zeta_coil_indices)), [ntheta_coil*nzeta_coil,1]);
-            f_z(:,imn) = reshape(cosangle.*squeeze(xn_coil(imn)*drdtheta_coil(3,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(3,:,zeta_coil_indices)), [ntheta_coil*nzeta_coil,1]);
         end
     case {2}
         % cosines only
@@ -869,9 +812,6 @@ switch symmetry_option
             cosangle = cos(angle);
             sinangle = sin(angle);
             basis_functions(:,imn) = reshape(cosangle, [ntheta_coil*nzeta_coil,1]);
-            f_x(:,imn) = reshape(-sinangle.*squeeze(xn_coil(imn)*drdtheta_coil(1,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(1,:,zeta_coil_indices)), [ntheta_coil*nzeta_coil,1]);
-            f_y(:,imn) = reshape(-sinangle.*squeeze(xn_coil(imn)*drdtheta_coil(2,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(2,:,zeta_coil_indices)), [ntheta_coil*nzeta_coil,1]);
-            f_z(:,imn) = reshape(-sinangle.*squeeze(xn_coil(imn)*drdtheta_coil(3,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(3,:,zeta_coil_indices)), [ntheta_coil*nzeta_coil,1]);
         end
     case {3}
         % Both sines and cosines
@@ -881,19 +821,11 @@ switch symmetry_option
             sinangle = sin(angle);
             basis_functions(:,imn)            = reshape(sinangle, [ntheta_coil*nzeta_coil,1]);
             basis_functions(:,imn+mnmax_coil) = reshape(cosangle, [ntheta_coil*nzeta_coil,1]);
-            temparr = squeeze(xn_coil(imn)*drdtheta_coil(1,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(1,:,zeta_coil_indices));
-            f_x(:,imn)            = reshape( cosangle.*temparr, [ntheta_coil*nzeta_coil,1]);
-            f_x(:,imn+mnmax_coil) = reshape(-sinangle.*temparr, [ntheta_coil*nzeta_coil,1]);
-            temparr = squeeze(xn_coil(imn)*drdtheta_coil(2,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(2,:,zeta_coil_indices));
-            f_y(:,imn)            = reshape( cosangle.*temparr, [ntheta_coil*nzeta_coil,1]);
-            f_y(:,imn+mnmax_coil) = reshape(-sinangle.*temparr, [ntheta_coil*nzeta_coil,1]);
-            temparr = squeeze(xn_coil(imn)*drdtheta_coil(3,:,zeta_coil_indices) + xm_coil(imn)*drdzeta_coil(3,:,zeta_coil_indices));
-            f_z(:,imn)            = reshape( cosangle.*temparr, [ntheta_coil*nzeta_coil,1]);
-            f_z(:,imn+mnmax_coil) = reshape(-sinangle.*temparr, [ntheta_coil*nzeta_coil,1]);
         end
 end
 fprintf('Done. Took %g sec.\n',toc)
         
+%compareVariableToFortran('basis_functions')
 
 
 % *********************************************
@@ -904,36 +836,66 @@ fprintf('Done. Took %g sec.\n',toc)
 fprintf('Computing inductance\n')
 tic
 
+
+sinzeta = sin(zetal_coil);
+coszeta = cos(zetal_coil);
 zeta_plasma_indices = 1:nzeta_plasma;
-inductance = zeros(ntheta_plasma*nzeta_plasma, ntheta_coil*nzeta_coil);
-for itheta_coil = 1:ntheta_coil
-    for izeta_coil = 1:nzeta_coil
-        index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil;
-        for l_coil = 0:(nfp-1)
-            izetal_coil = izeta_coil + l_coil*nzeta_coil;
-            dx = r_plasma(1,:,zeta_plasma_indices) - r_coil(1,itheta_coil,izetal_coil);
-            dy = r_plasma(2,:,zeta_plasma_indices) - r_coil(2,itheta_coil,izetal_coil);
-            dz = r_plasma(3,:,zeta_plasma_indices) - r_coil(3,itheta_coil,izetal_coil);
-            dr2 = dx.*dx + dy.*dy + dz.*dz;
-            denominator = dr2 .* sqrt(dr2);
-            temp = (normal_plasma(1,:,zeta_plasma_indices)*normal_coil(1,itheta_coil,izetal_coil) ...
-                +   normal_plasma(2,:,zeta_plasma_indices)*normal_coil(2,itheta_coil,izetal_coil) ...
-                +   normal_plasma(3,:,zeta_plasma_indices)*normal_coil(3,itheta_coil,izetal_coil) ...
-                - (3./dr2) .* (dx .* normal_plasma(1,:,zeta_plasma_indices) + dy .* normal_plasma(2,:,zeta_plasma_indices) + dz .* normal_plasma(3,:,zeta_plasma_indices)) ...
-                .* (dx * normal_coil(1,itheta_coil,izetal_coil) + dy * normal_coil(2,itheta_coil,izetal_coil) + dz * normal_coil(3,itheta_coil,izetal_coil))) ./ denominator;
-            inductance(:,index_coil) = inductance(:,index_coil) + ...
-                reshape(temp, [ntheta_plasma*nzeta_plasma,1]);
+inductance = zeros(ntheta_plasma*nzeta_plasma, ntheta_coil*nzeta_coil, ns_magnetization, 3);
+for ks = 1:ns_magnetization
+    for js = 1:ns_integration
+        for itheta_coil = 1:ntheta_coil
+            for izeta_coil = 1:nzeta_coil
+                index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil;
+                factor = Jacobian_coil(itheta_coil,izeta_coil,js) * s_weights(js) * interpolate_magnetization_to_integration(js,ks);
+                for l_coil = 0:(nfp-1)
+                    izetal_coil = izeta_coil + l_coil*nzeta_coil;
+                    
+                    dx = r_plasma(1,:,zeta_plasma_indices) - (r_coil(1,itheta_coil,izetal_coil) + s_integration(js) * d(itheta_coil,izeta_coil) * nX(itheta_coil,izetal_coil));
+                    dy = r_plasma(2,:,zeta_plasma_indices) - (r_coil(2,itheta_coil,izetal_coil) + s_integration(js) * d(itheta_coil,izeta_coil) * nY(itheta_coil,izetal_coil));
+                    dz = r_plasma(3,:,zeta_plasma_indices) - (r_coil(3,itheta_coil,izetal_coil) + s_integration(js) * d(itheta_coil,izeta_coil) * nZ(itheta_coil,izetal_coil));
+                    dr2 = dx.*dx + dy.*dy + dz.*dz;
+                    denominator = dr2 .* sqrt(dr2);
+                    
+                    normal_plasma_times_dr = (dx .* normal_plasma(1,:,zeta_plasma_indices) + dy .* normal_plasma(2,:,zeta_plasma_indices) + dz .* normal_plasma(3,:,zeta_plasma_indices));
+                    
+                    % e_R component
+                    temp = (normal_plasma(1,:,zeta_plasma_indices)*coszeta(izetal_coil) ...
+                        +   normal_plasma(2,:,zeta_plasma_indices)*sinzeta(izetal_coil) ...
+                        - (3./dr2) .*  normal_plasma_times_dr ...
+                        .* (dx * coszeta(izetal_coil) + dy * sinzeta(izetal_coil) )) ./ denominator;
+                    inductance(:,index_coil,ks,1) = inductance(:,index_coil,ks,1) - factor * reshape(temp, [ntheta_plasma*nzeta_plasma,1]);
+                    
+                    % e_zeta component
+                    % e_zeta = cos(zeta) * e_Y - sin(zeta) * e_X
+                    temp = (normal_plasma(1,:,zeta_plasma_indices)*(-sinzeta(izetal_coil)) ...
+                        +   normal_plasma(2,:,zeta_plasma_indices)*coszeta(izetal_coil) ...
+                        - (3./dr2) .* normal_plasma_times_dr ...
+                        .* (dx * (-sinzeta(izetal_coil)) + dy * coszeta(izetal_coil) )) ./ denominator;
+                    inductance(:,index_coil,ks,2) = inductance(:,index_coil,ks,2) - factor * reshape(temp, [ntheta_plasma*nzeta_plasma,1]);
+                    
+                    % e_Z component
+                    temp = (normal_plasma(3,:,zeta_plasma_indices) ...
+                        - (3./dr2) .* normal_plasma_times_dr ...
+                        .* ( dz )) ./ denominator;
+                    inductance(:,index_coil,ks,3) = inductance(:,index_coil,ks,3) - factor * reshape(temp, [ntheta_plasma*nzeta_plasma,1]);
+                end
+            end
         end
     end
 end
 inductance = inductance * (mu0/(4*pi));
 fprintf('Done. Took %g sec.\n',toc)
 
-compareVariableToFortran('inductance')
+%compareVariableToFortran('inductance')
 
 tic1 = tic;
-g = (dtheta_coil * dzeta_coil) * inductance * basis_functions;
-fprintf('Matmul: %g\n',toc(tic1))
+g = zeros(ntheta_plasma*nzeta_plasma, num_basis_functions, ns_magnetization, 3);
+for j = 1:3
+    for js = 1:ns_magnetization
+        g(:,:,js,j) = (dtheta_coil * dzeta_coil) * inductance(:,:,js,j) * basis_functions;
+    end
+end
+fprintf('inductance -> g: %g\n',toc(tic1))
 
 
 compareVariableToFortran('g')
@@ -946,30 +908,62 @@ norm_normal_plasma_vec = reshape(norm_normal_plasma,[ntheta_plasma*nzeta_plasma,
 norm_normal_coil_vec   = reshape(norm_normal_coil,  [ntheta_coil*nzeta_coil,    1]);
 diag_inv_norm_normal_plasma = diag(1./norm_normal_plasma_vec);
 diag_inv_norm_normal_coil   = diag(1./norm_normal_coil_vec);
+system_size = num_basis_functions * ns_magnetization * 3;
+Bnormal_from_TF_and_plasma_current_1D = reshape(Bnormal_from_TF_and_plasma_current, [ntheta_plasma*nzeta_plasma,1]);
 
 tic
 fprintf('Computing RHS_B and RHS_K.\n')
-RHS_B = (-dtheta_plasma*dzeta_plasma)*((Bnormal_from_plasma_current_1D + Bnormal_from_net_coil_currents_1D)' * g)';
-RHS_K = (dtheta_coil*dzeta_coil)*((d_x ./ norm_normal_coil_vec)' * f_x + (d_y ./ norm_normal_coil_vec)' * f_y + (d_z ./ norm_normal_coil_vec)' * f_z)';
+RHS_B = zeros(system_size,1);
+for j = 1:3
+    for js = 1:ns_magnetization
+        RHS_B((1:num_basis_functions) + (j-1)*ns_magnetization*num_basis_functions + (js-1)*num_basis_functions) ...
+            = (-dtheta_plasma*dzeta_plasma)*(Bnormal_from_TF_and_plasma_current_1D' * g(:,:,js,j))';
+    end
+end
 fprintf('Done. Took %g sec.\n',toc)
 
 compareVariableToFortran('RHS_B')
-compareVariableToFortran('RHS_K')
 
 tic
 fprintf('Computing matrix_B.\n')
-matrix_B = (dtheta_plasma*dzeta_plasma)*( (g') * diag_inv_norm_normal_plasma * g );
+matrix_B = zeros(system_size);
+for j = 1:3
+    for k = 1:3
+        for js = 1:ns_magnetization
+            for ks = 1:ns_magnetization
+                % Note here that the col/row indices must be consistent
+                % with the indices in the left and right g matrices!
+                col_indices = (1:num_basis_functions) + (j-1)*ns_magnetization*num_basis_functions + (js-1)*num_basis_functions;
+                row_indices = (1:num_basis_functions) + (k-1)*ns_magnetization*num_basis_functions + (ks-1)*num_basis_functions;
+                matrix_B(row_indices, col_indices) = (dtheta_plasma*dzeta_plasma)*( (g(:,:,ks,k)') * diag_inv_norm_normal_plasma * g(:,:,js,j) );
+            end
+        end
+    end
+end
 fprintf('Done. Took %g sec.\n',toc)
 compareVariableToFortran('matrix_B')
 
 tic
-fprintf('Computing matrix_K.\n')
-matrix_K = (dtheta_coil*dzeta_coil)*( ...
-    (f_x') * diag_inv_norm_normal_coil * f_x ...
-    +(f_y') * diag_inv_norm_normal_coil * f_y ...
-    +(f_z') * diag_inv_norm_normal_coil * f_z );
+fprintf('Computing matrix_regularization.\n')
+matrix_regularization = zeros(system_size);
+for js = 1:ns_magnetization
+    for ks = 1:ns_magnetization
+        block = zeros(num_basis_functions);
+        for ps = 1:ns_integration
+            block = block + s_weights(ps) * interpolate_magnetization_to_integration(ps,js) * interpolate_magnetization_to_integration(ps,ks) ...
+                * basis_functions' * (diag(reshape(Jacobian_coil(:,:,ps) .* d,[ntheta_coil*nzeta_coil,1])) * basis_functions);
+        end
+        for j = 1:3
+            row_indices = (j-1) * ns_magnetization*num_basis_functions + (js-1)*num_basis_functions + (1:num_basis_functions);
+            col_indices = (j-1) * ns_magnetization*num_basis_functions + (ks-1)*num_basis_functions + (1:num_basis_functions);
+            matrix_regularization(row_indices,col_indices) = block;
+        end
+    end
+end
+matrix_regularization = matrix_regularization * dtheta_coil * dzeta_coil;
+
 fprintf('Done. Took %g sec.\n',toc)
-compareVariableToFortran('matrix_K')
+compareVariableToFortran('matrix_regularization')
 
 
 % *********************************************
@@ -981,7 +975,7 @@ single_valued_current_potential_thetazeta = zeros(ntheta_coil, nzeta_coil, nlamb
 current_potential = zeros(ntheta_coil, nzeta_coil, nlambda);
 [zeta_coil_2D, theta_coil_2D] = meshgrid(zeta_coil, theta_coil);
 chi2_B = zeros(nlambda,1);
-chi2_K = zeros(nlambda,1);
+chi2_M = zeros(nlambda,1);
 Bnormal_total = zeros(ntheta_plasma, nzeta_plasma, nlambda);
 K2 = zeros(ntheta_coil, nzeta_coil, nlambda);
 
@@ -989,8 +983,9 @@ for ilambda=1:nlambda
     fprintf('Solving system for lambda = %g  (%d of %d)\n',lambda(ilambda), ilambda, nlambda)
     
     tic
-    matrix = matrix_B + lambda(ilambda) * matrix_K;
-    RHS    = RHS_B    + lambda(ilambda) * RHS_K;
+    matrix = matrix_B + lambda(ilambda) * matrix_regularization;
+    RHS    = RHS_B;
+    %RHS    = RHS_B    + lambda(ilambda) * RHS_K;
     %matrix = matrix_B - lambda(ilambda) * matrix_K;
     %RHS    = RHS_B    - lambda(ilambda) * RHS_K;
     fprintf('  Summing matrices: %g sec.\n',toc)
@@ -1000,6 +995,17 @@ for ilambda=1:nlambda
     fprintf('  Solve: %g sec.\n',toc)
     
     tic
+    temp = zeros(ntheta_plasma*nzeta_plasma,1);
+    for j = 1:3
+        for js = 1:ns_magnetization
+            indices = (j-1)*ns_magnetization*num_basis_functions + (js-1)*num_basis_functions + (1:num_basis_functions);
+            temp = temp + g(:,:,js,j) * solution(indices);
+        end
+    end
+    this_Bnormal = reshape(temp,[ntheta_plasma,nzeta_plasma]) ./ norm_normal_plasma + Bnormal_from_TF_and_plasma_current;
+    Bnormal_total(:,:,ilambda) = this_Bnormal;
+    chi2_B(ilambda) = nfp*dtheta_plasma*dzeta_plasma*sum(sum(this_Bnormal .* this_Bnormal .* norm_normal_plasma));
+    %{
     single_valued_current_potential_mn(:,ilambda) = solution;
     this_single_valued_current_potential_thetazeta = reshape(basis_functions*solution, [ntheta_coil,nzeta_coil]);
     single_valued_current_potential_thetazeta(:,:,ilambda) = this_single_valued_current_potential_thetazeta;
@@ -1010,7 +1016,6 @@ for ilambda=1:nlambda
     this_Bnormal = Bnormal_from_TF_and_plasma_current + Bnormal_from_net_coil_currents ...
         + reshape(g*solution, [ntheta_plasma,nzeta_plasma]) ./ norm_normal_plasma;
     Bnormal_total(:,:,ilambda) = this_Bnormal;
-    chi2_B(ilambda) = nfp*dtheta_plasma*dzeta_plasma*sum(sum(this_Bnormal .* this_Bnormal .* norm_normal_plasma));
     
     K_difference_x = d_x - f_x*solution;
     K_difference_y = d_y - f_y*solution;
@@ -1018,18 +1023,14 @@ for ilambda=1:nlambda
     this_K2_over_N = reshape(K_difference_x.*K_difference_x + K_difference_y.*K_difference_y + K_difference_z.*K_difference_z, [ntheta_coil, nzeta_coil]) ./(norm_normal_coil);
     K2(:,:,ilambda) = this_K2_over_N ./ norm_normal_coil;
     chi2_K(ilambda) = nfp*dtheta_coil*dzeta_coil*sum(sum(this_K2_over_N));
-    
+    %}
     fprintf('  Diagnostics: %g sec.\n',toc)
-    fprintf('  chi2_B: %g,   chi2_K: %g\n',chi2_B(ilambda),chi2_K(ilambda))
+    fprintf('  chi2_B: %g,   chi2_M: %g\n',chi2_B(ilambda),chi2_M(ilambda))
 end
 
-compareVariableToFortran('single_valued_current_potential_mn')
-compareVariableToFortran('single_valued_current_potential_thetazeta')
-compareVariableToFortran('current_potential')
 compareVariableToFortran('Bnormal_total')
-compareVariableToFortran('K2')
 compareVariableToFortran('chi2_B')
-compareVariableToFortran('chi2_K')
+compareVariableToFortran('chi2_M')
 
 %return
 
