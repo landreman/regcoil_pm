@@ -183,4 +183,12 @@ subroutine regcoil_validate_input
      stop
   end select
 
+  select case (trim(s_integration_option))
+  case (s_integration_option_Gaussian)
+  case (s_integration_option_Chebyshev)
+  case default
+     print *,"Error! Unrecognized s_integration_option: ",trim(s_integration_option)
+     stop
+  end select
+
 end subroutine regcoil_validate_input

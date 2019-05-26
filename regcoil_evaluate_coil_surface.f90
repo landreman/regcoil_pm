@@ -3,6 +3,7 @@ subroutine regcoil_evaluate_coil_surface()
   ! This subroutine takes the arrays rmnc_coil, zmns_coil, etc, and evaluates the position vector r_coil
   ! and its first and second derivatives with respect to theta and zeta.
 
+  use regcoil_Gaussian_quadrature
   use regcoil_variables
   use stel_kinds
   
@@ -217,7 +218,14 @@ subroutine regcoil_evaluate_coil_surface()
   allocate(s_weights(ns_integration))
   allocate(s_magnetization(ns_magnetization))
   allocate(temp_matrix(ns_integration,ns_integration))
-  call regcoil_Chebyshev_grid(ns_integration,   0.0_dp, 1.0_dp, s_integration, s_weights, temp_matrix)
+  select case (trim(s_integration_option))
+  case (s_integration_option_Chebyshev)
+     call regcoil_Chebyshev_grid(ns_integration,   0.0_dp, 1.0_dp, s_integration, s_weights, temp_matrix)
+  case (s_integration_option_Gaussian)
+     call get_legendre_grids(0.0_dp, 1.0_dp, s_integration, s_weights)
+  case default
+     stop "Unrecognized s_integration_option"
+  end select
   deallocate(temp_matrix)
   allocate(temp_matrix(ns_magnetization,ns_magnetization))
   allocate(temp_array(ns_magnetization))

@@ -11,6 +11,7 @@ OBJ_FILES =  \
 	regcoil_evaluate_coil_surface.o \
 	regcoil_expand_plasma_surface.o \
 	regcoil_fzero.o \
+	regcoil_Gaussian_quadrature.o \
 	regcoil_init_coil_surface.o \
 	regcoil_init_Fourier_modes_mod.o \
 	regcoil_init_plasma_mod.o \
@@ -37,9 +38,10 @@ regcoil_Chebyshev_interpolation_matrix.o:
 regcoil_compute_lambda.o: regcoil_variables.o
 regcoil_compute_offset_surface_mod.o: regcoil_variables.o
 regcoil_diagnostics.o: regcoil_variables.o
-regcoil_evaluate_coil_surface.o: regcoil_variables.o
+regcoil_evaluate_coil_surface.o: regcoil_variables.o regcoil_Gaussian_quadrature.o
 regcoil_expand_plasma_surface.o: regcoil_variables.o
 regcoil_fzero.o: 
+regcoil_Gaussian_quadrature.o:
 regcoil_init_coil_surface.o: regcoil_compute_offset_surface_mod.o regcoil_init_Fourier_modes_mod.o regcoil_splines.o regcoil_variables.o
 regcoil_init_Fourier_modes_mod.o:
 regcoil_init_plasma_mod.o: regcoil_variables.o regcoil_read_efit_mod.o

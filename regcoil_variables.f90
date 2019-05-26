@@ -120,6 +120,11 @@ module regcoil_variables
        target_option_chi2_B = "chi2_B"
   character(len=200) :: target_option = target_option_max_M
 
+  character(len=*), parameter :: &
+       s_integration_option_Gaussian = "Gaussian", &
+       s_integration_option_Chebyshev = "Chebyshev"
+  character(len=200) :: s_integration_option = s_integration_option_Gaussian
+
   namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &
        R0_plasma, R0_coil, a_plasma, a_coil, &
@@ -131,7 +136,7 @@ module regcoil_variables
        load_bnorm, bnorm_filename, &
        shape_filename_plasma, nlambda, lambda_min, lambda_max, general_option, regularization_term_option, verbose, nescout_filename, &
        target_option, target_value, lambda_search_tolerance, &
-       ns_magnetization, ns_integration, d_initial
+       ns_magnetization, ns_integration, d_initial, s_integration_option
 
 end module regcoil_variables
 

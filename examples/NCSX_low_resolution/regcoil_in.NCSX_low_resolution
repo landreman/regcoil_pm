@@ -46,4 +46,6 @@
 
   mpol_coil_filter = 999
   ntor_coil_filter = 999
+
+  s_integration_option='Gaussian'
 /
