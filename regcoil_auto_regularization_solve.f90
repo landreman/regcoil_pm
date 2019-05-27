@@ -11,11 +11,14 @@ subroutine regcoil_auto_regularization_solve()
   real(dp) :: Brendt_a, Brendt_b, Brendt_c, Brendt_fa, Brendt_fb, Brendt_fc, Brendt_d, Brendt_e
   real(dp) :: Brendt_p, Brendt_q, Brendt_r, Brendt_s, Brendt_tol1, Brendt_xm, Brendt_EPS, factor
 
-  if (general_option==4) then
-     stage = 1
-  else
-     stage = 10
-  end if
+!!$  if (general_option==4) then
+!!$     stage = 1
+!!$  else
+!!$     stage = 10
+!!$  end if
+
+  stage = 10
+
   exit_code = -1
   do ilambda = 1,nlambda
 

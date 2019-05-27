@@ -2,7 +2,7 @@
 
 program regcoil
 
-  use regcoil_variables, only: total_time, output_filename, general_option
+  use regcoil_variables
   use regcoil_init_plasma_mod
 
   implicit none
@@ -26,17 +26,13 @@ program regcoil
   call regcoil_build_matrices()
   call regcoil_prepare_solve()
 
-  select case (general_option)
-  case (1)
+  select case (trim(lambda_option))
+  case (lambda_option_single,lambda_option_scan)
      call regcoil_lambda_scan()
-  case (2)
-     !call regcoil_compute_diagnostics_for_nescout_potential()
-  case (3)
-     !call regcoil_svd_scan()
-  case (4,5)
+  case (lambda_option_search)
      call regcoil_auto_regularization_solve()
   case default
-     print *,"Invalid general_option:",general_option
+     print *,"Invalid lambda_option:",lambda_option
      stop
   end select
 

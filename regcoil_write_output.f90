@@ -43,7 +43,8 @@ subroutine regcoil_write_output
        vn_nlambda = "nlambda", &
        vn_total_time = "total_time", &
        vn_exit_code = "exit_code", &
-       vn_chi2_B_target = "chi2_B_target"
+       vn_chi2_B_target = "chi2_B_target", &
+       vn_lambda_option = "lambda_option"
 
   ! Arrays with dimension 1
   character(len=*), parameter :: &
@@ -163,6 +164,8 @@ subroutine regcoil_write_output
 
   ! Scalars
 
+  call cdf_define(ncid, vn_lambda_option, lambda_option)
+
   call cdf_define(ncid, vn_nfp, nfp)
   call cdf_setatt(ncid, vn_nfp, 'Number of field periods, i.e. the number of identical toroidal segments, 5 for W7-X, 4 for HSX, etc. ' // &
        'Equivalent to the VMEC variable of the same name.' // input_parameter_text)
@@ -251,13 +254,13 @@ subroutine regcoil_write_output
   call cdf_setatt(ncid, vn_total_time, 'Total time it took regcoil to run, in seconds.')
 
   call cdf_define(ncid, vn_exit_code, exit_code)
-  call cdf_setatt(ncid, vn_exit_code, "Only meaningful when general_option = 4 or 5 so a lambda search is performed. " // &
+  call cdf_setatt(ncid, vn_exit_code, "Only meaningful when lambda_option=lambda_option_search so a lambda search is performed. " // &
        "exit_code = 0 means the lambda search was successful. " // &
        "exit_code = -1 means the lambda search did not converge to the requested tolerance within nlambda iterations. " // &
        "exit_code = -2 means the current_density_target you have set is not achievable because it is too low. " // &
        "exit_code = -3 means the current_density_target you have set is not achievable because it is too high.")
 
-  if (general_option==4 .or. general_option==5) then
+  if (trim(lambda_option)==lambda_option_search) then
      call cdf_define(ncid, vn_chi2_B_target, chi2_B_target)
      call cdf_setatt(ncid, vn_chi2_B_target, 'The value of chi^2_B at the final value of regularization parameter lambda resulting from the lambda search. ' // &
           'Units = Tesla^2 meters^2.')
@@ -419,6 +422,7 @@ subroutine regcoil_write_output
 
   ! Scalars
 
+  call cdf_write(ncid, vn_lambda_option, lambda_option)
   call cdf_write(ncid, vn_nfp, nfp)
   call cdf_write(ncid, vn_geometry_option_plasma, geometry_option_plasma)
   call cdf_write(ncid, vn_geometry_option_coil, geometry_option_coil)
@@ -450,7 +454,7 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_nlambda, nlambda)
   call cdf_write(ncid, vn_total_time, total_time)
   call cdf_write(ncid, vn_exit_code, exit_code)
-  if (general_option==4 .or. general_option==5) call cdf_write(ncid, vn_chi2_B_target, chi2_B_target)
+  if (trim(lambda_option)==lambda_option_search) call cdf_write(ncid, vn_chi2_B_target, chi2_B_target)
 
   ! Arrays with dimension 1
 

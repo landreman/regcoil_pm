@@ -4,15 +4,13 @@ module regcoil_variables
 
   implicit none
 
-  integer :: general_option=1
   logical :: verbose = .true.
 
   character(len=*), parameter :: &
-       regularization_term_option_chi2_K = "chi2_K", &
-       regularization_term_option_Laplace_Beltrami = "Laplace-Beltrami", &
-       regularization_term_option_K_xy = "K_xy", &
-       regularization_term_option_K_zeta = "K_zeta"
-  character(len=200) :: regularization_term_option = regularization_term_option_chi2_K
+       lambda_option_single = "single", &
+       lambda_option_scan = "scan", &
+       lambda_option_search = "search"
+  character(len=200) :: lambda_option = lambda_option_scan
 
   integer :: ntheta_plasma=64, nzeta_plasma=64, nzetal_plasma
   integer :: ntheta_coil=64, nzeta_coil=64, nzetal_coil
@@ -87,6 +85,7 @@ module regcoil_variables
 
   integer :: nlambda = 4
   real(dp) :: lambda_min = 1.0d-19, lambda_max = 1.0d-13
+  real(dp) :: lambda_single = 0
   real(dp), dimension(:), allocatable :: lambda
 
   real(dp), dimension(:,:), allocatable :: matrix
@@ -134,9 +133,9 @@ module regcoil_variables
        nescin_filename, efit_filename, efit_psiN, efit_num_modes, &
        mpol_transform_refinement, ntor_transform_refinement, max_mpol_coil, max_ntor_coil, &
        load_bnorm, bnorm_filename, &
-       shape_filename_plasma, nlambda, lambda_min, lambda_max, general_option, regularization_term_option, verbose, nescout_filename, &
+       shape_filename_plasma, nlambda, lambda_min, lambda_max, lambda_option, verbose, nescout_filename, &
        target_option, target_value, lambda_search_tolerance, &
-       ns_magnetization, ns_integration, d_initial, s_integration_option
+       ns_magnetization, ns_integration, d_initial, s_integration_option, lambda_single
 
 end module regcoil_variables
 

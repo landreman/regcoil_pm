@@ -21,6 +21,10 @@ if N1==1
     x=(a+b)/2;
     w=a-b;
     return
+elseif N1==2
+    x=[0;1];
+    w=[0.5;0.5];
+    return
 end
 N=N1-1; bma=b-a;
 c=zeros(N1,2);

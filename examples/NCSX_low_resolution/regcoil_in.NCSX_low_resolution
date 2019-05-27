@@ -5,7 +5,8 @@
 
 &regcoil_nml
 
-  general_option = 1
+  lambda_option = "single"
+  lambda_single = 1e-10
 
   nlambda = 20
   lambda_min = 1e-24

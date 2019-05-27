@@ -106,12 +106,12 @@ subroutine regcoil_validate_input
      stop "lambda_max must be >= lambda_min."
   end if
 
-  if (general_option<1) then
-     stop "general_option must be at least 1."
-  end if
-  if (general_option>5) then
-     stop "general_option must be no more than 5."
-  end if
+!!$  if (general_option<1) then
+!!$     stop "general_option must be at least 1."
+!!$  end if
+!!$  if (general_option>5) then
+!!$     stop "general_option must be no more than 5."
+!!$  end if
 
   ! General_option=2 does not make sense for permanent magnets
 !!$  if (general_option==2) then
@@ -137,12 +137,13 @@ subroutine regcoil_validate_input
      stop "target_value must be positive."
   end if
 
-  if (general_option == 4 ) then
-     print *,"It is recommended that you run with general_option=5 instead of 4"
-     print *,"to verify that this value of target_value is attainable."
-  end if
+!!$  if (general_option == 4 ) then
+!!$     print *,"It is recommended that you run with general_option=5 instead of 4"
+!!$     print *,"to verify that this value of target_value is attainable."
+!!$  end if
 
-  if (general_option==4 .or. general_option==5) then
+  !if (general_option==4 .or. general_option==5) then
+  if (trim(lambda_option)==lambda_option_search) then
      select case (trim(target_option))
      case (target_option_max_M,target_option_rms_M)
         typical_target_min = 1e5
@@ -173,13 +174,16 @@ subroutine regcoil_validate_input
      end if
   end if
 
-  select case (trim(regularization_term_option))
-  case (regularization_term_option_chi2_K)
-  case (regularization_term_option_Laplace_Beltrami)
-  case (regularization_term_option_K_xy)
-  case (regularization_term_option_K_zeta)
+  if (ns_integration < ns_magnetization) then
+     stop "ns_integration must be >= ns_magnetization"
+  end if
+
+  select case (trim(lambda_option))
+  case (lambda_option_single)
+  case (lambda_option_scan)
+  case (lambda_option_search)
   case default
-     print *,"Error! Unrecognized regularization_term_option: ",trim(regularization_term_option)
+     print *,"Error! Unrecognized lambda_option: ",trim(lambda_option)
      stop
   end select
 

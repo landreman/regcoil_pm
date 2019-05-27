@@ -20,6 +20,16 @@ bnorm_filename = '/Users/mattland/Box Sync/MATLAB/bnorm.d23p4_tm';
 % Resolution parameters:
 % **********************************
 
+ntheta_plasma = 64;
+ntheta_coil   = 64;
+nzeta_plasma = 64;
+nzeta_coil   = 64;
+mpol_magnetization  = 12;
+ntor_magnetization  = 12;
+ns_magnetization = 1;
+ns_integration = 2;
+
+%{
 ntheta_plasma = 30;
 ntheta_coil   = 33;
 nzeta_plasma = 36;
@@ -28,7 +38,17 @@ mpol_magnetization  = 6;
 ntor_magnetization  = 8;
 ns_magnetization = 1;
 ns_integration = 5;
-
+%}
+%{
+ntheta_plasma = 30;
+ntheta_coil   = 33;
+nzeta_plasma = 36;
+nzeta_coil   = 38;
+mpol_magnetization  = 6;
+ntor_magnetization  = 8;
+ns_magnetization = 1;
+ns_integration = 5;
+%}
 %{
 ntheta_plasma = 5;
 ntheta_coil   = 4; %33;
@@ -64,14 +84,14 @@ nescin_filename = '../examples/NCSX_low_resolution/surf.vv';
 
 d_initial = 0.01;
 
-s_integration_option = 'Gaussian';
-%s_integration_option = 'Chebyshev';
+%s_integration_option = 'Gaussian';
+s_integration_option = 'Chebyshev';
 
 % Options for the regularization parameter:
 % **********************************
-nlambda = 20;
-lambda_min = 1e-24;
-lambda_max = 1e20;
+nlambda = 40;
+lambda_min = 1e-26;
+lambda_max = 1e-3;
 
 % Plotting options:
 % **********************************
@@ -104,7 +124,8 @@ compareToFortran = true;
 
 %fortranNcFilename = 'C:\Users\landreman\Box Sync\MATLAB\bdistrib_out.compareToMatlab.nc';
 %fortranNcFilename = '/Users/mattland/regcoil/examples/compareToMatlab1/regcoil_out.compareToMatlab1.nc';
-fortranNcFilename = '../examples/NCSX_low_resolution/regcoil_out.NCSX_low_resolution.nc';
+%fortranNcFilename = '../examples/NCSX_low_resolution/regcoil_out.NCSX_low_resolution.nc';
+fortranNcFilename = '/Users/mattland/Box Sync/work19/20190526-01-testing_regcoil_pm/20190526-01-015-thetaZeta64_mpolNtor12_sMagnetization1_sIntegration2_Cheb_d0.01_1proc/regcoil_out.NCSX.nc';
 
 fortranComparisonThreshhold_abs = 1e-11;
 
@@ -188,6 +209,8 @@ switch s_integration_option
         [s_integration, s_weights] = glwt(ns_integration, 0, 1);
     case 'Chebyshev'
         [s_integration, s_weights] = clencurt(ns_integration, 0, 1);
+    otherwise
+        error('Unrecognized s_integration_option')
 end
 interpolate_magnetization_to_integration = m20130215_01_makeChebyshevInterpolationMatrix(ns_magnetization, 0, 1, s_integration);
 
