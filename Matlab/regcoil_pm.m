@@ -19,7 +19,7 @@ bnorm_filename = '/Users/mattland/Box Sync/MATLAB/bnorm.d23p4_tm';
 
 % Resolution parameters:
 % **********************************
-
+%{
 ntheta_plasma = 64;
 ntheta_coil   = 64;
 nzeta_plasma = 64;
@@ -28,17 +28,17 @@ mpol_magnetization  = 12;
 ntor_magnetization  = 12;
 ns_magnetization = 1;
 ns_integration = 2;
+%}
 
-%{
 ntheta_plasma = 30;
 ntheta_coil   = 33;
 nzeta_plasma = 36;
 nzeta_coil   = 38;
 mpol_magnetization  = 6;
 ntor_magnetization  = 8;
-ns_magnetization = 1;
-ns_integration = 5;
-%}
+ns_magnetization = 2;
+ns_integration = 3;
+
 %{
 ntheta_plasma = 30;
 ntheta_coil   = 33;
@@ -69,7 +69,7 @@ nfp_imposed = 1;
 %woutFilename = 'C:\Users\landreman\Box Sync\MATLAB\20150601-01 Sfincs version 3\equilibria\wout_w7x_standardConfig.nc';
 %woutFilename = '/Users/mattland/Box Sync/MATLAB/wout_d23p4_tm.nc';
 %woutFilename = 'equilibria/wout_d23p4_tm.nc';
-shape_filename_plasma = '../examples/NCSX_low_resolution/tf_only_half_tesla.plasma';
+shape_filename_plasma = '../equilibria/tf_only_half_tesla.plasma';
 
 % Options for the shape of the coil surface:
 % **********************************
@@ -80,16 +80,16 @@ separation = 0.35;
 %nescin_filename = 'nescin.w7x_standardConfig_separation0.3';
 %nescin_filename = '/Users/mattland/Box Sync/MATLAB/nescin.w7x_winding_surface_from_Drevlak';
 %nescin_filename = 'equilibria/nescin.w7x_winding_surface_from_Drevlak';
-nescin_filename = '../examples/NCSX_low_resolution/surf.vv';
+nescin_filename = '../equilibria/surf.vv';
 
 d_initial = 0.01;
 
-%s_integration_option = 'Gaussian';
-s_integration_option = 'Chebyshev';
+s_integration_option = 'Gaussian';
+%s_integration_option = 'Chebyshev';
 
 % Options for the regularization parameter:
 % **********************************
-nlambda = 40;
+nlambda = 20;
 lambda_min = 1e-26;
 lambda_max = 1e-3;
 
@@ -125,7 +125,9 @@ compareToFortran = true;
 %fortranNcFilename = 'C:\Users\landreman\Box Sync\MATLAB\bdistrib_out.compareToMatlab.nc';
 %fortranNcFilename = '/Users/mattland/regcoil/examples/compareToMatlab1/regcoil_out.compareToMatlab1.nc';
 %fortranNcFilename = '../examples/NCSX_low_resolution/regcoil_out.NCSX_low_resolution.nc';
-fortranNcFilename = '/Users/mattland/Box Sync/work19/20190526-01-testing_regcoil_pm/20190526-01-015-thetaZeta64_mpolNtor12_sMagnetization1_sIntegration2_Cheb_d0.01_1proc/regcoil_out.NCSX.nc';
+%fortranNcFilename = '/Users/mattland/Box Sync/work19/20190526-01-testing_regcoil_pm/20190526-01-015-thetaZeta64_mpolNtor12_sMagnetization1_sIntegration2_Cheb_d0.01_1proc/regcoil_out.NCSX.nc';
+%fortranNcFilename = '/Users/mattland/Box Sync/work19/20190526-01-testing_regcoil_pm/20190526-01-038-loRes_sMagnetization2_sIntegration3_Gauss_d0.01/regcoil_out.NCSX.nc';
+fortranNcFilename = '/Users/mattland/regcoil_pm/examples/compareToMatlab1/regcoil_out.compareToMatlab1.nc';
 
 fortranComparisonThreshhold_abs = 1e-11;
 

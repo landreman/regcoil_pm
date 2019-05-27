@@ -4,15 +4,15 @@
   lambda_min = 1e-26
   lambda_max = 1e-3
 
-  ntheta_plasma = 64
-  ntheta_coil   = 64
+  ntheta_plasma = 63
+  ntheta_coil   = 66
   nzeta_plasma  = 64
-  nzeta_coil    = 64
+  nzeta_coil    = 65
   mpol_magnetization = 12
-  ntor_magnetization = 12
+  ntor_magnetization = 13
 
   ns_magnetization=1
-  ns_integration=2
+  ns_integration=4
 
   geometry_option_plasma = 7
   shape_filename_plasma = '../../equilibria/tf_only_half_tesla.plasma'

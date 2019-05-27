@@ -16,7 +16,7 @@ subroutine regcoil_build_matrices()
   real(dp) :: angle, sinangle, cosangle, factor, constants, normal_plasma_dot_dr
   real(dp), dimension(:,:,:,:), allocatable :: g_over_N_plasma
   real(dp), dimension(:), allocatable :: norm_normal_plasma_inv1D
-  integer :: js, ks, ls, row_offset, col_offset, j_RZetaZ, k_RZetaZ, block_size
+  integer :: js, ks, ls, row_offset, col_offset, j_RZetaZ, k_RZetaZ, k_RZetaZ_max, block_size
   real(dp), dimension(:,:), allocatable :: regularization_block, temp_matrix, Jacobian_coil_2D, regularization_without_RZetaZ
   real(dp), dimension(:,:), allocatable :: basis_functions_times_d
   real(dp), dimension(:), allocatable :: cos_zetal, sin_zetal, Bnormal_to_cancel_1D
@@ -309,7 +309,9 @@ subroutine regcoil_build_matrices()
   do js = 1, ns_magnetization
      do ks = 1, js
         do j_RZetaZ = 1, 3
-           do k_RZetaZ = 1, j_RZetaZ
+           k_RZetaZ_max = 3
+           if (js==ks) k_RZetaZ_max = j_RZetaZ
+           do k_RZetaZ = 1, k_RZetaZ_max
               row_offset = (j_RZetaZ-1)*ns_magnetization*num_basis_functions + (js-1)*num_basis_functions
               col_offset = (k_RZetaZ-1)*ns_magnetization*num_basis_functions + (ks-1)*num_basis_functions
               call system_clock(tic1)

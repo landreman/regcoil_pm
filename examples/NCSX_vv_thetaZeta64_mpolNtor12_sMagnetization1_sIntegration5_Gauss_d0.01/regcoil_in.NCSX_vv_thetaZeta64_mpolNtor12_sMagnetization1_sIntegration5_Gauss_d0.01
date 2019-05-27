@@ -18,6 +18,6 @@
   shape_filename_plasma = '../../equilibria/tf_only_half_tesla.plasma'
 
   geometry_option_coil=3
-  nescin_filename = '../../equilibria/surf.vv'
+  nescin_filename = '../../equilibria/NCSX.vv'
 
 /
