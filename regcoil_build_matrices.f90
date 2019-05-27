@@ -164,13 +164,13 @@ subroutine regcoil_build_matrices()
   ! This ensures the multiple threads write to different indices in h() rather than to the same indices in h(),
   ! in which case the h(index+plasma)=h(index_plasma)+... update does not work properly.
   !$OMP DO PRIVATE(index_plasma,index_coil,x,y,z,izetal_coil,dx,dy,dz,dr2inv,dr32inv,factor)
-  do ks = 1, ns_magnetization
-     do izeta_plasma = 1, nzeta_plasma
-        do itheta_plasma = 1, ntheta_plasma
-           index_plasma = (izeta_plasma-1)*ntheta_plasma + itheta_plasma
-           x = r_plasma(1,itheta_plasma,izeta_plasma)
-           y = r_plasma(2,itheta_plasma,izeta_plasma)
-           z = r_plasma(3,itheta_plasma,izeta_plasma)
+  do izeta_plasma = 1, nzeta_plasma
+     do itheta_plasma = 1, ntheta_plasma
+        index_plasma = (izeta_plasma-1)*ntheta_plasma + itheta_plasma
+        x = r_plasma(1,itheta_plasma,izeta_plasma)
+        y = r_plasma(2,itheta_plasma,izeta_plasma)
+        z = r_plasma(3,itheta_plasma,izeta_plasma)
+        do ks = 1, ns_magnetization
            do izeta_coil = 1, nzeta_coil
               do itheta_coil = 1, ntheta_coil
                  index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil

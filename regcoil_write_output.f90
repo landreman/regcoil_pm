@@ -409,8 +409,9 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_Jacobian_coil, Jacobian_coil, dimname=ntheta_nzeta_coil_ns_integration_dim)
 
   ! Arrays with dimension 4
-
-  call cdf_define(ncid, vn_g,  g,  dimname=ntheta_nzeta_plasma_basis_ns_magnetization_RZetaZ_dim)
+  if (save_level < 1) then
+     call cdf_define(ncid, vn_g,  g,  dimname=ntheta_nzeta_plasma_basis_ns_magnetization_RZetaZ_dim)
+  end if
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
   ! Done with cdf_define calls. Now write the data.
@@ -519,7 +520,9 @@ subroutine regcoil_write_output
 
   ! Arrays with dimension 4
 
-  call cdf_write(ncid, vn_g,  g)
+  if (save_level<1) then
+     call cdf_write(ncid, vn_g,  g)
+  end if
 
   ! Finish up:
   call cdf_close(ncid)

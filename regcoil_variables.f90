@@ -68,7 +68,7 @@ module regcoil_variables
   integer :: save_level = 3
   integer :: nfp_imposed = 1
 
-  integer :: symmetry_option = 1
+  integer :: symmetry_option = 3
   real(dp) :: total_time
 
   integer :: efit_num_modes = 10
@@ -106,7 +106,7 @@ module regcoil_variables
   real(dp), dimension(:,:), allocatable :: mean_curvature_coil
   real(dp), dimension(:,:), allocatable :: d
   integer :: ns_magnetization = 1
-  integer :: ns_integration = 5
+  integer :: ns_integration = 2
   real(dp) :: d_initial = 0.01d+0
   real(dp), dimension(:), allocatable :: s_integration, s_weights, s_magnetization
   real(dp), dimension(:,:), allocatable :: interpolate_magnetization_to_integration
