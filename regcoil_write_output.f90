@@ -380,8 +380,10 @@ subroutine regcoil_write_output
 
   call cdf_define(ncid, vn_mean_curvature_coil,  mean_curvature_coil,  dimname=ntheta_nzeta_coil_dim)
 
-  call cdf_define(ncid, vn_matrix_B,  matrix_B,  dimname=system_size_system_size_dim)
-  call cdf_define(ncid, vn_matrix_regularization,  matrix_regularization,  dimname=system_size_system_size_dim)
+  if (save_level < 3) then
+     call cdf_define(ncid, vn_matrix_B,  matrix_B,  dimname=system_size_system_size_dim)
+     call cdf_define(ncid, vn_matrix_regularization,  matrix_regularization,  dimname=system_size_system_size_dim)
+  end if
 
   ! Arrays with dimension 3
 
@@ -499,8 +501,10 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_norm_normal_coil,  norm_normal_coil)
   call cdf_write(ncid, vn_Bnormal_from_TF_and_plasma_current, Bnormal_from_TF_and_plasma_current)
   call cdf_write(ncid, vn_mean_curvature_coil, mean_curvature_coil)
-  call cdf_write(ncid, vn_matrix_B, matrix_B)
-  call cdf_write(ncid, vn_matrix_regularization, matrix_regularization)
+  if (save_level < 3) then
+     call cdf_write(ncid, vn_matrix_B, matrix_B)
+     call cdf_write(ncid, vn_matrix_regularization, matrix_regularization)
+  end if
 
   ! Arrays with dimension 3
 

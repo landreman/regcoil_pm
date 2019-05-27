@@ -61,7 +61,7 @@ module regcoil_variables
   integer :: nfp
   logical :: lasym
   integer :: max_mpol_coil = 24, max_ntor_coil = 24 ! These variables are upper limits on the # of Fourier modes used to describe a uniform-offset coil surface.
-  integer :: mpol_coil_filter = 24, ntor_coil_filter = 24
+  integer :: mpol_coil_filter = 9999, ntor_coil_filter = 9999
 
   integer :: save_level = 3
   integer :: nfp_imposed = 1
