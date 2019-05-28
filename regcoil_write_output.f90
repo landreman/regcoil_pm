@@ -103,7 +103,13 @@ subroutine regcoil_write_output
 
   ! Arrays with dimension 4
   character(len=*), parameter :: &
-       vn_g  = "g"
+       vn_g  = "g", &
+       vn_abs_M = "abs_M", &
+       vn_magnetization_vector_mn = "magnetization_vector_mn"
+
+  ! Arrays with dimension 5
+  character(len=*), parameter :: &
+       vn_magnetization_vector  = "magnetization_vector"
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Now create variables that name the dimensions.
@@ -149,7 +155,13 @@ subroutine regcoil_write_output
 
   ! Arrays with dimension 4:
   character(len=*), parameter, dimension(4) :: &
-       ntheta_nzeta_plasma_basis_ns_magnetization_RZetaZ_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','num_basis_functions','ns_magnetization','RZetaZ'/)
+       ntheta_nzeta_plasma_basis_ns_magnetization_RZetaZ_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','num_basis_functions','ns_magnetization','RZetaZ'/), &
+       ntheta_nzeta_coil_ns_magnetization_nlambda_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil', 'ns_magnetization','nlambda' /), &
+       basis_ns_magnetization_RZetaZ_nlambda_dim = (/ character(len=50) :: 'num_basis_functions','ns_magnetization','RZetaZ','nlambda' /) 
+
+  ! Arrays with dimension 5:
+  character(len=*), parameter, dimension(5) :: &
+       ntheta_nzeta_coil_ns_magnetization_RZetaZ_nlambda_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil', 'ns_magnetization','RZetaZ','nlambda' /)
 
   character(len=*), parameter :: input_parameter_text = ' See the user manual documentation for the input parameter of the same name.'
 
@@ -412,11 +424,19 @@ subroutine regcoil_write_output
        'for each value of the regularization parameter lambda considered.')
 
   call cdf_define(ncid, vn_Jacobian_coil, Jacobian_coil, dimname=ntheta_nzeta_coil_ns_integration_dim)
-
+ 
   ! Arrays with dimension 4
+
   if (save_level < 1) then
      call cdf_define(ncid, vn_g,  g,  dimname=ntheta_nzeta_plasma_basis_ns_magnetization_RZetaZ_dim)
   end if
+
+  call cdf_define(ncid, vn_abs_M, abs_M, dimname=ntheta_nzeta_coil_ns_magnetization_nlambda_dim)
+  call cdf_define(ncid, vn_magnetization_vector_mn, magnetization_vector_mn, dimname=basis_ns_magnetization_RZetaZ_nlambda_dim)
+
+  ! Arrays with dimension 5
+
+  call cdf_define(ncid, vn_magnetization_vector, magnetization_vector, dimname=ntheta_nzeta_coil_ns_magnetization_RZetaZ_nlambda_dim)
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
   ! Done with cdf_define calls. Now write the data.
@@ -531,6 +551,13 @@ subroutine regcoil_write_output
   if (save_level<1) then
      call cdf_write(ncid, vn_g,  g)
   end if
+
+  call cdf_write(ncid, vn_abs_M, abs_M)
+  call cdf_write(ncid, vn_magnetization_vector_mn, magnetization_vector_mn)
+
+  ! Arrays with dimension 5
+
+  call cdf_write(ncid, vn_magnetization_vector, magnetization_vector)
 
   ! Finish up:
   call cdf_close(ncid)

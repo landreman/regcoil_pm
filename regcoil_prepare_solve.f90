@@ -50,13 +50,8 @@ subroutine regcoil_prepare_solve()
   allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 14!'
 
-  allocate(M_R_mn(   num_basis_functions,ns_magnetization,nlambda))
-  allocate(M_zeta_mn(num_basis_functions,ns_magnetization,nlambda))
-  allocate(M_Z_mn(   num_basis_functions,ns_magnetization,nlambda))
-
-  allocate(M_R(   ntheta_coil, nzeta_coil, ns_magnetization, nlambda))
-  allocate(M_zeta(ntheta_coil, nzeta_coil, ns_magnetization, nlambda))
-  allocate(M_Z(   ntheta_coil, nzeta_coil, ns_magnetization, nlambda))
+  allocate(magnetization_vector(ntheta_coil, nzeta_coil, ns_magnetization, 3, nlambda))
+  allocate(magnetization_vector_mn(num_basis_functions, ns_magnetization, 3, nlambda))
   allocate(abs_M( ntheta_coil, nzeta_coil, ns_magnetization, nlambda))
 
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array

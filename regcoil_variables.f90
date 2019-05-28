@@ -39,8 +39,9 @@ module regcoil_variables
   real(dp), dimension(:), allocatable :: RHS_B, RHS_regularization
   real(dp), dimension(:,:,:), allocatable :: Bnormal_total
   real(dp), dimension(:), allocatable :: chi2_B, chi2_M, max_Bnormal, max_M, min_M
-  real(dp), dimension(:,:,:,:), allocatable :: M_R, M_zeta, M_Z, abs_M
-  real(dp), dimension(:,:,:), allocatable :: M_R_mn, M_zeta_mn, M_Z_mn
+  real(dp), dimension(:,:,:,:), allocatable :: abs_M
+  real(dp), dimension(:,:,:,:,:), allocatable :: magnetization_vector
+  real(dp), dimension(:,:,:,:), allocatable :: magnetization_vector_mn
 
   real(dp), dimension(:), allocatable :: theta_coil, zeta_coil, zetal_coil
   real(dp), dimension(:,:,:), allocatable :: r_coil, drdtheta_coil, drdzeta_coil, normal_coil

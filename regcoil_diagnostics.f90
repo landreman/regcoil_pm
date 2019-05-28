@@ -17,18 +17,20 @@ subroutine regcoil_diagnostics(ilambda)
   ! Unpack the solution vector.
   do js = 1, ns_magnetization
      offset = 0*ns_magnetization*num_basis_functions + (js-1) * num_basis_functions
-     M_R_mn(:,js,ilambda) = solution(offset+1:offset+num_basis_functions)
-     M_R(:,:,js,ilambda) = reshape(matmul(basis_functions, solution(offset+1:offset+num_basis_functions)), (/ ntheta_coil, nzeta_coil /))
+     magnetization_vector_mn(:,js,1,ilambda) = solution(offset+1:offset+num_basis_functions)
+     magnetization_vector( :,:,js,1,ilambda) = reshape(matmul(basis_functions, solution(offset+1:offset+num_basis_functions)), (/ ntheta_coil, nzeta_coil /))
 
      offset = 1*ns_magnetization*num_basis_functions + (js-1) * num_basis_functions
-     M_zeta_mn(:,js,ilambda) = solution(offset+1:offset+num_basis_functions)
-     M_zeta(:,:,js,ilambda) = reshape(matmul(basis_functions, solution(offset+1:offset+num_basis_functions)), (/ ntheta_coil, nzeta_coil /))
+     magnetization_vector_mn(:,js,2,ilambda) = solution(offset+1:offset+num_basis_functions)
+     magnetization_vector( :,:,js,2,ilambda) = reshape(matmul(basis_functions, solution(offset+1:offset+num_basis_functions)), (/ ntheta_coil, nzeta_coil /))
 
      offset = 2*ns_magnetization*num_basis_functions + (js-1) * num_basis_functions
-     M_Z_mn(:,js,ilambda) = solution(offset+1:offset+num_basis_functions)
-     M_Z(:,:,js,ilambda) = reshape(matmul(basis_functions, solution(offset+1:offset+num_basis_functions)), (/ ntheta_coil, nzeta_coil /))
+     magnetization_vector_mn(:,js,3,ilambda) = solution(offset+1:offset+num_basis_functions)
+     magnetization_vector( :,:,js,3,ilambda) = reshape(matmul(basis_functions, solution(offset+1:offset+num_basis_functions)), (/ ntheta_coil, nzeta_coil /))
 
-     abs_M(:,:,js,ilambda) = sqrt(M_R(:,:,js,ilambda) * M_R(:,:,js,ilambda) + M_zeta(:,:,js,ilambda) * M_zeta(:,:,js,ilambda) + M_Z(:,:,js,ilambda) * M_Z(:,:,js,ilambda))
+     abs_M(:,:,js,ilambda) = sqrt(magnetization_vector(:,:,js,1,ilambda) * magnetization_vector(:,:,js,1,ilambda) &
+          + magnetization_vector(:,:,js,2,ilambda) * magnetization_vector(:,:,js,2,ilambda) &
+          + magnetization_vector(:,:,js,3,ilambda) * magnetization_vector(:,:,js,3,ilambda))
   end do
 
   chi2_M(ilambda) = dot_product(solution, matmul(matrix_regularization, solution)) * nfp
@@ -37,9 +39,9 @@ subroutine regcoil_diagnostics(ilambda)
   do itheta = 1, ntheta_coil
      do izeta = 1, nzeta_coil
         chi2_M_alt = chi2_M_alt + d(itheta,izeta) * dot_product(s_weights * Jacobian_coil(itheta,izeta,:), &
-             matmul(interpolate_magnetization_to_integration, M_R(itheta,izeta,:,ilambda)) ** 2 &
-             + matmul(interpolate_magnetization_to_integration, M_zeta(itheta,izeta,:,ilambda)) ** 2 &
-             + matmul(interpolate_magnetization_to_integration, M_Z(itheta,izeta,:,ilambda)) ** 2)
+             matmul(interpolate_magnetization_to_integration, magnetization_vector(itheta,izeta,:,1,ilambda)) ** 2 &
+             + matmul(interpolate_magnetization_to_integration, magnetization_vector(itheta,izeta,:,2,ilambda)) ** 2 &
+             + matmul(interpolate_magnetization_to_integration, magnetization_vector(itheta,izeta,:,3,ilambda)) ** 2)
      end do
   end do
   chi2_M_alt = chi2_M_alt * nfp * dtheta_coil * dzeta_coil
@@ -49,7 +51,7 @@ subroutine regcoil_diagnostics(ilambda)
   allocate(temp_array(ntheta_plasma * nzeta_plasma))
   temp_array = 0
   do js = 1, ns_magnetization
-     temp_array = temp_array + matmul(g(:,:,js,1), M_R_mn(:,js,ilambda)) + matmul(g(:,:,js,2), M_zeta_mn(:,js,ilambda)) + matmul(g(:,:,js,3), M_Z_mn(:,js,ilambda))
+     temp_array = temp_array + matmul(g(:,:,js,1), magnetization_vector_mn(:,js,1,ilambda)) + matmul(g(:,:,js,2), magnetization_vector_mn(:,js,2,ilambda)) + matmul(g(:,:,js,3), magnetization_vector_mn(:,js,3,ilambda))
   end do
   !Bnormal_total(:,:,ilambda) = (reshape(matmul(g,solution),(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &
   Bnormal_total(:,:,ilambda) = (reshape(temp_array,(/ ntheta_plasma, nzeta_plasma /)) / norm_normal_plasma) &

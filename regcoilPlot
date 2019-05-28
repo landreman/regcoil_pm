@@ -38,6 +38,8 @@ chi2_B = f.variables['chi2_B'][()]
 chi2_M = f.variables['chi2_M'][()]
 max_M = f.variables['max_M'][()]
 min_M = f.variables['min_M'][()]
+abs_M = f.variables['abs_M'][()]
+ns_magnetization = f.variables['ns_magnetization'][()]
 Bnormal_from_TF_and_plasma_current = f.variables['Bnormal_from_TF_and_plasma_current'][()]
 Bnormal_total = f.variables['Bnormal_total'][()]
 # = f.variables[''][()]
@@ -49,6 +51,7 @@ print "ntheta_plasma: ",ntheta_plasma
 print "nzetal_plasma: ",nzetal_plasma
 print "r_plasma.shape: ",r_plasma.shape
 print "Bnormal_total.shape: ",Bnormal_total.shape
+print "abs_M.shape: ",abs_M.shape
 
 f.close()
 
@@ -221,6 +224,40 @@ mpl.rc('xtick',labelsize=7)
 mpl.rc('ytick',labelsize=7)
 
 numContours = 20
+
+########################################################
+# Plot |M|
+########################################################
+
+num_abs_M_figures = 1
+if ns_magnetization>1:
+    num_abs_M_figures = 2
+
+for js in range(num_abs_M_figures):
+    if num_abs_M_figures==1:
+        title_string = ''
+    else:
+        if js==0:
+            title_string = ', side facing plasma'
+        else:
+            title_string = ', side facing away from plasma'
+
+    ks = js * (ns_magnetization - 1)
+
+    figureNum += 1
+    fig = plt.figure(figureNum,figsize=(14,7))
+    fig.patch.set_facecolor('white')
+
+    for whichPlot in range(numPlots):
+        plt.subplot(numRows,numCols,whichPlot+1)
+        plt.contourf(zeta_plasma, theta_plasma, np.transpose(abs_M[ilambda_to_plot[whichPlot]-1,ks,:,:]), numContours)
+        plt.colorbar()
+        plt.xlabel('zeta (coil)',fontsize='x-small')
+        plt.ylabel('theta (coil)',fontsize='x-small')
+        plt.title('lambda={:.2e}'.format(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
+
+    plt.tight_layout()
+    plt.figtext(0.5,0.99,"Magnitude of the magnetization (|M|)"+title_string,horizontalalignment='center',verticalalignment='top',fontsize='small')
 
 ########################################################
 # Plot Bnormal
