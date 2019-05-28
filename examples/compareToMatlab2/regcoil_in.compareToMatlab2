@@ -1,0 +1,27 @@
+&regcoil_nml
+
+  sign_normal = -1
+  d_initial = 0.005
+
+  nlambda = 20
+  lambda_min = 1e-26
+  lambda_max = 1e-3
+
+  ntheta_plasma = 38
+  ntheta_coil   = 36
+  nzeta_plasma  = 33
+  nzeta_coil    = 30
+  mpol_magnetization = 8
+  ntor_magnetization = 7
+
+  ns_magnetization=3
+  ns_integration=3
+
+  geometry_option_plasma = 7
+  shape_filename_plasma = '/Users/mattland/regcoil_pm/equilibria/tf_only_half_tesla.plasma'
+
+  geometry_option_coil=3
+  nescin_filename = '/Users/mattland/regcoil_pm/equilibria/NCSX.vv'
+
+  save_level=0
+/

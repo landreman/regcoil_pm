@@ -11,77 +11,18 @@ In this section we describe all the parameters which can be included in the inpu
 
 \section{General parameters}
 
-\param{general\_option}
-{integer}
-{1}
-{Always}
-{Determines the overall flow of program execution.\\
-
-{\ttfamily general\_option} = 1: Compute the current potential for a range of $\lambda$.\\
-
-{\ttfamily general\_option} = 2: Do not compute the current potential, but rather load the current potential computed
-by \nescoil~in the file \parlink{nescout\_filename}, compute the $\chi^2_B$ and $\chi^2_K$ for it,
-and save results. For this setting, \parlink{Nlambda} will be over-written with the number of
-current potential solutions found in the nescout file.\\
-
-{\ttfamily general\_option} = 3: Emulate \nescoil's truncated singular value decomposition (TSVD) solver.
-The least-squares problem solved will be minimization of only $\chi^2_B$ (i.e. $\lambda=0$.)
-Output quantities will be saved in the same arrays as if $\lambda$ were scanned.
-For this setting, \parlink{Nlambda} will be over-written with the number of
-singular values.\\
-
-{\ttfamily general\_option} = 4: Search for a value of the regularization weight such that
-a certain target is met. The target is chosen using \parlink{target\_option}.
-Use this value of {\ttfamily general\_option} for running \regcoil~inside
-a fixed-boundary plasma shape optimization, in which case {\ttfamily chi2\_B\_target}
-is the objective function you should minimize in the optimization.\\
-
-{\ttfamily general\_option} = 5: Same as 4, except that before the $\lambda$ search is carried out,
-the system is solved
-for $\lambda=0$ and $\lambda=\infty$ to check whether the current density target is attainable.
-Thus, this option takes a little more time than {\ttfamily general\_option}=4 but is more robust.
-}
-
-\myhrule
-
-\param{regularization\_term\_option}
-{string}
-{{\ttfamily "chi2\_K"}}
-{Always}
-{Determines which term is used for regularization.\\
-
-{\ttfamily regularization\_term\_option = "chi2\_K"}: Use $\chi^2_K$ as the regularization term, as described in the Nuclear Fusion paper.\\
-
-{\ttfamily regularization\_term\_option = "Laplace-Beltrami"}: Use $\int d^2a (\nabla^2 \Phi)^2$ as the regularization term, where the integral is 
-performed over the coil surface, and $\nabla^2$ is the Laplace-Beltrami operator.
-
-}
-
-\myhrule
-
-\param{nescout\_filename}
-{string}
-{{\ttfamily ""}}
-{Only when \parlink{general\_option}=2.}
-{Name of a \nescoil~output file which can be read in for processing.
-}
-
-\myhrule
-
 \param{symmetry\_option}
 {integer}
 {1}
 {Always}
-{Determines whether stellarator symmetry is imposed.\\
+{Determines whether stellarator symmetry is imposed. At the moment, only option 3 works.\\
 
-{\ttfamily symmetry\_option} = 1: Force the single-valued part of the current potential
-to be odd in $\theta$ and $\zeta$. This option corresponds to stellarator symmetry.\\
+{\ttfamily symmetry\_option} = 1: Force the magnetization to be stellarator symmetric.\\
 
-{\ttfamily symmetry\_option} = 2: Force the single-valued part of the current potential
-to be even in $\theta$ and $\zeta$. I'm not sure why you would ever use this option,
+{\ttfamily symmetry\_option} = 2: Force the magnetization to be stellarator-asymmetric. I'm not sure why you would ever use this option,
 but it is available for completeness.\\
 
-{\ttfamily symmetry\_option} = 3: No symmetry in the current potential is imposed.
+{\ttfamily symmetry\_option} = 3: No symmetry in the magnetization is imposed.
 }
 
 \myhrule
@@ -94,23 +35,9 @@ but it is available for completeness.\\
 
 {\ttfamily save\_level} = 0: Save everything.\\
 
-{\ttfamily save\_level} = 1: Do not save the inductance matrix.\\
+{\ttfamily save\_level} = 1: Do not save the matrix $g$ that relates each degree of freedom of $\vect{M}$ to $B_{normal}$ at each point on the plasma surface.\\
 
-{\ttfamily save\_level} = 2: Also do not save the matrix $g$.\\
-
-{\ttfamily save\_level} = 3: Also do not save the normal vector or derivatives of the position vector.
-}
-
-\myhrule
-
-\param{load\_bnorm}
-{logical}
-{\false}
-{When \parlink{general\_option}=1 or 3.}
-{Whether or not an output file from the \bnorm~code is to be loaded.
-Set this option to \true~if there is significant current in the plasma,
-meaning the coils will need to cancel the associated magnetic field component normal
-to the target plasma surface.
+{\ttfamily save\_level} = 3: Also do not save the normal vector or derivatives of the position vector, or the matrices representing $\chi_B^2$ or $\chi_M^2$.
 }
 
 \myhrule
@@ -118,40 +45,17 @@ to the target plasma surface.
 \param{bnorm\_filename}
 {string}
 {{\ttfamily ""}}
-{When \parlink{general\_option}=1 or 3 and \parlink{load\_bnorm}=\true.}
+{When \parlink{geometry\_option\_plasma} is not 7.}
 {Output file from the \bnorm~code which contains the magnetic field normal to the target
-plasma surface associated with current inside the plasma.}
-
-\myhrule
-
-\param{net\_poloidal\_current\_Amperes}
-{real}
-{1.0}
-{If \parlink{geometry\_option\_plasma}=0,1, 5 or 7, i.e. if the plasma surface is not a vmec equilibrium.}
-{The number of Amperes of current the links the coil winding surface poloidally,
-denoted $G$ in \cite{regcoilPaper}. If the plasma surface is obtained from a vmec equilibrium,
-then {\ttfamily net\_poloidal\_current\_Amperes} will be determined instead
-from the {\ttfamily bvco} value in the vmec wout file.
-}
-
-\myhrule
-
-\param{net\_toroidal\_current\_Amperes}
-{real}
-{0.0}
-{Always}
-{The number of Amperes of current the links the coil winding surface toroidally,
-denoted $I$ in \cite{regcoilPaper}. Unlike the net poloidal current, this number
-is never read from a wout file.
-}
-
+plasma surface associated with current inside the plasma and with coils such as planar TF coils.}
 
 
 \section{Resolution parameters}
 
 For any new set of surface geometries you consider, you should vary the resolution parameters in this section to make sure
 they are large enough.  These parameters should be large enough that the code results you care about are unchanged under further
-resolution increases.
+resolution increases. (A possible exception is \parlink{ns\_magnetization}, which you may want to set to 1 to make the magnetization
+uniform in the $s$ direction.)
 
 \myhrule
 
@@ -169,7 +73,7 @@ It is resonable and common but not mandatory to use the same value for {\ttfamil
 {integer}
 {64}
 {Always}
-{Number of grid points in poloidal angle used to evaluate surface integrals on the coil winding surface.
+{Number of grid points in poloidal angle used to evaluate integrals over the magnetization region.
 Often 64 or 128 is a good value.
 It is resonable and common but not mandatory to use the same value for \parlink{ntheta\_plasma} and {\ttfamily ntheta\_coil}.}
 
@@ -190,27 +94,49 @@ It is resonable and common but not mandatory to use the same value for {\ttfamil
 {integer}
 {64}
 {Always}
-{Number of grid points in toroidal angle used to evaluate surface integrals on the coil winding surface.
+{Number of grid points in toroidal angle used to evaluate integrals over the magnetization region.
 Often 64 or 128 is a good value.
 It is resonable and common but not mandatory to use the same value for \parlink{nzeta\_plasma} and {\ttfamily nzeta\_coil}.}
 
 \myhrule
 
-\param{mpol\_potential}
+\param{mpol\_magnetization}
 {integer}
 {12}
 {Always}
-{Maximum poloidal mode number to include for the single-valued part of the current potential on the coil winding surface.
+{Maximum poloidal mode number to include for the magnetization.
 }
 
 \myhrule
 
-\param{ntor\_potential}
+\param{ntor\_magnetization}
 {integer}
 {12}
 {Always}
 {
-Maximum toroidal mode number to include for the single-valued part of the current potential on the coil winding surface.
+Maximum toroidal mode number to include for the magnetization.
+}
+
+\myhrule
+
+\param{ns\_integration}
+{integer}
+{2}
+{Always}
+{
+Number of grid points in the radial coordinate $s$ used for integration over the magnetization region.
+It is required that {\ttfamily ns\_integration} $\ge$ \parlink{ns\_magnetization}.
+}
+
+\myhrule
+
+\param{ns\_magnetization}
+{integer}
+{1}
+{Always}
+{
+Number of grid points in the radial coordinate $s$ used to discretize the magnetization vector. If you wish the Cartesian components of $\vect{M}$ to be
+independent of $s$, you can set {\ttfamily ns\_magnetization=1}.
 }
 
 \myhrule
@@ -254,7 +180,7 @@ but does not affect the time for other calculations.
 
 {\ttfamily geometry\_option\_plasma} = 1: Identical to option 0.\\
 
-{\ttfamily geometry\_option\_plasma} = 2: The plasma surface will be the last surface in the full radial grid of the \vmec~file specified by \parlink{wout\_ilename}.
+{\ttfamily geometry\_option\_plasma} = 2: The plasma surface will be the last surface in the full radial grid of the \vmec~file specified by \parlink{wout\_filename}.
 The poloidal angle used will be the normal \vmec~angle which is not a straight-field-line coordinate.
 This is typically the best option to use for working with \vmec~equilibria.\\
 
@@ -346,26 +272,49 @@ A value of 1 corresponds to the last closed flux surface, and 0 corresponds to t
 the plasma surface. Each of these functions will be expanded in a sum of functions $\sin(m\theta)$ and $\cos(m\theta)$,
 where $m$ ranges from 0 to {\ttfamily efit\_num\_modes}$-1$.}
 
-\section{Geometry parameters for the coil winding surface}
+\section{Geometry parameters for the magnetization region}
+
+For greater code consistency with standard REGCOIL, many variables describing the magnetization region include the word {\ttfamily coil}
+even though they describe a region of magnetization rather than coils.
+
+\myhrule
+
+\param{d\_initial}
+{real}
+{0.01}
+{Always}
+{Uniform thickness of the magnetization region, in meters.}
+
+\myhrule
+
+\param{sign\_normal}
+{integer}
+{1}
+{Always}
+{If equal to $+1$, the magnetization region is obtained from the magnetization boundary surface by extending in the direction 
+$(\partial \vect{r}/\partial\zeta) \times (\partial \vect{r}/\partial\theta)$. If equal to $-1$, the magnetization region
+is obtained by extending the boundary surface in the opposite direction.}
+
+\myhrule
 
 \param{geometry\_option\_coil}
 {integer}
 {0}
 {Always}
-{This option controls which type of geometry is used for the coil surface.\\
+{This option controls which type of geometry is used for the inner boundary surface of the magnetization region.\\
 
 {\ttfamily geometry\_option\_coil} = 0: The coil surface will be a plain circular torus. The major radius will be the 
 same as the plasma surface: either \parlink{R0\_plasma} if \parlink{geometry\_option\_plasma} is 0 or 1, or {\ttfamily Rmajor\_p} from the \vmec~{\ttfamily wout} file
 if  \parlink{geometry\_option\_plasma} is 2.
      The minor radius will be \parlink{a\_coil}.\\
 
-{\ttfamily geometry\_option\_coil} = 1: Identical to option 0, except the major radius of the coil surface will be set by \parlink{R0\_coil}.\\
+{\ttfamily geometry\_option\_coil} = 1: Identical to option 0, except the major radius of the magnetization surface will be set by \parlink{R0\_coil}.\\
 
-{\ttfamily geometry\_option\_coil} = 2: The coil surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation}. The expanded surface will be saved to a local file specified by \parlink{nescin\_filename}. \\
+{\ttfamily geometry\_option\_coil} = 2: The magnetization surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation}. The expanded surface will be saved to a local file specified by \parlink{nescin\_filename}. \\
 
-{\ttfamily geometry\_option\_coil} = 3: The coil surface will be the `coil' surface in the \nescoil~`nescin' input file specified by \parlink{nescin\_filename}. \\
+{\ttfamily geometry\_option\_coil} = 3: The magnetization surface will be the `coil' surface in the \nescoil~`nescin' input file specified by \parlink{nescin\_filename}. \\
 
-{\ttfamily geometry\_option\_coil} = 4: Similar to option 2, except that the poloidal angle will be changed such that the arclength (with respect to $\theta)$ is independent of $\theta$ at each $\zeta$. The coil surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation}. The expanded surface will be saved to a local file specified by \parlink{nescin\_filename}. \\
+{\ttfamily geometry\_option\_coil} = 4: Similar to option 2, except that the poloidal angle will be changed such that the arclength (with respect to $\theta)$ is independent of $\theta$ at each $\zeta$. The magnetization surface will computing by expanding the plasma surface uniformly by a distance \parlink{separation}. The expanded surface will be saved to a local file specified by \parlink{nescin\_filename}. \\
 }
 
 \myhrule
@@ -374,7 +323,7 @@ if  \parlink{geometry\_option\_plasma} is 2.
 {real}
 {10.0}
 {Only when \parlink{geometry\_option\_coil} is 1.}
-{Major radius of the coil surface, when this surface is a plain circular torus.}
+{Major radius of the magnetization surface, when this surface is a plain circular torus.}
 
 \myhrule
 
@@ -382,7 +331,7 @@ if  \parlink{geometry\_option\_plasma} is 2.
 {real}
 {1.0}
 {Only when \parlink{geometry\_option\_coil} is 0 or 1.}
-{Minor radius of the coil surface, when this surface is a plain circular torus.}
+{Minor radius of the magnetization surface, when this surface is a plain circular torus.}
 
 
 \myhrule
@@ -391,7 +340,7 @@ if  \parlink{geometry\_option\_plasma} is 2.
 {real}
 {0.2}
 {Only when \parlink{geometry\_option\_coil} is 2.}
-{Amount by which the coil surface is offset from the plasma surface.}
+{Amount by which the magnetization surface is offset from the plasma surface.}
 
 \myhrule
 
@@ -401,7 +350,7 @@ if  \parlink{geometry\_option\_plasma} is 2.
 {Only when \parlink{geometry\_option\_coil} is 2 (write to) or 3 (read from).}
 {Name of a {\ttfamily nescin} file, of the sort used with the \nescoil~code.
 If \parlink{geometry\_option\_coil}=3, the coil surface from
-this file will be used as the coil surface for \regcoil. 
+this file will be used as the magnetization surface for \regcoil. 
 If \parlink{geometry\_option\_coil}=2, \regcoil~will save the uniform-offset surface it computes
 into a file with this name.}
 
@@ -409,34 +358,50 @@ into a file with this name.}
 
 \param{mpol\_coil\_filter}
 {integer}
-{24}
+{9999}
 {Only when \parlink{geometry\_option\_coil} is 2, 3, or 4.}
-{Terms in the Fourier series for $R(\theta,\zeta)$ and $Z(\theta,\zeta)$ describing the coil winding surface will be dropped if the poloidal mode number is larger than {\ttfamily mpol\_coil\_filter}.}
+{Terms in the Fourier series for $R(\theta,\zeta)$ and $Z(\theta,\zeta)$ describing the magnetization surface will be dropped if the poloidal mode number is larger than {\ttfamily mpol\_coil\_filter}.}
 
 \myhrule
 
 \param{ntor\_coil\_filter}
 {integer}
-{24}
+{9999}
 {Only when \parlink{geometry\_option\_coil} is 2, 3, or 4.}
-{Terms in the Fourier series for $R(\theta,\zeta)$ and $Z(\theta,\zeta)$ describing the coil winding surface will be dropped if the toroidal mode number is larger than {\ttfamily ntor\_coil\_filter}. Specify 1, 2, 3, $\ldots$ rather than {\ttfamily nfp}, 2$\times${\ttfamily nfp}, 3$\times${\ttfamily nfp}, etc.}
+{Terms in the Fourier series for $R(\theta,\zeta)$ and $Z(\theta,\zeta)$ describing the magnetization surface will be dropped if the toroidal mode number is larger than {\ttfamily ntor\_coil\_filter}. Specify 1, 2, 3, $\ldots$ rather than {\ttfamily nfp}, 2$\times${\ttfamily nfp}, 3$\times${\ttfamily nfp}, etc.}
 
 
 \section{Parameters related to the regularization weight}
 
+\param{lambda\_option}
+{string}
+{"scan"}
+{Always}
+{Determines how values of the regularization parameter $\lambda$ are chosen.\\
+
+{\ttfamily lambda\_option = "single"}: Use only a single value, \parlink{lambda\_single}.\\
+
+{\ttfamily lambda\_option = "scan"}: Use a range of values of $\lambda$, determined by \parlink{lambda\_min}, \parlink{lambda\_max}, and \parlink{nlambda}.\\
+
+{\ttfamily lambda\_option = "search"}: Search for a value of the regularization weight such that
+a certain target is met. The target is chosen using \parlink{target\_option}.
+}
+
+\myhrule
+
 \param{Nlambda}
 {integer}
 {4}
-{Only when \parlink{general\_option} = 1, 4, or 5.}
-{When \parlink{general\_option}=1, {\ttfamily Nlambda} is the number of values of $\lambda$ for which the problem is solved.
-When \parlink{general\_option}=4 or 5, {\ttfamily Nlambda} is the upper limit on the number of values of $\lambda$ for which the problem is solved.}
+{Only when \parlink{lambda\_option} = {\ttfamily "scan"} or {\ttfamily "search"}.}
+{When \parlink{lambda\_option}={\ttfamily "scan"}, {\ttfamily Nlambda} is the number of values of $\lambda$ for which the problem is solved.
+When \parlink{lambda\_option}={\ttfamily "search"}, {\ttfamily Nlambda} is the upper limit on the number of values of $\lambda$ for which the problem is solved.}
 
 \myhrule
 
 \param{lambda\_max}
 {real}
 {1.0e-13}
-{Only when \parlink{general\_option} = 1.}
+{Only when \parlink{lambda\_option} = {\ttfamily "scan"}.}
 {Maximum value of $\lambda$ for which the problem is solved.}
 
 \myhrule
@@ -444,7 +409,7 @@ When \parlink{general\_option}=4 or 5, {\ttfamily Nlambda} is the upper limit on
 \param{lambda\_min}
 {real}
 {1.0e-19}
-{Only when \parlink{general\_option} = 1.}
+{Only when \parlink{lambda\_option} = {\ttfamily "scan"}.}
 {Minimum nonzero value of $\lambda$ for which the problem is solved.
 Note that the problem is always solved for $\lambda=0$ in addition to
 the nonzero values.}
@@ -453,17 +418,14 @@ the nonzero values.}
 
 \param{target\_option}
 {string}
-{{\ttfamily "max\_K"}}
-{Only when \parlink{general\_option} = 4 or 5.}
+{{\ttfamily "max\_M"}}
+{Only when \parlink{lambda\_option} = {\ttfamily "search"}.}
 {Controls which quantity is targeted to determine $\lambda$:\\
 
-{\ttfamily target\_option = "max\_K"}: Search for the $\lambda$ value such that the maximum
-current density over the winding surface equals \parlink{target\_value}.\\
+{\ttfamily target\_option = "max\_M"}: Search for the $\lambda$ value such that the maximum
+magnetization in the magnetization volume equals \parlink{target\_value}.\\
 
-{\ttfamily target\_option = "chi2\_K"}: Search for the $\lambda$ value such that $\chi^2_K$ equals \parlink{target\_value}.\\
-
-{\ttfamily target\_option = "rms\_K"}: Search for the $\lambda$ value such that the root-mean-square current density
-$\left( \int d^2a\; K^2 \right)^{1/2}$ (where the integral is over the current winding surface) equals \parlink{target\_value}.\\
+{\ttfamily target\_option = "chi2\_M"}: Search for the $\lambda$ value such that $\chi^2_M$ equals \parlink{target\_value}.\\
 
 {\ttfamily target\_option = "max\_Bnormal"}: Search for the $\lambda$ value such that the maximum
 $\vect{B}\cdot\vect{n}$ over the plasma surface equals \parlink{target\_value}.\\
@@ -480,7 +442,7 @@ $\left( \int d^2a\; B_n^2 \right)^{1/2}$ (where the integral is over the plasma 
 \param{target\_value}
 {real}
 {8.0e6}
-{Only when \parlink{general\_option} = 4 or 5.}
+{Only when \parlink{lambda\_option} = {\ttfamily "search"}.}
 {The value of the quantity specified by \parlink{target\_option} that the code will attempt to match
 by varying $\lambda$.
 }
@@ -490,5 +452,5 @@ by varying $\lambda$.
 \param{lambda\_search\_tolerance}
 {real}
 {1.0e-5}
-{Only when \parlink{general\_option} = 4 or 5.}
+{Only when \parlink{lambda\_option} = {\ttfamily "search"}.}
 {Relative tolerance for the lambda root-finding.}

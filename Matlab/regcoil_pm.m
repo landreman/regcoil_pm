@@ -29,7 +29,7 @@ ntor_magnetization  = 12;
 ns_magnetization = 1;
 ns_integration = 2;
 %}
-
+%{
 ntheta_plasma = 30;
 ntheta_coil   = 33;
 nzeta_plasma = 36;
@@ -37,6 +37,16 @@ nzeta_coil   = 38;
 mpol_magnetization  = 6;
 ntor_magnetization  = 8;
 ns_magnetization = 2;
+ns_integration = 3;
+%}
+
+ntheta_plasma = 38;
+ntheta_coil   = 36;
+nzeta_plasma = 33;
+nzeta_coil   = 30;
+mpol_magnetization  = 8;
+ntor_magnetization  = 7;
+ns_magnetization = 3;
 ns_integration = 3;
 
 %{
@@ -80,9 +90,11 @@ separation = 0.35;
 %nescin_filename = 'nescin.w7x_standardConfig_separation0.3';
 %nescin_filename = '/Users/mattland/Box Sync/MATLAB/nescin.w7x_winding_surface_from_Drevlak';
 %nescin_filename = 'equilibria/nescin.w7x_winding_surface_from_Drevlak';
-nescin_filename = '../equilibria/surf.vv';
+nescin_filename = '../equilibria/NCSX.vv';
 
-d_initial = 0.01;
+%d_initial = 0.01;
+d_initial = 0.005;
+sign_normal = -1;
 
 s_integration_option = 'Gaussian';
 %s_integration_option = 'Chebyshev';
@@ -127,7 +139,7 @@ compareToFortran = true;
 %fortranNcFilename = '../examples/NCSX_low_resolution/regcoil_out.NCSX_low_resolution.nc';
 %fortranNcFilename = '/Users/mattland/Box Sync/work19/20190526-01-testing_regcoil_pm/20190526-01-015-thetaZeta64_mpolNtor12_sMagnetization1_sIntegration2_Cheb_d0.01_1proc/regcoil_out.NCSX.nc';
 %fortranNcFilename = '/Users/mattland/Box Sync/work19/20190526-01-testing_regcoil_pm/20190526-01-038-loRes_sMagnetization2_sIntegration3_Gauss_d0.01/regcoil_out.NCSX.nc';
-fortranNcFilename = '/Users/mattland/regcoil_pm/examples/compareToMatlab1/regcoil_out.compareToMatlab1.nc';
+fortranNcFilename = '/Users/mattland/regcoil_pm/examples/compareToMatlab2/regcoil_out.compareToMatlab2.nc';
 
 fortranComparisonThreshhold_abs = 1e-11;
 
@@ -648,7 +660,7 @@ dzeta_coil = zeta_coil(2)-zeta_coil(1);
 d = d_initial * ones(ntheta_coil, nzeta_coil);
 Jacobian_coil = zeros(ntheta_coil, nzeta_coil, ns_integration);
 for js = 1:ns_integration
-    Jacobian_coil(:,:,js) = d .* norm_normal_coil .* (-1 + 2 * s_integration(js) * d .* mean_curvature_coil ...
+    Jacobian_coil(:,:,js) = d .* norm_normal_coil .* (-1 + sign_normal * 2 * s_integration(js) * d .* mean_curvature_coil ...
         + s_integration(js) * s_integration(js) * d .* d .* Jacobian_coefficient);
 end
 if any(any(Jacobian_coil >= 0)) 
@@ -875,9 +887,9 @@ for ks = 1:ns_magnetization
                 for l_coil = 0:(nfp-1)
                     izetal_coil = izeta_coil + l_coil*nzeta_coil;
                     
-                    dx = r_plasma(1,:,zeta_plasma_indices) - (r_coil(1,itheta_coil,izetal_coil) + s_integration(js) * d(itheta_coil,izeta_coil) * nX(itheta_coil,izetal_coil));
-                    dy = r_plasma(2,:,zeta_plasma_indices) - (r_coil(2,itheta_coil,izetal_coil) + s_integration(js) * d(itheta_coil,izeta_coil) * nY(itheta_coil,izetal_coil));
-                    dz = r_plasma(3,:,zeta_plasma_indices) - (r_coil(3,itheta_coil,izetal_coil) + s_integration(js) * d(itheta_coil,izeta_coil) * nZ(itheta_coil,izetal_coil));
+                    dx = r_plasma(1,:,zeta_plasma_indices) - (r_coil(1,itheta_coil,izetal_coil) + sign_normal * s_integration(js) * d(itheta_coil,izeta_coil) * nX(itheta_coil,izetal_coil));
+                    dy = r_plasma(2,:,zeta_plasma_indices) - (r_coil(2,itheta_coil,izetal_coil) + sign_normal * s_integration(js) * d(itheta_coil,izeta_coil) * nY(itheta_coil,izetal_coil));
+                    dz = r_plasma(3,:,zeta_plasma_indices) - (r_coil(3,itheta_coil,izetal_coil) + sign_normal * s_integration(js) * d(itheta_coil,izeta_coil) * nZ(itheta_coil,izetal_coil));
                     dr2 = dx.*dx + dy.*dy + dz.*dz;
                     denominator = dr2 .* sqrt(dr2);
                     

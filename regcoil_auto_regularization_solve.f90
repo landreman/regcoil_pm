@@ -243,10 +243,6 @@ contains
        target_function = max_M(jlambda)
        targeted_quantity_increases_with_lambda = .false.
 
-    case (target_option_rms_M)
-       target_function = sqrt(chi2_M(jlambda) / area_coil)
-       targeted_quantity_increases_with_lambda = .false.
-
     case (target_option_chi2_M)
        target_function = chi2_M(jlambda)
        targeted_quantity_increases_with_lambda = .false.

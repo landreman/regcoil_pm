@@ -12,6 +12,7 @@ subroutine regcoil_write_output
 
   ! Scalars:
   character(len=*), parameter :: &
+       vn_lambda_option = "lambda_option", &
        vn_nfp = "nfp", &
        vn_geometry_option_plasma = "geometry_option_plasma", &
        vn_geometry_option_coil = "geometry_option_coil", &
@@ -44,7 +45,7 @@ subroutine regcoil_write_output
        vn_total_time = "total_time", &
        vn_exit_code = "exit_code", &
        vn_chi2_B_target = "chi2_B_target", &
-       vn_lambda_option = "lambda_option"
+       vn_sign_normal = "sign_normal"
 
   ! Arrays with dimension 1
   character(len=*), parameter :: &
@@ -86,7 +87,8 @@ subroutine regcoil_write_output
        vn_Bnormal_from_TF_and_plasma_current = "Bnormal_from_TF_and_plasma_current", &
        vn_mean_curvature_coil = "mean_curvature_coil", &
        vn_matrix_B = "matrix_B", &
-       vn_matrix_regularization = "matrix_regularization"
+       vn_matrix_regularization = "matrix_regularization", &
+       vn_interpolate_magnetization_to_integration = "interpolate_magnetization_to_integration"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -143,7 +145,8 @@ subroutine regcoil_write_output
        nthetanzeta_plasma_basis_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','num_basis_functions'/), &
        basis_basis_dim = (/ character(len=50) :: 'num_basis_functions','num_basis_functions'/), &
        basis_nlambda_dim = (/ character(len=50) :: 'num_basis_functions','nlambda'/), &
-       system_size_system_size_dim = (/ character(len=50) :: 'system_size','system_size'/)
+       system_size_system_size_dim = (/ character(len=50) :: 'system_size','system_size'/), &
+       ns_integration_ns_magnetization_dim = (/ character(len=50) :: 'ns_integration', 'ns_magnetization' /)
 
   ! Arrays with dimension 3:
   character(len=*), parameter, dimension(3) :: &
@@ -177,6 +180,7 @@ subroutine regcoil_write_output
   ! Scalars
 
   call cdf_define(ncid, vn_lambda_option, lambda_option)
+  call cdf_setatt(ncid, vn_lambda_option, "Option determining how the values of the regularization parameter lambda were selected. " // input_parameter_text)
 
   call cdf_define(ncid, vn_nfp, nfp)
   call cdf_setatt(ncid, vn_nfp, 'Number of field periods, i.e. the number of identical toroidal segments, 5 for W7-X, 4 for HSX, etc. ' // &
@@ -186,7 +190,7 @@ subroutine regcoil_write_output
   call cdf_setatt(ncid, vn_geometry_option_plasma, 'Method used to define the geometry of the plasma surface.' // input_parameter_text)
 
   call cdf_define(ncid, vn_geometry_option_coil, geometry_option_coil)
-  call cdf_setatt(ncid, vn_geometry_option_coil, 'Method used to define the geometry of the coil winding surface.' // input_parameter_text)
+  call cdf_setatt(ncid, vn_geometry_option_coil, 'Method used to define the geometry of the inner magnetization surface.' // input_parameter_text)
 
   call cdf_define(ncid, vn_ntheta_plasma, ntheta_plasma)
   call cdf_setatt(ncid, vn_ntheta_plasma, 'Number of grid points used in the poloidal angle theta on the plasma surface.' // input_parameter_text)
@@ -198,13 +202,13 @@ subroutine regcoil_write_output
   call cdf_setatt(ncid, vn_nzetal_plasma, 'Number of grid points used in the toridal angle, including all the nfp identical toroidal periods, on the plasma surface.')
 
   call cdf_define(ncid, vn_ntheta_coil, ntheta_coil)
-  call cdf_setatt(ncid, vn_ntheta_coil, 'Number of grid points used in the poloidal angle theta on the coil surface.' // input_parameter_text)
+  call cdf_setatt(ncid, vn_ntheta_coil, 'Number of grid points used in the poloidal angle theta on the inner magnetization surface.' // input_parameter_text)
 
   call cdf_define(ncid, vn_nzeta_coil, nzeta_coil)
-  call cdf_setatt(ncid, vn_nzeta_coil, 'Number of grid points used in the toridal angle zeta per identical toroidal period, on the coil surface.' // input_parameter_text)
+  call cdf_setatt(ncid, vn_nzeta_coil, 'Number of grid points used in the toridal angle zeta per identical toroidal period, on the inner magnetization surface.' // input_parameter_text)
 
   call cdf_define(ncid, vn_nzetal_coil, nzetal_coil)
-  call cdf_setatt(ncid, vn_nzetal_coil, 'Number of grid points used in the toridal angle, including all the nfp identical toroidal periods, on the coil surface.')
+  call cdf_setatt(ncid, vn_nzetal_coil, 'Number of grid points used in the toridal angle, including all the nfp identical toroidal periods, on the inner magnetization surface.')
 
   call cdf_define(ncid, vn_ns_magnetization, ns_magnetization)
   call cdf_setatt(ncid, vn_ns_magnetization, 'Number of grid points in the radial (s) direction used to discretize the magnetization.')
@@ -234,7 +238,7 @@ subroutine regcoil_write_output
   call cdf_setatt(ncid, vn_mnmax_plasma, 'Number of unique (m,n) pairs for the Fourier modes retained in the plasma surface.')
 
   call cdf_define(ncid, vn_mnmax_coil, mnmax_coil)
-  call cdf_setatt(ncid, vn_mnmax_coil, 'Number of unique (m,n) pairs for the Fourier modes retained in the coil winding surface.')
+  call cdf_setatt(ncid, vn_mnmax_coil, 'Number of unique (m,n) pairs for the Fourier modes retained in the inner magnetization surface.')
 
   call cdf_define(ncid, vn_num_basis_functions, num_basis_functions)
   call cdf_setatt(ncid, vn_num_basis_functions, 'Number of cos(m*theta-n*zeta) and/or sin(m*theta-n*zeta) Fourier modes ' // &
@@ -249,15 +253,13 @@ subroutine regcoil_write_output
   call cdf_setatt(ncid, vn_area_plasma, 'Area of the plasma surface in meters^2')
 
   call cdf_define(ncid, vn_area_coil, area_coil)
-  call cdf_setatt(ncid, vn_area_coil, 'Area of the coil winding surface in meters^2')
+  call cdf_setatt(ncid, vn_area_coil, 'Area of the inner magnetization surface in meters^2')
 
   call cdf_define(ncid, vn_volume_plasma, volume_plasma)
   call cdf_setatt(ncid, vn_volume_plasma, 'Volume of the plasma surface in meters^3')
 
   call cdf_define(ncid, vn_volume_coil, volume_coil)
-  call cdf_setatt(ncid, vn_volume_coil, 'Volume of the coil winding surface in meters^3')
-
-  call cdf_define(ncid, vn_curpol, curpol)
+  call cdf_setatt(ncid, vn_volume_coil, 'Volume of the inner magnetization surface in meters^3. Note that this quantity is NOT the volume of the magnetization region!')
 
   call cdf_define(ncid, vn_nlambda, nlambda)
   call cdf_setatt(ncid, vn_nlambda, 'Number of values of the regularization parameter lambda examined.')
@@ -278,6 +280,10 @@ subroutine regcoil_write_output
           'Units = Tesla^2 meters^2.')
   end if
 
+  call cdf_define(ncid, vn_sign_normal, sign_normal)
+  call cdf_setatt(ncid, vn_sign_normal, '+1 if the magnetization region is obtained by moving in the normal_coil direction from the boundary surface, or ' // &
+       '-1 if the magnetization region is obtained by moving opposite to the normal_coil direction from the boundary surface.')
+
   ! Arrays with dimension 1
 
   call cdf_define(ncid, vn_theta_plasma, theta_plasma, dimname=ntheta_plasma_dim)
@@ -291,14 +297,14 @@ subroutine regcoil_write_output
   call cdf_setatt(ncid, vn_theta_plasma, 'Grid points of the toroidal angle on the plasma surface, including all nfp toroidal periods.')
 
   call cdf_define(ncid, vn_theta_coil, theta_coil, dimname=ntheta_coil_dim)
-  call cdf_setatt(ncid, vn_theta_coil, 'Grid points of the poloidal angle on the coil surface.')
+  call cdf_setatt(ncid, vn_theta_coil, 'Grid points of the poloidal angle on the inner magnetization surface.')
 
   call cdf_define(ncid, vn_zeta_coil, zeta_coil, dimname=nzeta_coil_dim)
-  call cdf_setatt(ncid, vn_theta_coil, 'Grid points of the toroidal angle on the coil surface. ' // &
+  call cdf_setatt(ncid, vn_theta_coil, 'Grid points of the toroidal angle on the inner magnetization surface. ' // &
        'Only the first of the nfp identical toroidal periods is included')
 
   call cdf_define(ncid, vn_zetal_coil, zetal_coil, dimname=nzetal_coil_dim)
-  call cdf_setatt(ncid, vn_theta_coil, 'Grid points of the toroidal angle on the coil surface, including all nfp toroidal periods.')
+  call cdf_setatt(ncid, vn_theta_coil, 'Grid points of the toroidal angle on the inner magnetization surface, including all nfp toroidal periods.')
 
   call cdf_define(ncid, vn_s_magnetization, s_magnetization, dimname=ns_magnetization_dim)
   call cdf_setatt(ncid, vn_s_magnetization, 'Grid points in the radial (s) direction in the discrete representation of the magnetization.')
@@ -320,9 +326,9 @@ subroutine regcoil_write_output
   call cdf_setatt(ncid, vn_xm_plasma, 'Values of toroidal mode number n used in the Fourier representation of the plasma surface.')
 
   call cdf_define(ncid, vn_xm_coil, xm_coil, dimname=mnmax_coil_dim)
-  call cdf_setatt(ncid, vn_xm_coil, 'Values of poloidal mode number m used in the Fourier representation of the coil winding surface.')
+  call cdf_setatt(ncid, vn_xm_coil, 'Values of poloidal mode number m used in the Fourier representation of the inner magnetization surface.')
   call cdf_define(ncid, vn_xn_coil, xn_coil, dimname=mnmax_coil_dim)
-  call cdf_setatt(ncid, vn_xm_coil, 'Values of toroidal mode number n used in the Fourier representation of the coil winding surface.')
+  call cdf_setatt(ncid, vn_xm_coil, 'Values of toroidal mode number n used in the Fourier representation of the inner magnetization surface.')
 
   call cdf_define(ncid, vn_rmnc_plasma, rmnc_plasma, dimname=mnmax_plasma_dim)
   call cdf_setatt(ncid, vn_rmnc_plasma, 'Amplitudes of the cosine(m*theta-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
@@ -345,34 +351,34 @@ subroutine regcoil_write_output
   if (lasym) then
      call cdf_define(ncid, vn_rmns_coil, rmns_coil, dimname=mnmax_coil_dim)
      call cdf_setatt(ncid, vn_rmns_coil, 'Amplitudes of the sine(m*theta-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
-          'R(theta,zeta) defining the coil surface. The corresponding mode numbers (m,n) are stored in xm_coil and xn_coil.')
+          'R(theta,zeta) defining the inner magnetization surface. The corresponding mode numbers (m,n) are stored in xm_coil and xn_coil.')
      call cdf_define(ncid, vn_zmnc_coil, zmnc_coil, dimname=mnmax_coil_dim)
      call cdf_setatt(ncid, vn_zmnc_coil, 'Amplitudes of the cosine(m*theta-n*zeta) terms in a Fourier expansion of the coordinate ' // &
-          'Z(theta,zeta) defining the coil surface. The corresponding mode numbers (m,n) are stored in xm_coil and xn_coil.')
+          'Z(theta,zeta) defining the inner magnetization surface. The corresponding mode numbers (m,n) are stored in xm_coil and xn_coil.')
   end if
   call cdf_define(ncid, vn_zmns_coil, zmns_coil, dimname=mnmax_coil_dim)
   call cdf_setatt(ncid, vn_zmns_coil, 'Amplitudes of the sine(m*theta-n*zeta) terms in a Fourier expansion of the coordinate ' // &
-       'Z(theta,zeta) defining the coil surface. The corresponding mode numbers (m,n) are stored in xm_coil and xn_coil.')
+       'Z(theta,zeta) defining the inner magnetization surface. The corresponding mode numbers (m,n) are stored in xm_coil and xn_coil.')
 
   call cdf_define(ncid, vn_RHS_B, RHS_B, dimname=system_size_dim)
 
   call cdf_define(ncid, vn_lambda, lambda(1:Nlambda), dimname=nlambda_dim)
-  call cdf_setatt(ncid, vn_lambda, 'Values of the regularization parameter that were used, in SI units (Tesla^2 meter^2 / Ampere^2)')
+  call cdf_setatt(ncid, vn_lambda, 'Values of the regularization parameter that were used, in SI units (Tesla^2 / Ampere^2)')
 
   call cdf_define(ncid, vn_chi2_B, chi2_B(1:Nlambda), dimname=nlambda_dim)
   call cdf_setatt(ncid, vn_chi2_B, 'Values of chi^2_B (the area integral over the plasma surface of |B_normal|^2) that resulted for each value of lambda, in SI units (Tesla^2 meter^2)')
 
   call cdf_define(ncid, vn_chi2_M, chi2_M(1:Nlambda), dimname=nlambda_dim)
-  call cdf_setatt(ncid, vn_chi2_M, 'Values of chi^2_M (the volume integral over the magnetization region of magnetization density squared times thickness d) that resulted for each value of lambda, in SI units')
+  call cdf_setatt(ncid, vn_chi2_M, 'Values of chi^2_M (the volume integral over the magnetization region of magnetization squared times thickness d) that resulted for each value of lambda, in SI units (Amperes^2 meters^2).')
 
   call cdf_define(ncid, vn_max_Bnormal, max_Bnormal(1:Nlambda), dimname=nlambda_dim)
   call cdf_setatt(ncid, vn_max_Bnormal, 'Maximum (over the plasma surface) magnetic field normal to the target plasma shape that resulted for each value of lambda, in Tesla.')
 
   call cdf_define(ncid, vn_max_M, max_M(1:Nlambda), dimname=nlambda_dim) ! We only write elements 1:Nlambda in case of a lambda search.
-  call cdf_setatt(ncid, vn_max_M, 'Maximum (over the magnetization region) magnitude of the magnetization that resulted for each value of lambda, in SI units.')
+  call cdf_setatt(ncid, vn_max_M, 'Maximum (over the magnetization region) magnitude of the magnetization that resulted for each value of lambda, in SI units (Amperes / meter).')
 
   call cdf_define(ncid, vn_min_M, min_M(1:Nlambda), dimname=nlambda_dim) ! We only write elements 1:Nlambda in case of a lambda search.
-  call cdf_setatt(ncid, vn_min_M, 'Minimum (over the magnetization region) magnitude of the magnetization that resulted for each value of lambda, in SI units.')
+  call cdf_setatt(ncid, vn_min_M, 'Minimum (over the magnetization region) magnitude of the magnetization that resulted for each value of lambda, in SI units (Amperes / meter).')
 
   ! Arrays with dimension 2
 
@@ -383,7 +389,7 @@ subroutine regcoil_write_output
 
   call cdf_define(ncid, vn_norm_normal_coil,  norm_normal_coil,  dimname=ntheta_nzeta_coil_dim)
   call cdf_setatt(ncid, vn_norm_normal_coil, '|N|, where N = (d r / d zeta) cross (d r / d theta) is a non-unit-length normal vector ' // &
-       'and r is the posiiton vector, for the coil surface. This quantity is the Jacobian appearing in area integrals: ' // &
+       'and r is the posiiton vector, for the inner magnetization surface. This quantity is the Jacobian appearing in area integrals: ' // &
        'int d^2a = int dtheta int dzeta |N|. Units = meters^2.')
 
   call cdf_define(ncid, vn_Bnormal_from_TF_and_plasma_current, Bnormal_from_TF_and_plasma_current, dimname=ntheta_nzeta_plasma_dim)
@@ -391,11 +397,15 @@ subroutine regcoil_write_output
        'and any electromagnetic coils, such as planar TF coils that generate the net toroidal flux. Units = Tesla.')
 
   call cdf_define(ncid, vn_mean_curvature_coil,  mean_curvature_coil,  dimname=ntheta_nzeta_coil_dim)
+  call cdf_setatt(ncid, vn_mean_curvature_coil,  "Mean curvature (i.e. average of the two principal curvatures) of the inner magnetization surface. Units = 1/meters.")
 
   if (save_level < 3) then
      call cdf_define(ncid, vn_matrix_B,  matrix_B,  dimname=system_size_system_size_dim)
      call cdf_define(ncid, vn_matrix_regularization,  matrix_regularization,  dimname=system_size_system_size_dim)
   end if
+
+  call cdf_define(ncid, vn_interpolate_magnetization_to_integration,  interpolate_magnetization_to_integration,  dimname=ns_integration_ns_magnetization_dim)
+  call cdf_setatt(ncid, vn_interpolate_magnetization_to_integration,  "Matrix to transfer quantities from the s_magnetization radial grid to the s_integration radial grid. Dimensionless.")
 
   ! Arrays with dimension 3
 
@@ -424,19 +434,29 @@ subroutine regcoil_write_output
        'for each value of the regularization parameter lambda considered.')
 
   call cdf_define(ncid, vn_Jacobian_coil, Jacobian_coil, dimname=ntheta_nzeta_coil_ns_integration_dim)
+  call cdf_setatt(ncid, vn_Jacobian_coil, "Jacobian of the (s,theta,zeta) coordinates describing the magnetization region. Units = meters^3.")
  
   ! Arrays with dimension 4
 
   if (save_level < 1) then
-     call cdf_define(ncid, vn_g,  g,  dimname=ntheta_nzeta_plasma_basis_ns_magnetization_RZetaZ_dim)
+     call cdf_define(ncid, vn_g, g,  dimname=ntheta_nzeta_plasma_basis_ns_magnetization_RZetaZ_dim)
+     call cdf_setatt(ncid, vn_g, 'Matrix relating the magnetization to its contribution to B_normal on the plasma surface.')
   end if
 
   call cdf_define(ncid, vn_abs_M, abs_M, dimname=ntheta_nzeta_coil_ns_magnetization_nlambda_dim)
+  call cdf_setatt(ncid, vn_abs_M, 'Magnitude of the magnetization vector, |M|. Units = Amperes / meter.')
+
   call cdf_define(ncid, vn_magnetization_vector_mn, magnetization_vector_mn, dimname=basis_ns_magnetization_RZetaZ_nlambda_dim)
+  call cdf_setatt(ncid, vn_magnetization_vector_mn, 'The magnetization vector, M, with its dependence on (theta,zeta) described in Fourier space. ' // &
+       'The dimension of size 3 corresponds to the components of M along the cylindrical unit basis vectors, ' // &
+       'with these basis vectors evaluated at toroidal angle zeta, not necessarily at the position where M is evaluated. Units = Amperes / meter.')
 
   ! Arrays with dimension 5
 
   call cdf_define(ncid, vn_magnetization_vector, magnetization_vector, dimname=ntheta_nzeta_coil_ns_magnetization_RZetaZ_nlambda_dim)
+  call cdf_setatt(ncid, vn_magnetization_vector, 'The magnetization vector, M, with its dependence on (theta,zeta) described in real space rather than Fourier space. ' // &
+       'The dimension of size 3 corresponds to the components of M along the cylindrical unit basis vectors, ' // &
+       'with these basis vectors evaluated at toroidal angle zeta, not necessarily at the position where M is evaluated. Units = Amperes / meter.')
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
   ! Done with cdf_define calls. Now write the data.
@@ -472,11 +492,11 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_area_coil, area_coil)
   call cdf_write(ncid, vn_volume_plasma, volume_plasma)
   call cdf_write(ncid, vn_volume_coil, volume_coil)
-  call cdf_write(ncid, vn_curpol, curpol)
   call cdf_write(ncid, vn_nlambda, nlambda)
   call cdf_write(ncid, vn_total_time, total_time)
   call cdf_write(ncid, vn_exit_code, exit_code)
   if (trim(lambda_option)==lambda_option_search) call cdf_write(ncid, vn_chi2_B_target, chi2_B_target)
+  call cdf_write(ncid, vn_sign_normal, sign_normal)
 
   ! Arrays with dimension 1
 
@@ -525,6 +545,7 @@ subroutine regcoil_write_output
      call cdf_write(ncid, vn_matrix_B, matrix_B)
      call cdf_write(ncid, vn_matrix_regularization, matrix_regularization)
   end if
+  call cdf_write(ncid, vn_interpolate_magnetization_to_integration,  interpolate_magnetization_to_integration)
 
   ! Arrays with dimension 3
 

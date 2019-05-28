@@ -145,7 +145,7 @@ subroutine regcoil_validate_input
   !if (general_option==4 .or. general_option==5) then
   if (trim(lambda_option)==lambda_option_search) then
      select case (trim(target_option))
-     case (target_option_max_M,target_option_rms_M)
+     case (target_option_max_M)
         typical_target_min = 1e5
         typical_target_max = 3e8
      case (target_option_chi2_M)
@@ -194,5 +194,9 @@ subroutine regcoil_validate_input
      print *,"Error! Unrecognized s_integration_option: ",trim(s_integration_option)
      stop
   end select
+
+  if (symmetry_option .ne. 3) stop "Error! Presently only symmetry_option=3 works."
+
+  if ((sign_normal.ne.1) .and. (sign_normal.ne.-1)) stop "Error! sign_normal must be 1 or -1."
 
 end subroutine regcoil_validate_input

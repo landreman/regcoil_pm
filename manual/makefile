@@ -1,4 +1,4 @@
-TARGET = regcoilManual
+TARGET = regcoilPMManual
 
 .PHONY: all
 

@@ -147,7 +147,7 @@ subroutine regcoil_build_matrices()
      do izeta_coil = 1, nzeta_coil
         izetal_coil = izeta_coil + l_coil*nzeta_coil
         do itheta_coil = 1, ntheta_coil
-           d_times_unit_normal_coil(:,itheta_coil,izetal_coil) = d(itheta_coil,izeta_coil) * normal_coil(:,itheta_coil,izetal_coil) / norm_normal_coil(itheta_coil,izeta_coil)
+           d_times_unit_normal_coil(:,itheta_coil,izetal_coil) = sign_normal * d(itheta_coil,izeta_coil) * normal_coil(:,itheta_coil,izetal_coil) / norm_normal_coil(itheta_coil,izeta_coil)
         end do
      end do
   end do
@@ -185,18 +185,6 @@ subroutine regcoil_build_matrices()
                        dr32inv = dr2inv*sqrt(dr2inv)
                        factor = dr32inv * Jacobian_coil(itheta_coil, izeta_coil, js) * s_weights(js) &
                             * interpolate_magnetization_to_integration(js, ks) * constants
-
-!!$                 inductance_Z(index_plasma,index_coil) = inductance_Z(index_plasma,index_coil) + &
-!!$                      (normal_plasma(1,itheta_plasma,izeta_plasma)*normal_coil(1,itheta_coil,izetal_coil) &
-!!$                      +normal_plasma(2,itheta_plasma,izeta_plasma)*normal_coil(2,itheta_coil,izetal_coil) &
-!!$                      +normal_plasma(3,itheta_plasma,izeta_plasma)*normal_coil(3,itheta_coil,izetal_coil) &
-!!$                      - (3*dr2inv) * &
-!!$                      (normal_plasma(1,itheta_plasma,izeta_plasma)*dx &
-!!$                      + normal_plasma(2,itheta_plasma,izeta_plasma)*dy &
-!!$                      + normal_plasma(3,itheta_plasma,izeta_plasma)*dz) * &
-!!$                      (normal_coil(1,itheta_coil,izetal_coil)*dx &
-!!$                      +normal_coil(2,itheta_coil,izetal_coil)*dy &
-!!$                      +normal_coil(3,itheta_coil,izetal_coil)*dz)) * dr32inv
 
                        normal_plasma_dot_dr = normal_plasma(1,itheta_plasma,izeta_plasma)*dx &
                             + normal_plasma(2,itheta_plasma,izeta_plasma)*dy &
@@ -306,6 +294,8 @@ subroutine regcoil_build_matrices()
   call system_clock(tic)
 
   allocate(temp_matrix(num_basis_functions,num_basis_functions))
+  ! The logic of these loops is designed to reach (row=x,col=y) and (row=y,col=x) only once, to minimize matrix multiplications.
+  ! Whichever one of the two cases is not reached directly is handled by adding the transpose of the block to the appropriate location.
   do js = 1, ns_magnetization
      do ks = 1, js
         do j_RZetaZ = 1, 3

@@ -250,7 +250,7 @@ subroutine regcoil_evaluate_coil_surface()
   temp_matrix = d * d * (fundamental_form_M * fundamental_form_M - fundamental_form_L * fundamental_form_P) / norm_normal_coil
   allocate(Jacobian_coil(ntheta_coil, nzeta_coil, ns_integration))
   do js = 1, ns_integration
-     Jacobian_coil(:,:,js) = d * (-norm_normal_coil + s_integration(js) * d * 2 * norm_normal_coil * mean_curvature_coil + s_integration(js) * s_integration(js) * temp_matrix)
+     Jacobian_coil(:,:,js) = d * (-norm_normal_coil + sign_normal * s_integration(js) * d * 2 * norm_normal_coil * mean_curvature_coil + s_integration(js) * s_integration(js) * temp_matrix)
   end do
   deallocate(temp_matrix)
   if (any(Jacobian_coil >= 0)) then

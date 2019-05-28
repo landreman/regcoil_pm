@@ -78,21 +78,21 @@ if lambdas[-1]>1.0e199:
 # For 3D plotting, 'close' the arrays in u and v
 ########################################################
 
-r_plasma  = np.append(r_plasma,  r_plasma[[0],:,:], axis=0)
-r_plasma  = np.append(r_plasma,  r_plasma[:,[0],:], axis=1)
-zetal_plasma = np.append(zetal_plasma,nfp)
+#r_plasma  = np.append(r_plasma,  r_plasma[[0],:,:], axis=0)
+#r_plasma  = np.append(r_plasma,  r_plasma[:,[0],:], axis=1)
+#zetal_plasma = np.append(zetal_plasma,nfp)
 
-r_coil  = np.append(r_coil,  r_coil[[0],:,:], axis=0)
-r_coil  = np.append(r_coil,  r_coil[:,[0],:], axis=1)
-zetal_coil = np.append(zetal_coil,nfp)
+#r_coil  = np.append(r_coil,  r_coil[[0],:,:], axis=0)
+#r_coil  = np.append(r_coil,  r_coil[:,[0],:], axis=1)
+#zetal_coil = np.append(zetal_coil,nfp)
 
 ########################################################
 # Extract cross-sections of the 3 surfaces at several toroidal angles
 ########################################################
 
 def getCrossSection(rArray, zetal_old, zeta_new):
-    zetal_old = np.concatenate((zetal_old-nfp,zetal_old))
-    rArray = np.concatenate((rArray,rArray),axis=0)
+    zetal_old = np.concatenate((zetal_old-2*np.pi,zetal_old, zetal_old+2*np.pi))
+    rArray = np.concatenate((rArray,rArray,rArray),axis=0)
 
 
     print "zetal_old shape:",zetal_old.shape
@@ -139,8 +139,8 @@ Zmax = Z_slice_coil.max()
 for whichPlot in range(4):
     plt.subplot(numRows,numCols,whichPlot+1)
     zeta = zeta_slices[whichPlot]
-    plt.plot(R_slice_coil[whichPlot,:], Z_slice_coil[whichPlot,:], 'b.-', label='coil')
-    plt.plot(R_slice_plasma[whichPlot,:], Z_slice_plasma[whichPlot,:], 'r.-', label='plasma')
+    plt.plot(R_slice_coil[whichPlot,:], Z_slice_coil[whichPlot,:], 'b.-', label='Inner magnetization surface')
+    plt.plot(R_slice_plasma[whichPlot,:], Z_slice_plasma[whichPlot,:], 'r.-', label='Plasma')
     plt.gca().set_aspect('equal',adjustable='box')
     plt.legend(fontsize='x-small')
     plt.title('zeta='+str(zeta))
@@ -171,46 +171,31 @@ fig = plt.figure(figureNum,figsize=(14,7))
 fig.patch.set_facecolor('white')
 
 numRows = 2
-numCols = 3
+numCols = 2
 
 plt.subplot(numRows,numCols,1)
 plt.loglog(chi2_M,chi2_B,'.-r')
-plt.xlabel('chi2_M [A^2]')
+plt.xlabel('chi2_M [A^2 m^2]')
 plt.ylabel('chi2_B [T^2 m^2]')
 for j in range(numPlots):
     plt.plot(chi2_M[ilambda_to_plot[j]-1], chi2_B[ilambda_to_plot[j]-1],'ob')
 
-if nlambda>1:
-    plt.subplot(numRows,numCols,2)
-    plt.loglog(lambdas,chi2_B,'.-r')
-    plt.xlabel('lambda [T^2 m^2 / A^2]')
-    plt.ylabel('chi2_B [T^2 m^2]')
-    for j in range(numPlots):
-        plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_B[ilambda_to_plot[j]-1],'ob')
-
-plt.subplot(numRows,numCols,3)
-plt.semilogy(lambdas,chi2_B,'.-r')
-plt.xlabel('lambda [T^2 m^2 / A^2]')
+plt.subplot(numRows,numCols,2)
+plt.loglog(lambdas,chi2_B,'.-r')
+plt.xlabel('lambda [T^2 / A^2]')
 plt.ylabel('chi2_B [T^2 m^2]')
 for j in range(numPlots):
     plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_B[ilambda_to_plot[j]-1],'ob')
 
-if nlambda>1:
-    plt.subplot(numRows,numCols,5)
-    plt.loglog(lambdas,chi2_M,'.-r')
-    plt.xlabel('lambda [T^2 m^2 / A^2]')
-    plt.ylabel('chi2_M [A^2]')
-    for j in range(numPlots):
-        plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_M[ilambda_to_plot[j]-1],'ob')
-
-plt.subplot(numRows,numCols,6)
-plt.semilogy(lambdas,chi2_M,'.-r')
-plt.xlabel('lambda [T^2 m^2 / A^2]')
-plt.ylabel('chi2_M [A^2]')
+plt.subplot(numRows,numCols,4)
+plt.loglog(lambdas,chi2_M,'.-r')
+plt.xlabel('lambda [T^2 / A^2]')
+plt.ylabel('chi2_M [A^2 m^2]')
 for j in range(numPlots):
     plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_M[ilambda_to_plot[j]-1],'ob')
 
 plt.tight_layout()
+plt.subplots_adjust(top=0.95)
 plt.figtext(0.5,0.99,"Blue dots indicate the points in the lambda scan that are plotted in later figures",horizontalalignment='center',verticalalignment='top',fontsize='small')
 
 ########################################################
@@ -250,14 +235,15 @@ for js in range(num_abs_M_figures):
 
     for whichPlot in range(numPlots):
         plt.subplot(numRows,numCols,whichPlot+1)
-        plt.contourf(zeta_plasma, theta_plasma, np.transpose(abs_M[ilambda_to_plot[whichPlot]-1,ks,:,:]), numContours)
+        plt.contourf(zeta_coil, theta_coil, np.transpose(abs_M[ilambda_to_plot[whichPlot]-1,ks,:,:]), numContours)
         plt.colorbar()
         plt.xlabel('zeta (coil)',fontsize='x-small')
         plt.ylabel('theta (coil)',fontsize='x-small')
         plt.title('lambda={:.2e}'.format(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
 
     plt.tight_layout()
-    plt.figtext(0.5,0.99,"Magnitude of the magnetization (|M|)"+title_string,horizontalalignment='center',verticalalignment='top',fontsize='small')
+    plt.subplots_adjust(top=0.94)
+    plt.figtext(0.5,0.99,"Magnitude of the magnetization (|M|, [Amperes / meter])"+title_string,horizontalalignment='center',verticalalignment='top',fontsize='small')
 
 ########################################################
 # Plot Bnormal
@@ -288,6 +274,7 @@ for whichPlot in range(numPlots-1):
     plt.title('Total, lambda={:.2e}'.format(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
 
 plt.tight_layout()
+plt.subplots_adjust(top=0.94)
 plt.figtext(0.5,0.99,"Bnormal [Tesla]",horizontalalignment='center',verticalalignment='top',fontsize='small')
 
 

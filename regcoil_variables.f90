@@ -25,7 +25,6 @@ module regcoil_variables
   character(len=200) :: wout_filename=""
   character(len=200) :: shape_filename_plasma=""
   character(len=200) :: nescin_filename="nescin.out"
-  character(len=200) :: nescout_filename=""
   character(len=200) :: efit_filename=""
   character(len=200) :: output_filename
 
@@ -110,10 +109,10 @@ module regcoil_variables
   real(dp) :: d_initial = 0.01d+0
   real(dp), dimension(:), allocatable :: s_integration, s_weights, s_magnetization
   real(dp), dimension(:,:), allocatable :: interpolate_magnetization_to_integration
+  integer :: sign_normal = 1
 
   character(len=*), parameter :: &
        target_option_max_M = "max_M", &
-       target_option_rms_M = "rms_M", &
        target_option_chi2_M = "chi2_M", &
        target_option_max_Bnormal = "max_Bnormal", &
        target_option_rms_Bnormal = "rms_Bnormal", &
@@ -133,10 +132,10 @@ module regcoil_variables
        mpol_magnetization, ntor_magnetization, mpol_coil_filter, ntor_coil_filter, &
        nescin_filename, efit_filename, efit_psiN, efit_num_modes, &
        mpol_transform_refinement, ntor_transform_refinement, max_mpol_coil, max_ntor_coil, &
-       load_bnorm, bnorm_filename, &
-       shape_filename_plasma, nlambda, lambda_min, lambda_max, lambda_option, verbose, nescout_filename, &
+       bnorm_filename, &
+       shape_filename_plasma, nlambda, lambda_min, lambda_max, lambda_option, verbose, &
        target_option, target_value, lambda_search_tolerance, &
-       ns_magnetization, ns_integration, d_initial, s_integration_option, lambda_single
+       ns_magnetization, ns_integration, d_initial, s_integration_option, lambda_single, sign_normal
 
 end module regcoil_variables
 
