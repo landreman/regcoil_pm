@@ -95,7 +95,24 @@ subroutine regcoil_build_matrices()
   
   call system_clock(toc)
   if (verbose) print *,"Done. Took",real(toc-tic)/countrate,"sec."
-  
+
+  !--------------------------------------------------------------
+  ! Initialize Jacobian of the magnetization region
+  !--------------------------------------------------------------
+
+  if (allocated(Jacobian_coil)) deallocate(Jacobian_coil)
+  allocate(Jacobian_coil(ntheta_coil, nzeta_coil, ns_integration))
+  do js = 1, ns_integration
+     Jacobian_coil(:,:,js) = d * (-norm_normal_coil + sign_normal * s_integration(js) * d * 2 * norm_normal_coil * mean_curvature_coil + s_integration(js) * s_integration(js) * d * d * Jacobian_ssquared_term)
+  end do
+  if (any(Jacobian_coil >= 0)) then
+     print *,"Error! Jacobian for the magnetization region is not negative-definite."
+     print *,Jacobian_coil
+     stop
+  end if
+  Jacobian_coil = abs(Jacobian_coil) ! When we do volume integrals later, we want the absolute value of the Jacobian.
+
+  !--------------------------------------------------------------
 
   if (allocated(g)) deallocate(g)
   allocate(g(ntheta_plasma*nzeta_plasma, num_basis_functions, ns_magnetization, 3),stat=iflag)

@@ -195,8 +195,20 @@ subroutine regcoil_validate_input
      stop
   end select
 
+  select case (trim(d_option))
+  case (d_option_uniform)
+  case (d_option_iterate)
+  case default
+     print *,"Error! Unrecognized d_option: ",trim(d_option)
+     stop
+  end select
+
   if (symmetry_option .ne. 3) stop "Error! Presently only symmetry_option=3 works."
 
   if ((sign_normal.ne.1) .and. (sign_normal.ne.-1)) stop "Error! sign_normal must be 1 or -1."
+
+  if (nd < 1) stop "nd must be at least 1."
+
+  if (target_mu0_M < 0) stop "target_mu0_M must be positive."
 
 end subroutine regcoil_validate_input

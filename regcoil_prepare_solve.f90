@@ -53,7 +53,10 @@ subroutine regcoil_prepare_solve()
   allocate(magnetization_vector(ntheta_coil, nzeta_coil, ns_magnetization, 3, nlambda))
   allocate(magnetization_vector_mn(num_basis_functions, ns_magnetization, 3, nlambda))
   allocate(abs_M( ntheta_coil, nzeta_coil, ns_magnetization, nlambda))
-
+  allocate(s_averaged_abs_M(ntheta_coil,nzeta_coil,nlambda))
+  allocate(d_iterations(ntheta_coil,nzeta_coil,nlambda))
+  allocate(last_d(ntheta_coil,nzeta_coil))
+  
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
   call DSYSV('U',system_size, 1, matrix, system_size, LAPACK_IPIV, RHS, system_size, LAPACK_WORK, -1, LAPACK_INFO)
   LAPACK_LWORK = int(LAPACK_WORK(1))

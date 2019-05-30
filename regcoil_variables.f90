@@ -102,14 +102,19 @@ module regcoil_variables
   real(dp) :: chi2_B_target = 0
 
   real(dp), dimension(:,:,:), allocatable :: Jacobian_coil
+  real(dp), dimension(:,:), allocatable :: Jacobian_ssquared_term
   real(dp), dimension(:,:), allocatable :: mean_curvature_coil
   real(dp), dimension(:,:), allocatable :: d
   integer :: ns_magnetization = 1
   integer :: ns_integration = 2
   real(dp) :: d_initial = 0.01d+0
-  real(dp), dimension(:), allocatable :: s_integration, s_weights, s_magnetization
+  integer :: nd = 10
+  real(dp), dimension(:), allocatable :: s_integration, s_weights, s_magnetization, s_magnetization_weights
   real(dp), dimension(:,:), allocatable :: interpolate_magnetization_to_integration
+  real(dp), dimension(:,:), allocatable :: last_d
+  real(dp), dimension(:,:,:), allocatable :: s_averaged_abs_M, d_iterations
   integer :: sign_normal = 1
+  real(dp) :: target_mu0_M = 1.4d+0
 
   character(len=*), parameter :: &
        target_option_max_M = "max_M", &
@@ -124,6 +129,11 @@ module regcoil_variables
        s_integration_option_Chebyshev = "Chebyshev"
   character(len=200) :: s_integration_option = s_integration_option_Gaussian
 
+  character(len=*), parameter :: &
+       d_option_uniform = "uniform", &
+       d_option_iterate = "iterate"
+  character(len=200) :: d_option = d_option_uniform
+
   namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &
        R0_plasma, R0_coil, a_plasma, a_coil, &
@@ -135,7 +145,8 @@ module regcoil_variables
        bnorm_filename, &
        shape_filename_plasma, nlambda, lambda_min, lambda_max, lambda_option, verbose, &
        target_option, target_value, lambda_search_tolerance, &
-       ns_magnetization, ns_integration, d_initial, s_integration_option, lambda_single, sign_normal
+       ns_magnetization, ns_integration, d_initial, s_integration_option, lambda_single, sign_normal, &
+       d_option, nd, target_mu0_M
 
 end module regcoil_variables
 

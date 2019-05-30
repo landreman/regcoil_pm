@@ -228,14 +228,15 @@ subroutine regcoil_evaluate_coil_surface()
   end select
   deallocate(temp_matrix)
   allocate(temp_matrix(ns_magnetization,ns_magnetization))
-  allocate(temp_array(ns_magnetization))
-  call regcoil_Chebyshev_grid(ns_magnetization, 0.0_dp, 1.0_dp, s_magnetization, temp_array, temp_matrix)
-  deallocate(temp_array, temp_matrix)
+  allocate(s_magnetization_weights(ns_magnetization))
+  call regcoil_Chebyshev_grid(ns_magnetization, 0.0_dp, 1.0_dp, s_magnetization, s_magnetization_weights, temp_matrix)
+  deallocate(temp_matrix)
   allocate(interpolate_magnetization_to_integration(ns_integration,ns_magnetization))
   call regcoil_Chebyshev_interpolation_matrix(ns_magnetization, ns_integration, s_magnetization, s_integration, interpolate_magnetization_to_integration)
   print *,"s_integration:",s_integration
   print *,"s_weights:",s_weights
   print *,"s_magnetization",s_magnetization
+  print *,"s_magnetization_weights",s_magnetization_weights
   print *,"interpolate_magnetization_to_integration:"
   do j = 1,ns_integration
      print *,interpolate_magnetization_to_integration(j,:)
@@ -245,20 +246,9 @@ subroutine regcoil_evaluate_coil_surface()
   allocate(d(ntheta_coil, nzeta_coil))
   d = d_initial
 
-  ! Generate Jacobian of the (s, theta, zeta) coordinates in the magnetization region:
-  allocate(temp_matrix(ntheta_coil, nzeta_coil))
-  temp_matrix = d * d * (fundamental_form_M * fundamental_form_M - fundamental_form_L * fundamental_form_P) / norm_normal_coil
-  allocate(Jacobian_coil(ntheta_coil, nzeta_coil, ns_integration))
-  do js = 1, ns_integration
-     Jacobian_coil(:,:,js) = d * (-norm_normal_coil + sign_normal * s_integration(js) * d * 2 * norm_normal_coil * mean_curvature_coil + s_integration(js) * s_integration(js) * temp_matrix)
-  end do
-  deallocate(temp_matrix)
-  if (any(Jacobian_coil >= 0)) then
-     print *,"Error! Jacobian for the magnetization region is not negative-definite."
-     print *,Jacobian_coil
-     stop
-  end if
-  Jacobian_coil = abs(Jacobian_coil) ! When we do volume integrals later, we want the absolute value of the Jacobian.
+  allocate(Jacobian_ssquared_term(ntheta_coil, nzeta_coil))
+  ! We wll need this quantity later to generate the Jacobian of the (s, theta, zeta) coordinates in the magnetization region:
+  Jacobian_ssquared_term = (fundamental_form_M * fundamental_form_M - fundamental_form_L * fundamental_form_P) / norm_normal_coil
 
   deallocate(fundamental_form_E, fundamental_form_F, fundamental_form_G, fundamental_form_L, fundamental_form_M, fundamental_form_P)
   

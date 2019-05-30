@@ -1,39 +1,62 @@
 subroutine regcoil_solve(ilambda)
 
   use regcoil_variables
+  use stel_constants
 
   implicit none
 
   integer, intent(in) :: ilambda
   integer :: iflag, tic, toc, countrate
-
+  integer :: jd, num_iterations, j
 
   call system_clock(tic,countrate)
-
-  ! The scaling of the terms below by 1/(1+lambda) ensures that matrix and RHS are O(1) regardless of whether lambda is >> 1 or << 1.
-  matrix = (1 / (1 + lambda(ilambda))) * matrix_B + (lambda(ilambda) / (1 + lambda(ilambda))) * matrix_regularization
-  RHS    = (1 / (1 + lambda(ilambda))) *    RHS_B + (lambda(ilambda) / (1 + lambda(ilambda))) *    RHS_regularization
-
-  call system_clock(toc)
-  if (verbose) print *,"  Additions: ",real(toc-tic)/countrate," sec."
-  call system_clock(tic)
-
-  ! Compute solution = matrix \ RHS.
-  ! Use LAPACK's DSYSV since matrix is symmetric.
-  ! Note: RHS will be over-written with the solution.
-  call DSYSV('U',system_size, 1, matrix, system_size, LAPACK_IPIV, RHS, system_size, LAPACK_WORK, LAPACK_LWORK, LAPACK_INFO)
-  if (LAPACK_INFO /= 0) then
-     print *, "!!!!!! Error in LAPACK DSYSV: INFO = ", LAPACK_INFO
-     !stop
-  end if
-  solution = RHS
-
-  call system_clock(toc)
-  if (verbose) print *,"  DSYSV: ",real(toc-tic)/countrate," sec."
-  call system_clock(tic)
   
-  call regcoil_diagnostics(ilambda)
+  num_iterations = nd
+  if (trim(d_option)==d_option_uniform) num_iterations = 1
 
+  do jd = 1, num_iterations
+     if ((verbose) .and. (trim(d_option).ne.d_option_uniform)) print "(a,i4,a,i4,a)", " ------ Beginning d iteration",jd," of",num_iterations," ------"
+
+     ! The scaling of the terms below by 1/(1+lambda) ensures that matrix and RHS are O(1) regardless of whether lambda is >> 1 or << 1.
+     matrix = (1 / (1 + lambda(ilambda))) * matrix_B + (lambda(ilambda) / (1 + lambda(ilambda))) * matrix_regularization
+     RHS    = (1 / (1 + lambda(ilambda))) *    RHS_B + (lambda(ilambda) / (1 + lambda(ilambda))) *    RHS_regularization
+     
+     call system_clock(toc)
+     if (verbose) print *,"  Additions: ",real(toc-tic)/countrate," sec."
+     call system_clock(tic)
+     
+     ! Compute solution = matrix \ RHS.
+     ! Use LAPACK's DSYSV since matrix is symmetric.
+     ! Note: RHS will be over-written with the solution.
+     call DSYSV('U',system_size, 1, matrix, system_size, LAPACK_IPIV, RHS, system_size, LAPACK_WORK, LAPACK_LWORK, LAPACK_INFO)
+     if (LAPACK_INFO /= 0) then
+        print *, "!!!!!! Error in LAPACK DSYSV: INFO = ", LAPACK_INFO
+        !stop
+     end if
+     solution = RHS
+     
+     call system_clock(toc)
+     if (verbose) print *,"  DSYSV: ",real(toc-tic)/countrate," sec."
+     call system_clock(tic)
+  
+     call regcoil_diagnostics(ilambda)
+
+     if (jd < num_iterations) then
+        ! Update thickness:
+        last_d = d
+        d = last_d * s_averaged_abs_M(:,:,ilambda) / (target_mu0_M / mu0)
+        if (verbose) print *,"Updated d. ||d_old - d_new|| = ",dtheta_coil*dzeta_coil*sum((d - last_d) **2)
+
+        print *,"new d:"
+        do j = 1,ntheta_coil
+           print "(*(f5.2))",d(j,:)
+        end do
+
+        call regcoil_build_matrices()
+
+     end if
+
+end do
   
 end subroutine regcoil_solve
 

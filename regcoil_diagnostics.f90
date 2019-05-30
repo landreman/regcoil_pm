@@ -33,6 +33,14 @@ subroutine regcoil_diagnostics(ilambda)
           + magnetization_vector(:,:,js,3,ilambda) * magnetization_vector(:,:,js,3,ilambda))
   end do
 
+  d_iterations(:,:,ilambda) = d
+
+  do itheta = 1, ntheta_coil
+     do izeta = 1, nzeta_coil
+        s_averaged_abs_M(itheta,izeta,ilambda) = dot_product(s_magnetization_weights, abs_M(itheta,izeta,:,ilambda))
+     end do
+  end do
+
   chi2_M(ilambda) = dot_product(solution, matmul(matrix_regularization, solution)) * nfp
   ! Compute chi2_M a second way, as a sanity test. This second method is probably slower, so it could eventually be commented out.
   chi2_M_alt = 0
