@@ -45,7 +45,8 @@ subroutine regcoil_write_output
        vn_total_time = "total_time", &
        vn_exit_code = "exit_code", &
        vn_chi2_B_target = "chi2_B_target", &
-       vn_sign_normal = "sign_normal"
+       vn_sign_normal = "sign_normal", &
+       vn_d_initial = "d_initial"
 
   ! Arrays with dimension 1
   character(len=*), parameter :: &
@@ -284,6 +285,9 @@ subroutine regcoil_write_output
   call cdf_setatt(ncid, vn_sign_normal, '+1 if the magnetization region is obtained by moving in the normal_coil direction from the boundary surface, or ' // &
        '-1 if the magnetization region is obtained by moving opposite to the normal_coil direction from the boundary surface.')
 
+  call cdf_define(ncid, vn_d_initial, d_initial)
+  call cdf_setatt(ncid, vn_d_initial, 'Initial thickness of the magnetization region, in meters. ' // input_parameter_text)
+
   ! Arrays with dimension 1
 
   call cdf_define(ncid, vn_theta_plasma, theta_plasma, dimname=ntheta_plasma_dim)
@@ -497,6 +501,7 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_exit_code, exit_code)
   if (trim(lambda_option)==lambda_option_search) call cdf_write(ncid, vn_chi2_B_target, chi2_B_target)
   call cdf_write(ncid, vn_sign_normal, sign_normal)
+  call cdf_write(ncid, vn_d_initial, d_initial)
 
   ! Arrays with dimension 1
 

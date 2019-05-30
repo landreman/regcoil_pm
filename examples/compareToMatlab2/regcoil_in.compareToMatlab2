@@ -23,5 +23,5 @@
   geometry_option_coil=3
   nescin_filename = '/Users/mattland/regcoil_pm/equilibria/NCSX.vv'
 
-  save_level=0
+!  save_level=0
 /

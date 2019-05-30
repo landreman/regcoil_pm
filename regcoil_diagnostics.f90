@@ -45,7 +45,7 @@ subroutine regcoil_diagnostics(ilambda)
      end do
   end do
   chi2_M_alt = chi2_M_alt * nfp * dtheta_coil * dzeta_coil
-  if (verbose) print "(3(a,es22.14))","2 methods of computing chi2_M that should agree: method 1 =",chi2_M(ilambda),", method 2 =",chi2_M_alt,", relative difference =",(chi2_M(ilambda) - chi2_M_alt) / (abs(chi2_M(ilambda)) + abs(chi2_M_alt))
+  if (verbose) print "(3(a,es22.14))","   2 methods of computing chi2_M that should agree: method 1 =",chi2_M(ilambda),", method 2 =",chi2_M_alt,", relative difference =",(chi2_M(ilambda) - chi2_M_alt) / (abs(chi2_M(ilambda)) + abs(chi2_M_alt))
 
 
   allocate(temp_array(ntheta_plasma * nzeta_plasma))
@@ -67,7 +67,7 @@ subroutine regcoil_diagnostics(ilambda)
   ! Compute chi2_B a second way, as a sanity test.
   chi2_B_alt = nfp * dot_product(solution, matmul(matrix_B, solution)) - 2 * nfp * dot_product(RHS_B, solution) &
        + nfp * dtheta_plasma * dzeta_plasma * sum(norm_normal_plasma * Bnormal_from_TF_and_plasma_current * Bnormal_from_TF_and_plasma_current)
-  if (verbose) print "(3(a,es22.14))","2 methods of computing chi2_B that should agree: method 1 =",chi2_B(ilambda),", method 2 =",chi2_B_alt,", relative difference =",(chi2_B(ilambda) - chi2_B_alt) / (abs(chi2_B(ilambda)) + abs(chi2_B_alt))
+  if (verbose) print "(3(a,es22.14))","   2 methods of computing chi2_B that should agree: method 1 =",chi2_B(ilambda),", method 2 =",chi2_B_alt,", relative difference =",(chi2_B(ilambda) - chi2_B_alt) / (abs(chi2_B(ilambda)) + abs(chi2_B_alt))
   
   call system_clock(toc)
   if (verbose) print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
