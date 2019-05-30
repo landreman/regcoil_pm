@@ -73,17 +73,20 @@ dzeta  =  zeta_coil[1] -  zeta_coil[0]
 #print "magnetization_vector.shape:",magnetization_vector.shape
 #print "Jacobian_coil.shape:",Jacobian_coil.shape
 
-focus_filename = 'focus.in'
+focus_filename = 'focus.regcoil_pm'
 f = open(focus_filename,'w')
+f.write("# Total number of coils \n")
+f.write('{:d} \n'.format(nzeta_coil*ntheta_coil*ns_integration*nfp))
+print(ns_integration, ntheta_coil,  nzeta_coil, nfp)
 
 icoil = 0
-for il in range(nfp):
+for js in range(ns_integration):
     for izeta in range(nzeta_coil):
-        izetal = il * nzeta_coil + izeta
-        coszeta = np.cos(zetal_coil[izetal])
-        sinzeta = np.sin(zetal_coil[izetal])
         for itheta in range(ntheta_coil):
-            for js in range(ns_integration):
+            for il in range(nfp):
+                izetal = il * nzeta_coil + izeta
+                coszeta = np.cos(zetal_coil[izetal])
+                sinzeta = np.sin(zetal_coil[izetal])
                 icoil += 1
                 # Evaluate the position vector in the magnetization region:
                 x = r_coil[izetal,itheta,0] + sign_normal * s_integration[js] * d_initial * normal_coil[izetal,itheta,0] / norm_normal_coil[izeta,itheta]
