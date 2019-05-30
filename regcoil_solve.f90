@@ -6,7 +6,7 @@ subroutine regcoil_solve(ilambda)
   implicit none
 
   integer, intent(in) :: ilambda
-  integer :: iflag, tic, toc, countrate
+  integer :: iflag, tic, toc, countrate, isaved
   integer :: jd, num_iterations, j
 
   call system_clock(tic,countrate)
@@ -39,12 +39,17 @@ subroutine regcoil_solve(ilambda)
      if (verbose) print *,"  DSYSV: ",real(toc-tic)/countrate," sec."
      call system_clock(tic)
   
-     call regcoil_diagnostics(ilambda)
+     if (trim(lambda_option)==lambda_option_single) then
+        isaved = jd
+     else
+        isaved = ilambda
+     end if
+     call regcoil_diagnostics(isaved)
 
      if (jd < num_iterations) then
         ! Update thickness:
         last_d = d
-        d = last_d * s_averaged_abs_M(:,:,ilambda) / (target_mu0_M / mu0)
+        d = last_d * s_averaged_abs_M(:,:,isaved) / (target_mu0_M / mu0)
         if (verbose) print *,"Updated d. ||d_old - d_new|| = ",dtheta_coil*dzeta_coil*sum((d - last_d) **2)
 
         print *,"new d:"

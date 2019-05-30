@@ -227,6 +227,8 @@ subroutine regcoil_auto_regularization_solve()
      print *,"*******************************************************************************"
   end if
 
+  nsaved = nlambda
+
 contains
  
   function target_function(jlambda)

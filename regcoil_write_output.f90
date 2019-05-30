@@ -42,6 +42,8 @@ subroutine regcoil_write_output
        vn_volume_coil = "volume_coil", &
        vn_curpol = "curpol", &
        vn_nlambda = "nlambda", &
+       vn_nsaved = "nsaved", &
+       vn_nd = "nd", &
        vn_total_time = "total_time", &
        vn_exit_code = "exit_code", &
        vn_chi2_B_target = "chi2_B_target", &
@@ -132,6 +134,7 @@ subroutine regcoil_write_output
        nthetanzeta_plasma_dim = (/'ntheta_nzeta_plasma'/), &
        num_basis_functions_dim = (/'num_basis_functions'/), &
        nlambda_dim = (/'nlambda'/), &
+       nsaved_dim = (/'nsaved'/), &
        system_size_dim = (/'system_size'/), &
        ns_magnetization_dim = (/'ns_magnetization'/), &
        ns_integration_dim = (/'ns_integration'/)
@@ -145,7 +148,7 @@ subroutine regcoil_write_output
        nthetanzeta_plasma_nthetanzeta_coil_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','ntheta_nzeta_coil'/), &
        nthetanzeta_plasma_basis_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','num_basis_functions'/), &
        basis_basis_dim = (/ character(len=50) :: 'num_basis_functions','num_basis_functions'/), &
-       basis_nlambda_dim = (/ character(len=50) :: 'num_basis_functions','nlambda'/), &
+       basis_nsaved_dim = (/ character(len=50) :: 'num_basis_functions','nsaved'/), &
        system_size_system_size_dim = (/ character(len=50) :: 'system_size','system_size'/), &
        ns_integration_ns_magnetization_dim = (/ character(len=50) :: 'ns_integration', 'ns_magnetization' /)
 
@@ -153,19 +156,19 @@ subroutine regcoil_write_output
   character(len=*), parameter, dimension(3) :: &
        xyz_ntheta_nzetal_plasma_dim = (/ character(len=50) :: 'xyz','ntheta_plasma','nzetal_plasma'/), &
        xyz_ntheta_nzetal_coil_dim = (/ character(len=50) :: 'xyz','ntheta_coil','nzetal_coil'/), &
-       ntheta_nzeta_coil_nlambda_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil','nlambda'/), &
-       ntheta_nzeta_plasma_nlambda_dim = (/ character(len=50) :: 'ntheta_plasma','nzeta_plasma','nlambda'/), &
+       ntheta_nzeta_coil_nsaved_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil','nsaved'/), &
+       ntheta_nzeta_plasma_nsaved_dim = (/ character(len=50) :: 'ntheta_plasma','nzeta_plasma','nsaved'/), &
        ntheta_nzeta_coil_ns_integration_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil','ns_integration'/)
 
   ! Arrays with dimension 4:
   character(len=*), parameter, dimension(4) :: &
        ntheta_nzeta_plasma_basis_ns_magnetization_RZetaZ_dim = (/ character(len=50) :: 'ntheta_nzeta_plasma','num_basis_functions','ns_magnetization','RZetaZ'/), &
-       ntheta_nzeta_coil_ns_magnetization_nlambda_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil', 'ns_magnetization','nlambda' /), &
-       basis_ns_magnetization_RZetaZ_nlambda_dim = (/ character(len=50) :: 'num_basis_functions','ns_magnetization','RZetaZ','nlambda' /) 
+       ntheta_nzeta_coil_ns_magnetization_nsaved_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil', 'ns_magnetization','nsaved' /), &
+       basis_ns_magnetization_RZetaZ_nsaved_dim = (/ character(len=50) :: 'num_basis_functions','ns_magnetization','RZetaZ','nsaved' /) 
 
   ! Arrays with dimension 5:
   character(len=*), parameter, dimension(5) :: &
-       ntheta_nzeta_coil_ns_magnetization_RZetaZ_nlambda_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil', 'ns_magnetization','RZetaZ','nlambda' /)
+       ntheta_nzeta_coil_ns_magnetization_RZetaZ_nsaved_dim = (/ character(len=50) :: 'ntheta_coil','nzeta_coil', 'ns_magnetization','RZetaZ','nsaved' /)
 
   character(len=*), parameter :: input_parameter_text = ' See the user manual documentation for the input parameter of the same name.'
 
@@ -264,6 +267,12 @@ subroutine regcoil_write_output
 
   call cdf_define(ncid, vn_nlambda, nlambda)
   call cdf_setatt(ncid, vn_nlambda, 'Number of values of the regularization parameter lambda examined.')
+
+  call cdf_define(ncid, vn_nd, nd)
+  call cdf_setatt(ncid, vn_nd, 'Number of iterations performed to determine the thickness d.')
+
+  call cdf_define(ncid, vn_nsaved, nsaved)
+  call cdf_setatt(ncid, vn_nsaved, 'Number of configurations saved in the output file. This value equals nd if lambda_option=single, otherwise nsaved=nlambda.')
 
   call cdf_define(ncid, vn_total_time, total_time)
   call cdf_setatt(ncid, vn_total_time, 'Total time it took regcoil to run, in seconds.')
@@ -366,22 +375,22 @@ subroutine regcoil_write_output
 
   call cdf_define(ncid, vn_RHS_B, RHS_B, dimname=system_size_dim)
 
-  call cdf_define(ncid, vn_lambda, lambda(1:Nlambda), dimname=nlambda_dim)
+  call cdf_define(ncid, vn_lambda, lambda(1:nsaved), dimname=nsaved_dim)
   call cdf_setatt(ncid, vn_lambda, 'Values of the regularization parameter that were used, in SI units (Tesla^2 / Ampere^2)')
 
-  call cdf_define(ncid, vn_chi2_B, chi2_B(1:Nlambda), dimname=nlambda_dim)
+  call cdf_define(ncid, vn_chi2_B, chi2_B(1:nsaved), dimname=nsaved_dim)
   call cdf_setatt(ncid, vn_chi2_B, 'Values of chi^2_B (the area integral over the plasma surface of |B_normal|^2) that resulted for each value of lambda, in SI units (Tesla^2 meter^2)')
 
-  call cdf_define(ncid, vn_chi2_M, chi2_M(1:Nlambda), dimname=nlambda_dim)
+  call cdf_define(ncid, vn_chi2_M, chi2_M(1:nsaved), dimname=nsaved_dim)
   call cdf_setatt(ncid, vn_chi2_M, 'Values of chi^2_M (the volume integral over the magnetization region of magnetization squared times thickness d) that resulted for each value of lambda, in SI units (Amperes^2 meters^2).')
 
-  call cdf_define(ncid, vn_max_Bnormal, max_Bnormal(1:Nlambda), dimname=nlambda_dim)
+  call cdf_define(ncid, vn_max_Bnormal, max_Bnormal(1:nsaved), dimname=nsaved_dim)
   call cdf_setatt(ncid, vn_max_Bnormal, 'Maximum (over the plasma surface) magnetic field normal to the target plasma shape that resulted for each value of lambda, in Tesla.')
 
-  call cdf_define(ncid, vn_max_M, max_M(1:Nlambda), dimname=nlambda_dim) ! We only write elements 1:Nlambda in case of a lambda search.
+  call cdf_define(ncid, vn_max_M, max_M(1:nsaved), dimname=nsaved_dim) ! We only write elements 1:nsaved in case of a lambda search.
   call cdf_setatt(ncid, vn_max_M, 'Maximum (over the magnetization region) magnitude of the magnetization that resulted for each value of lambda, in SI units (Amperes / meter).')
 
-  call cdf_define(ncid, vn_min_M, min_M(1:Nlambda), dimname=nlambda_dim) ! We only write elements 1:Nlambda in case of a lambda search.
+  call cdf_define(ncid, vn_min_M, min_M(1:nsaved), dimname=nsaved_dim) ! We only write elements 1:nsaved in case of a lambda search.
   call cdf_setatt(ncid, vn_min_M, 'Minimum (over the magnetization region) magnitude of the magnetization that resulted for each value of lambda, in SI units (Amperes / meter).')
 
   ! Arrays with dimension 2
@@ -433,7 +442,7 @@ subroutine regcoil_write_output
 
   end if
 
-  call cdf_define(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:Nlambda), dimname=ntheta_nzeta_plasma_nlambda_dim)
+  call cdf_define(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:nsaved), dimname=ntheta_nzeta_plasma_nsaved_dim)
   call cdf_setatt(ncid, vn_Bnormal_total, 'Residual magnetic field normal to the plasma surface, in units of Tesla, ' // &
        'for each value of the regularization parameter lambda considered.')
 
@@ -447,17 +456,17 @@ subroutine regcoil_write_output
      call cdf_setatt(ncid, vn_g, 'Matrix relating the magnetization to its contribution to B_normal on the plasma surface.')
   end if
 
-  call cdf_define(ncid, vn_abs_M, abs_M, dimname=ntheta_nzeta_coil_ns_magnetization_nlambda_dim)
+  call cdf_define(ncid, vn_abs_M, abs_M, dimname=ntheta_nzeta_coil_ns_magnetization_nsaved_dim)
   call cdf_setatt(ncid, vn_abs_M, 'Magnitude of the magnetization vector, |M|. Units = Amperes / meter.')
 
-  call cdf_define(ncid, vn_magnetization_vector_mn, magnetization_vector_mn, dimname=basis_ns_magnetization_RZetaZ_nlambda_dim)
+  call cdf_define(ncid, vn_magnetization_vector_mn, magnetization_vector_mn, dimname=basis_ns_magnetization_RZetaZ_nsaved_dim)
   call cdf_setatt(ncid, vn_magnetization_vector_mn, 'The magnetization vector, M, with its dependence on (theta,zeta) described in Fourier space. ' // &
        'The dimension of size 3 corresponds to the components of M along the cylindrical unit basis vectors, ' // &
        'with these basis vectors evaluated at toroidal angle zeta, not necessarily at the position where M is evaluated. Units = Amperes / meter.')
 
   ! Arrays with dimension 5
 
-  call cdf_define(ncid, vn_magnetization_vector, magnetization_vector, dimname=ntheta_nzeta_coil_ns_magnetization_RZetaZ_nlambda_dim)
+  call cdf_define(ncid, vn_magnetization_vector, magnetization_vector, dimname=ntheta_nzeta_coil_ns_magnetization_RZetaZ_nsaved_dim)
   call cdf_setatt(ncid, vn_magnetization_vector, 'The magnetization vector, M, with its dependence on (theta,zeta) described in real space rather than Fourier space. ' // &
        'The dimension of size 3 corresponds to the components of M along the cylindrical unit basis vectors, ' // &
        'with these basis vectors evaluated at toroidal angle zeta, not necessarily at the position where M is evaluated. Units = Amperes / meter.')
@@ -497,6 +506,8 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_volume_plasma, volume_plasma)
   call cdf_write(ncid, vn_volume_coil, volume_coil)
   call cdf_write(ncid, vn_nlambda, nlambda)
+  call cdf_write(ncid, vn_nd, nd)
+  call cdf_write(ncid, vn_nsaved, nsaved)
   call cdf_write(ncid, vn_total_time, total_time)
   call cdf_write(ncid, vn_exit_code, exit_code)
   if (trim(lambda_option)==lambda_option_search) call cdf_write(ncid, vn_chi2_B_target, chi2_B_target)
@@ -533,12 +544,12 @@ subroutine regcoil_write_output
   end if
   call cdf_write(ncid, vn_zmns_coil, zmns_coil)
   call cdf_write(ncid, vn_RHS_B, RHS_B)
-  call cdf_write(ncid, vn_lambda, lambda(1:Nlambda))
-  call cdf_write(ncid, vn_chi2_B, chi2_B(1:Nlambda))
-  call cdf_write(ncid, vn_chi2_M, chi2_M(1:Nlambda))
-  call cdf_write(ncid, vn_max_Bnormal, max_Bnormal(1:Nlambda))
-  call cdf_write(ncid, vn_max_M, max_M(1:Nlambda))
-  call cdf_write(ncid, vn_min_M, min_M(1:Nlambda))
+  call cdf_write(ncid, vn_lambda, lambda(1:nsaved))
+  call cdf_write(ncid, vn_chi2_B, chi2_B(1:nsaved))
+  call cdf_write(ncid, vn_chi2_M, chi2_M(1:nsaved))
+  call cdf_write(ncid, vn_max_Bnormal, max_Bnormal(1:nsaved))
+  call cdf_write(ncid, vn_max_M, max_M(1:nsaved))
+  call cdf_write(ncid, vn_min_M, min_M(1:nsaved))
 
   ! Arrays with dimension 2
 
@@ -569,7 +580,7 @@ subroutine regcoil_write_output
 
   end if
 
-  call cdf_write(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:Nlambda))
+  call cdf_write(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:nsaved))
   call cdf_write(ncid, vn_Jacobian_coil, Jacobian_coil)
 
   ! Arrays with dimension 4

@@ -45,6 +45,7 @@ Bnormal_total = f.variables['Bnormal_total'][()]
 # = f.variables[''][()]
 
 nlambda = f.variables['nlambda'][()]
+nsaved = len(chi2_B)
 lambdas = f.variables['lambda'][()]
 
 print "ntheta_plasma: ",ntheta_plasma
@@ -64,15 +65,16 @@ if np.max(np.abs(lambdas)) < 1.0e-200:
 # the output arrays are in the order of the search, which is not so convenient for plotting.
 ########################################################
 
-permutation = np.argsort(lambdas)
-lambdas = lambdas[permutation]
-chi2_M = chi2_M[permutation]
-chi2_B = chi2_B[permutation]
-Bnormal_total = Bnormal_total[permutation,:,:]
-max_M = max_M[permutation]
-min_M = min_M[permutation]
-if lambdas[-1]>1.0e199:
-    lambdas[-1] = np.inf
+if nsaved == nlambda:
+    permutation = np.argsort(lambdas)
+    lambdas = lambdas[permutation]
+    chi2_M = chi2_M[permutation]
+    chi2_B = chi2_B[permutation]
+    Bnormal_total = Bnormal_total[permutation,:,:]
+    max_M = max_M[permutation]
+    min_M = min_M[permutation]
+    if lambdas[-1]>1.0e199:
+        lambdas[-1] = np.inf
 
 ########################################################
 # For 3D plotting, 'close' the arrays in u and v
@@ -153,14 +155,14 @@ plt.tight_layout()
 
 
 ########################################################
-# Pick the lambda values to show in the 2D plots
+# Pick the isaved values to show in the 2D plots
 ########################################################
 
-max_nlambda_for_contour_plots = 16
-numPlots = min(nlambda,max_nlambda_for_contour_plots)
-ilambda_to_plot = np.sort(list(set(map(int,np.linspace(1,nlambda,numPlots)))))
-numPlots = len(ilambda_to_plot)
-print "ilambda_to_plot:",ilambda_to_plot
+max_nsaved_for_contour_plots = 16
+numPlots = min(nsaved,max_nsaved_for_contour_plots)
+isaved_to_plot = np.sort(list(set(map(int,np.linspace(1,nsaved,numPlots)))))
+numPlots = len(isaved_to_plot)
+print "isaved_to_plot:",isaved_to_plot
 
 ########################################################
 # Now make plot of chi^2 over lambda scan
@@ -178,25 +180,42 @@ plt.loglog(chi2_M,chi2_B,'.-r')
 plt.xlabel('chi2_M [A^2 m^2]')
 plt.ylabel('chi2_B [T^2 m^2]')
 for j in range(numPlots):
-    plt.plot(chi2_M[ilambda_to_plot[j]-1], chi2_B[ilambda_to_plot[j]-1],'ob')
+    plt.plot(chi2_M[isaved_to_plot[j]-1], chi2_B[isaved_to_plot[j]-1],'ob')
 
-plt.subplot(numRows,numCols,2)
-plt.loglog(lambdas,chi2_B,'.-r')
-plt.xlabel('lambda [T^2 / A^2]')
-plt.ylabel('chi2_B [T^2 m^2]')
-for j in range(numPlots):
-    plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_B[ilambda_to_plot[j]-1],'ob')
+if nsaved == nlambda:
+    plt.subplot(numRows,numCols,2)
+    plt.loglog(lambdas,chi2_B,'.-r')
+    plt.xlabel('lambda [T^2 / A^2]')
+    plt.ylabel('chi2_B [T^2 m^2]')
+    for j in range(numPlots):
+        plt.plot(lambdas[isaved_to_plot[j]-1], chi2_B[isaved_to_plot[j]-1],'ob')
 
-plt.subplot(numRows,numCols,4)
-plt.loglog(lambdas,chi2_M,'.-r')
-plt.xlabel('lambda [T^2 / A^2]')
-plt.ylabel('chi2_M [A^2 m^2]')
-for j in range(numPlots):
-    plt.plot(lambdas[ilambda_to_plot[j]-1], chi2_M[ilambda_to_plot[j]-1],'ob')
+    plt.subplot(numRows,numCols,4)
+    plt.loglog(lambdas,chi2_M,'.-r')
+    plt.xlabel('lambda [T^2 / A^2]')
+    plt.ylabel('chi2_M [A^2 m^2]')
+    for j in range(numPlots):
+        plt.plot(lambdas[isaved_to_plot[j]-1], chi2_M[isaved_to_plot[j]-1],'ob')
+else:
+    d_iterations = np.arange(nsaved)
+
+    plt.subplot(numRows,numCols,2)
+    plt.semilogy(d_iterations,chi2_B,'.-r')
+    plt.xlabel('d_iteration')
+    plt.ylabel('chi2_B [T^2 m^2]')
+    for j in range(numPlots):
+        plt.plot(d_iterations[isaved_to_plot[j]-1], chi2_B[isaved_to_plot[j]-1],'ob')
+
+    plt.subplot(numRows,numCols,4)
+    plt.semilogy(d_iterations,chi2_M,'.-r')
+    plt.xlabel('d iteration')
+    plt.ylabel('chi2_M [A^2 m^2]')
+    for j in range(numPlots):
+        plt.plot(d_iterations[isaved_to_plot[j]-1], chi2_M[isaved_to_plot[j]-1],'ob')
 
 plt.tight_layout()
 plt.subplots_adjust(top=0.95)
-plt.figtext(0.5,0.99,"Blue dots indicate the points in the lambda scan that are plotted in later figures",horizontalalignment='center',verticalalignment='top',fontsize='small')
+plt.figtext(0.5,0.99,"Blue dots indicate the points that are plotted in later figures",horizontalalignment='center',verticalalignment='top',fontsize='small')
 
 ########################################################
 # Prepare for future plots
@@ -235,11 +254,14 @@ for js in range(num_abs_M_figures):
 
     for whichPlot in range(numPlots):
         plt.subplot(numRows,numCols,whichPlot+1)
-        plt.contourf(zeta_coil, theta_coil, np.transpose(abs_M[ilambda_to_plot[whichPlot]-1,ks,:,:]), numContours)
+        plt.contourf(zeta_coil, theta_coil, np.transpose(abs_M[isaved_to_plot[whichPlot]-1,ks,:,:]), numContours)
         plt.colorbar()
         plt.xlabel('zeta (coil)',fontsize='x-small')
         plt.ylabel('theta (coil)',fontsize='x-small')
-        plt.title('lambda={:.2e}'.format(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
+        if nsaved==nlambda:
+            plt.title('lambda={:.2e}'.format(lambdas[isaved_to_plot[whichPlot]-1]),fontsize='x-small')
+        else:
+            plt.title('iteration {:d}'.format(d_iterations[isaved_to_plot[whichPlot]-1]),fontsize='x-small')
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.94)
@@ -267,11 +289,14 @@ plt.title('From TF and plasma current',fontsize='x-small')
 
 for whichPlot in range(numPlots-1):
     plt.subplot(numRows,numCols,whichPlot+2)
-    plt.contourf(zeta_plasma, theta_plasma, np.transpose(Bnormal_total[ilambda_to_plot[whichPlot]-1,:,:]), numContours)
+    plt.contourf(zeta_plasma, theta_plasma, np.transpose(Bnormal_total[isaved_to_plot[whichPlot]-1,:,:]), numContours)
     plt.colorbar()
     plt.xlabel('zeta',fontsize='x-small')
     plt.ylabel('theta',fontsize='x-small')
-    plt.title('Total, lambda={:.2e}'.format(lambdas[ilambda_to_plot[whichPlot]-1]),fontsize='x-small')
+    if nsaved == nlambda:
+        plt.title('Total, lambda={:.2e}'.format(lambdas[isaved_to_plot[whichPlot]-1]),fontsize='x-small')
+    else:
+        plt.title('Total, iteration {:d}'.format(d_iterations[isaved_to_plot[whichPlot]-1]),fontsize='x-small')
 
 plt.tight_layout()
 plt.subplots_adjust(top=0.94)

@@ -115,6 +115,7 @@ module regcoil_variables
   real(dp), dimension(:,:,:), allocatable :: s_averaged_abs_M, d_iterations
   integer :: sign_normal = 1
   real(dp) :: target_mu0_M = 1.4d+0
+  integer :: nsaved
 
   character(len=*), parameter :: &
        target_option_max_M = "max_M", &

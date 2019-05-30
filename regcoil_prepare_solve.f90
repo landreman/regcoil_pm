@@ -6,6 +6,12 @@ subroutine regcoil_prepare_solve()
 
   integer :: iflag
 
+  if (trim(lambda_option)==lambda_option_single) then
+     nsaved = nd
+  else
+     nsaved = nlambda
+  end if
+
   if (allocated(matrix)) deallocate(matrix)
   allocate(matrix(system_size, system_size), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 1!'
@@ -27,34 +33,34 @@ subroutine regcoil_prepare_solve()
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 5!'
 
   if (allocated(chi2_B)) deallocate(chi2_B)
-  allocate(chi2_B(nlambda), stat=iflag)
+  allocate(chi2_B(nsaved), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 6!'
 
   if (allocated(chi2_M)) deallocate(chi2_M)
-  allocate(chi2_M(nlambda), stat=iflag)
+  allocate(chi2_M(nsaved), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 7!'
 
   if (allocated(max_Bnormal)) deallocate(max_Bnormal)
-  allocate(max_Bnormal(nlambda), stat=iflag)
+  allocate(max_Bnormal(nsaved), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 8!'
 
   if (allocated(max_M)) deallocate(max_M)
-  allocate(max_M(nlambda), stat=iflag)
+  allocate(max_M(nsaved), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 9!'
 
   if (allocated(min_M)) deallocate(min_M)
-  allocate(min_M(nlambda), stat=iflag)
+  allocate(min_M(nsaved), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 9!'
 
   if (allocated(Bnormal_total)) deallocate(Bnormal_total)
-  allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nlambda), stat=iflag)
+  allocate(Bnormal_total(ntheta_plasma,nzeta_plasma,nsaved), stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_prepare_solve Allocation error 14!'
 
-  allocate(magnetization_vector(ntheta_coil, nzeta_coil, ns_magnetization, 3, nlambda))
-  allocate(magnetization_vector_mn(num_basis_functions, ns_magnetization, 3, nlambda))
-  allocate(abs_M( ntheta_coil, nzeta_coil, ns_magnetization, nlambda))
-  allocate(s_averaged_abs_M(ntheta_coil,nzeta_coil,nlambda))
-  allocate(d_iterations(ntheta_coil,nzeta_coil,nlambda))
+  allocate(magnetization_vector(ntheta_coil, nzeta_coil, ns_magnetization, 3, nsaved))
+  allocate(magnetization_vector_mn(num_basis_functions, ns_magnetization, 3, nsaved))
+  allocate(abs_M( ntheta_coil, nzeta_coil, ns_magnetization, nsaved))
+  allocate(s_averaged_abs_M(ntheta_coil,nzeta_coil,nsaved))
+  allocate(d_iterations(ntheta_coil,nzeta_coil,nsaved))
   allocate(last_d(ntheta_coil,nzeta_coil))
   
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array

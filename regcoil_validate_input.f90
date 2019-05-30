@@ -197,6 +197,7 @@ subroutine regcoil_validate_input
 
   select case (trim(d_option))
   case (d_option_uniform)
+     nd = 1
   case (d_option_iterate)
   case default
      print *,"Error! Unrecognized d_option: ",trim(d_option)

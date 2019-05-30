@@ -20,7 +20,6 @@ subroutine regcoil_evaluate_coil_surface()
   real(dp), dimension(:,:), allocatable :: sin_m_theta, cos_m_theta, sin_n_zeta, cos_n_zeta
   real(dp), dimension(:,:), allocatable :: fundamental_form_E, fundamental_form_F, fundamental_form_G
   real(dp), dimension(:,:), allocatable :: fundamental_form_L, fundamental_form_M, fundamental_form_P
-  real(dp), dimension(:), allocatable :: temp_array
   real(dp), dimension(:,:), allocatable :: temp_matrix
 
   call system_clock(tic,countrate)
