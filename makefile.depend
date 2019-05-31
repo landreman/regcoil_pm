@@ -23,6 +23,7 @@ OBJ_FILES =  \
 	regcoil_read_nescin.o \
 	regcoil_solve.o \
 	regcoil_splines.o \
+	regcoil_update_d.o \
 	regcoil_validate_input.o \
 	regcoil_variables.o \
 	regcoil_write_input.o \
@@ -53,6 +54,7 @@ regcoil_read_input.o: regcoil_variables.o
 regcoil_read_nescin.o: regcoil_variables.o
 regcoil_solve.o: regcoil_variables.o
 regcoil_splines.o:
+regcoil_update_d.o: regcoil_variables.o
 regcoil_validate_input.o: regcoil_variables.o
 regcoil_variables.o: 
 regcoil_write_input.o: regcoil_variables.o

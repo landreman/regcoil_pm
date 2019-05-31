@@ -62,7 +62,12 @@ subroutine regcoil_prepare_solve()
   allocate(s_averaged_abs_M(ntheta_coil,nzeta_coil,nsaved))
   allocate(d_iterations(ntheta_coil,nzeta_coil,nsaved))
   allocate(last_d(ntheta_coil,nzeta_coil))
-  
+  allocate(Anderson_G(ntheta_coil, nzeta_coil, Anderson_depth+1))
+  allocate(Anderson_u_tilde(ntheta_coil, nzeta_coil, Anderson_depth+1))
+  Anderson_G = 0
+  Anderson_u_tilde = 0
+  allocate(volume_magnetization(nlambda))
+
   ! Call LAPACK's DSYSV in query mode to determine the optimal size of the work array
   call DSYSV('U',system_size, 1, matrix, system_size, LAPACK_IPIV, RHS, system_size, LAPACK_WORK, -1, LAPACK_INFO)
   LAPACK_LWORK = int(LAPACK_WORK(1))

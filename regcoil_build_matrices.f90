@@ -103,7 +103,7 @@ subroutine regcoil_build_matrices()
   if (allocated(Jacobian_coil)) deallocate(Jacobian_coil)
   allocate(Jacobian_coil(ntheta_coil, nzeta_coil, ns_integration))
   do js = 1, ns_integration
-     Jacobian_coil(:,:,js) = d * (-norm_normal_coil + sign_normal * s_integration(js) * d * 2 * norm_normal_coil * mean_curvature_coil + s_integration(js) * s_integration(js) * d * d * Jacobian_ssquared_term)
+     Jacobian_coil(:,:,js) = d * (-norm_normal_coil + sign_normal * s_integration(js) * d * 2 * norm_normal_coil * mean_curvature_coil + s_integration(js) * s_integration(js) * (d * d * Jacobian_ssquared_term))
   end do
   if (any(Jacobian_coil >= 0)) then
      print *,"Error! Jacobian for the magnetization region is not negative-definite."

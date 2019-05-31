@@ -81,7 +81,8 @@ subroutine regcoil_write_output
        vn_chi2_M = "chi2_M", &
        vn_max_Bnormal = "max_Bnormal", &
        vn_max_M = "max_M", &
-       vn_min_M = "min_M"
+       vn_min_M = "min_M", &
+       vn_volume_magnetization = "volume_magnetization"
 
   ! Arrays with dimension 2
   character(len=*), parameter :: &
@@ -393,6 +394,9 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_min_M, min_M(1:nsaved), dimname=nsaved_dim) ! We only write elements 1:nsaved in case of a lambda search.
   call cdf_setatt(ncid, vn_min_M, 'Minimum (over the magnetization region) magnitude of the magnetization that resulted for each value of lambda, in SI units (Amperes / meter).')
 
+  call cdf_define(ncid, vn_volume_magnetization, volume_magnetization(1:nlambda), dimname=nlambda_dim)
+  call cdf_setatt(ncid, vn_volume_magnetization, 'Volume of the magnetization region, in meters^3.')
+
   ! Arrays with dimension 2
 
   call cdf_define(ncid, vn_norm_normal_plasma,  norm_normal_plasma,  dimname=ntheta_nzeta_plasma_dim)
@@ -550,6 +554,7 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_max_Bnormal, max_Bnormal(1:nsaved))
   call cdf_write(ncid, vn_max_M, max_M(1:nsaved))
   call cdf_write(ncid, vn_min_M, min_M(1:nsaved))
+  call cdf_write(ncid, vn_volume_magnetization, volume_magnetization(1:nlambda))
 
   ! Arrays with dimension 2
 

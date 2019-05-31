@@ -75,6 +75,7 @@ module regcoil_variables
 
   real(dp) :: mpol_transform_refinement=5, ntor_transform_refinement=1
   real(dp) :: area_plasma, area_coil, volume_plasma, volume_coil
+  real(dp), dimension(:), allocatable :: volume_magnetization
 
   logical :: load_bnorm = .true.
   character(len=200) :: bnorm_filename=""
@@ -132,8 +133,14 @@ module regcoil_variables
 
   character(len=*), parameter :: &
        d_option_uniform = "uniform", &
-       d_option_iterate = "iterate"
+       d_option_Picard = "Picard", &
+       d_option_Anderson = "Anderson"
   character(len=200) :: d_option = d_option_uniform
+
+  integer :: Anderson_depth = 2
+  real(dp), dimension(:,:,:), allocatable :: Anderson_G, Anderson_u_tilde
+  real(dp) :: Anderson_alpha = 1
+  real(dp) :: Picard_alpha = 1
 
   namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &
@@ -147,7 +154,7 @@ module regcoil_variables
        shape_filename_plasma, nlambda, lambda_min, lambda_max, lambda_option, verbose, &
        target_option, target_value, lambda_search_tolerance, &
        ns_magnetization, ns_integration, d_initial, s_integration_option, lambda_single, sign_normal, &
-       d_option, nd, target_mu0_M
+       d_option, nd, target_mu0_M, Anderson_depth, Anderson_alpha, Picard_alpha
 
 end module regcoil_variables
 

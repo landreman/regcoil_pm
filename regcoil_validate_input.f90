@@ -198,7 +198,8 @@ subroutine regcoil_validate_input
   select case (trim(d_option))
   case (d_option_uniform)
      nd = 1
-  case (d_option_iterate)
+  case (d_option_Picard)
+  case (d_option_Anderson)
   case default
      print *,"Error! Unrecognized d_option: ",trim(d_option)
      stop

@@ -47,22 +47,18 @@ subroutine regcoil_solve(ilambda)
      call regcoil_diagnostics(isaved)
 
      if (jd < num_iterations) then
-        ! Update thickness:
-        last_d = d
-        d = last_d * s_averaged_abs_M(:,:,isaved) / (target_mu0_M / mu0)
-        if (verbose) print *,"Updated d. ||d_old - d_new|| = ",dtheta_coil*dzeta_coil*sum((d - last_d) **2)
-
-        print *,"new d:"
-        do j = 1,ntheta_coil
-           print "(*(f5.2))",d(j,:)
-        end do
-
+        call regcoil_update_d(jd,isaved)
         call regcoil_build_matrices()
-
      end if
 
-end do
+  end do
   
+  volume_magnetization(ilambda) = 0
+  do j = 1, ns_integration
+     volume_magnetization(ilambda) = volume_magnetization(ilambda) + nfp * dtheta_coil * dzeta_coil * sum(Jacobian_coil(:,:,j)) * s_weights(j)
+  end do
+  if (verbose) print "(a,es10.2,a)"," Volume of magnetization region:",volume_magnetization(ilambda)," meters^3."
+
 end subroutine regcoil_solve
 
 
