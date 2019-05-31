@@ -141,7 +141,7 @@ module regcoil_variables
   real(dp), dimension(:,:,:), allocatable :: Anderson_G, Anderson_u_tilde
   real(dp) :: Anderson_alpha = 1
   real(dp) :: Picard_alpha = 1
-  real(dp) :: min_d = 0.002
+  real(dp) :: min_d = 0
 
   namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &
