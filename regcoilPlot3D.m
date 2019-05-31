@@ -1,5 +1,5 @@
-regcoil_out_filename = 'examples/compareToMatlab1/regcoil_out.compareToMatlab1.nc';
-%regcoil_out_filename = 'examples/NCSX_vv_randomResolution1_iterate_d/regcoil_out.NCSX_vv_randomResolution1_iterate_d.nc';
+%regcoil_out_filename = 'examples/compareToMatlab1/regcoil_out.compareToMatlab1.nc';
+regcoil_out_filename = 'examples/NCSX_vv_randomResolution1_iterate_d/regcoil_out.NCSX_vv_randomResolution1_iterate_d.nc';
 %regcoil_out_filename = '/Users/mattland/Box Sync/work19/20190526-01-testing_regcoil_pm/20190526-01-044-vv_thetaZeta64_mpolNtor12_sMagnetization2_sIntegration2_d0.15/regcoil_out.NCSX.nc';
 
 ilambda = 12;
@@ -75,6 +75,11 @@ big_d = big_d(:,1:max_zeta_index);
 
 surf(squeeze(r_coil(1,:,:)), squeeze(r_coil(2,:,:)), squeeze(r_coil(3,:,:)),abs_M_inner,'edgecolor','none','facecolor','interp','facealpha',1)
 surf(squeeze(r_coil_outer(1,:,:)), squeeze(r_coil_outer(2,:,:)), squeeze(r_coil_outer(3,:,:)),abs_M_outer,'edgecolor','none','facecolor','interp','facealpha',0.7)
+lw=2;
+plot3(squeeze(r_coil(1,:,1)), squeeze(r_coil(2,:,1)), squeeze(r_coil(3,:,1)),'g','linewidth',lw)
+plot3(squeeze(r_coil(1,:,end)), squeeze(r_coil(2,:,end)), squeeze(r_coil(3,:,end)),'g','linewidth',lw)
+plot3(squeeze(r_coil_outer(1,:,1)), squeeze(r_coil_outer(2,:,1)), squeeze(r_coil_outer(3,:,1)),'y','linewidth',lw)
+plot3(squeeze(r_coil_outer(1,:,end)), squeeze(r_coil_outer(2,:,end)), squeeze(r_coil_outer(3,:,end)),'y','linewidth',lw)
 colorbar
 lighting gouraud
 
