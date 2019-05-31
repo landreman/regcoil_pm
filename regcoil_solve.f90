@@ -9,14 +9,14 @@ subroutine regcoil_solve(ilambda)
   integer :: iflag, tic, toc, countrate, isaved
   integer :: jd, num_iterations, j
 
-  call system_clock(tic,countrate)
-  
   num_iterations = nd
   if (trim(d_option)==d_option_uniform) num_iterations = 1
 
   do jd = 1, num_iterations
      if ((verbose) .and. (trim(d_option).ne.d_option_uniform)) print "(a,i4,a,i4,a)", " ------ Beginning d iteration",jd," of",num_iterations," ------"
 
+     call system_clock(tic,countrate)
+  
      ! The scaling of the terms below by 1/(1+lambda) ensures that matrix and RHS are O(1) regardless of whether lambda is >> 1 or << 1.
      matrix = (1 / (1 + lambda(ilambda))) * matrix_B + (lambda(ilambda) / (1 + lambda(ilambda))) * matrix_regularization
      RHS    = (1 / (1 + lambda(ilambda))) *    RHS_B + (lambda(ilambda) / (1 + lambda(ilambda))) *    RHS_regularization

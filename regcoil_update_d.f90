@@ -13,6 +13,16 @@ subroutine regcoil_update_d(jd,isaved)
   ! Update thickness:
   last_d = d
   d = last_d * s_averaged_abs_M(:,:,isaved) / (target_mu0_M / mu0)
+
+  if (min_d > 0) then
+     if (verbose) print *,"Applying min_d=",min_d
+     do i = 1, ntheta_coil
+        do j = 1, nzeta_coil
+           d(i,j) = d(i,j) + min_d * exp(-d(i,j) / min_d)
+        end do
+     end do
+  end if
+
   ! Take a mixture of the new and old depths:
   d = Picard_alpha * d + (1 - Picard_alpha) * last_d
 
@@ -29,7 +39,6 @@ subroutine regcoil_update_d(jd,isaved)
      Anderson_G(:,:,Anderson_depth+1) = d - last_d
 
      if (jd > 1) then
-        ! Need to write this part.
         ! Sanchez-Vizuet notation        Notation here
         ! --------------------------------------------
         !                n                       jd-1
@@ -37,7 +46,6 @@ subroutine regcoil_update_d(jd,isaved)
         !                m             Anderson_depth
         !                u                          d
         !         \tilde{u}          Anderson_u_tilde
-
 
         Anderson_k = min(Anderson_depth, jd-1)
         Anderson_size = Anderson_k + 2
@@ -90,10 +98,10 @@ subroutine regcoil_update_d(jd,isaved)
 
   if (verbose) print *,"Updated d. ||d_old - d_new|| = ",dtheta_coil*dzeta_coil*sum((d - last_d) **2)
 
-  print *,"new d:"
-  do j = 1,ntheta_coil
-     print "(*(f5.2))",d(j,:)
-  end do
+!!$  print *,"new d:"
+!!$  do j = 1,ntheta_coil
+!!$     print "(*(f5.2))",d(j,:)
+!!$  end do
 
   
 end subroutine regcoil_update_d

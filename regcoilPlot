@@ -234,6 +234,10 @@ numContours = 20
 # Plot |M|
 ########################################################
 
+cmin = np.min(abs_M)
+cmax = np.max(abs_M)
+contours = np.linspace(cmin,cmax,numContours)
+
 num_abs_M_figures = 1
 if ns_magnetization>1:
     num_abs_M_figures = 2
@@ -255,7 +259,11 @@ for js in range(num_abs_M_figures):
 
     for whichPlot in range(numPlots):
         plt.subplot(numRows,numCols,whichPlot+1)
-        plt.contourf(zeta_coil, theta_coil, np.transpose(abs_M[isaved_to_plot[whichPlot]-1,ks,:,:]), numContours)
+        if nsaved==nlambda:
+            plt.contourf(zeta_coil, theta_coil, np.transpose(abs_M[isaved_to_plot[whichPlot]-1,ks,:,:]), numContours)
+        else:
+            plt.contourf(zeta_coil, theta_coil, np.transpose(abs_M[isaved_to_plot[whichPlot]-1,ks,:,:]), contours)
+
         plt.colorbar()
         plt.xlabel('zeta (coil)',fontsize='x-small')
         plt.ylabel('theta (coil)',fontsize='x-small')
@@ -272,13 +280,17 @@ for js in range(num_abs_M_figures):
 # Plot d
 ########################################################
 
+cmin = np.min(d)
+cmax = np.max(d)
+contours = np.linspace(cmin,cmax,numContours)
+
 figureNum += 1
 fig = plt.figure(figureNum,figsize=(14,7))
 fig.patch.set_facecolor('white')
 
 for whichPlot in range(numPlots):
     plt.subplot(numRows,numCols,whichPlot+1)
-    plt.contourf(zeta_coil, theta_coil, np.transpose(d[isaved_to_plot[whichPlot]-1,:,:]), numContours)
+    plt.contourf(zeta_coil, theta_coil, np.transpose(d[isaved_to_plot[whichPlot]-1,:,:]), contours)
     plt.colorbar()
     plt.xlabel('zeta (coil)',fontsize='x-small')
     plt.ylabel('theta (coil)',fontsize='x-small')
