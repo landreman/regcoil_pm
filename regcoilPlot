@@ -39,6 +39,7 @@ chi2_M = f.variables['chi2_M'][()]
 max_M = f.variables['max_M'][()]
 min_M = f.variables['min_M'][()]
 abs_M = f.variables['abs_M'][()]
+d = f.variables['d'][()]
 ns_magnetization = f.variables['ns_magnetization'][()]
 Bnormal_from_TF_and_plasma_current = f.variables['Bnormal_from_TF_and_plasma_current'][()]
 Bnormal_total = f.variables['Bnormal_total'][()]
@@ -266,6 +267,29 @@ for js in range(num_abs_M_figures):
     plt.tight_layout()
     plt.subplots_adjust(top=0.94)
     plt.figtext(0.5,0.99,"Magnitude of the magnetization (|M|, [Amperes / meter])"+title_string,horizontalalignment='center',verticalalignment='top',fontsize='small')
+
+########################################################
+# Plot d
+########################################################
+
+figureNum += 1
+fig = plt.figure(figureNum,figsize=(14,7))
+fig.patch.set_facecolor('white')
+
+for whichPlot in range(numPlots):
+    plt.subplot(numRows,numCols,whichPlot+1)
+    plt.contourf(zeta_coil, theta_coil, np.transpose(d[isaved_to_plot[whichPlot]-1,:,:]), numContours)
+    plt.colorbar()
+    plt.xlabel('zeta (coil)',fontsize='x-small')
+    plt.ylabel('theta (coil)',fontsize='x-small')
+    if nsaved==nlambda:
+        plt.title('lambda={:.2e}'.format(lambdas[isaved_to_plot[whichPlot]-1]),fontsize='x-small')
+    else:
+        plt.title('iteration {:d}'.format(d_iterations[isaved_to_plot[whichPlot]-1]),fontsize='x-small')
+
+plt.tight_layout()
+plt.subplots_adjust(top=0.94)
+plt.figtext(0.5,0.99,"Thickness d of the magnetization region [meters].",horizontalalignment='center',verticalalignment='top',fontsize='small')
 
 ########################################################
 # Plot Bnormal

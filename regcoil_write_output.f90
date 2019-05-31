@@ -105,7 +105,8 @@ subroutine regcoil_write_output
        vn_normal_plasma = "normal_plasma", &
        vn_normal_coil = "normal_coil", &
        vn_Bnormal_total = "Bnormal_total", &
-       vn_Jacobian_coil = "Jacobian_coil"
+       vn_Jacobian_coil = "Jacobian_coil", &
+       vn_d_iterations = "d"
 
   ! Arrays with dimension 4
   character(len=*), parameter :: &
@@ -442,9 +443,9 @@ subroutine regcoil_write_output
      call cdf_define(ncid, vn_drdzeta_coil,  drdzeta_coil,  dimname=xyz_ntheta_nzetal_coil_dim)
 
      call cdf_define(ncid, vn_normal_plasma,  normal_plasma,  dimname=xyz_ntheta_nzetal_plasma_dim)
-     call cdf_define(ncid, vn_normal_coil,  normal_coil,  dimname=xyz_ntheta_nzetal_coil_dim)
-
   end if
+
+  call cdf_define(ncid, vn_normal_coil,  normal_coil,  dimname=xyz_ntheta_nzetal_coil_dim)
 
   call cdf_define(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:nsaved), dimname=ntheta_nzeta_plasma_nsaved_dim)
   call cdf_setatt(ncid, vn_Bnormal_total, 'Residual magnetic field normal to the plasma surface, in units of Tesla, ' // &
@@ -453,6 +454,9 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_Jacobian_coil, Jacobian_coil, dimname=ntheta_nzeta_coil_ns_integration_dim)
   call cdf_setatt(ncid, vn_Jacobian_coil, "Jacobian of the (s,theta,zeta) coordinates describing the magnetization region. Units = meters^3.")
  
+  call cdf_define(ncid, vn_d_iterations, d_iterations(:,:,1:nsaved), dimname=ntheta_nzeta_coil_nsaved_dim)
+  call cdf_setatt(ncid, vn_d_iterations, 'Thickness of the magnetization region, in meters.')
+
   ! Arrays with dimension 4
 
   if (save_level < 1) then
@@ -581,12 +585,13 @@ subroutine regcoil_write_output
      call cdf_write(ncid, vn_drdzeta_coil, drdzeta_coil)
 
      call cdf_write(ncid, vn_normal_plasma, normal_plasma)
-     call cdf_write(ncid, vn_normal_coil, normal_coil)
-
   end if
+
+  call cdf_write(ncid, vn_normal_coil, normal_coil)
 
   call cdf_write(ncid, vn_Bnormal_total, Bnormal_total(:,:,1:nsaved))
   call cdf_write(ncid, vn_Jacobian_coil, Jacobian_coil)
+  call cdf_write(ncid, vn_d_iterations, d_iterations(:,:,1:nsaved))
 
   ! Arrays with dimension 4
 
