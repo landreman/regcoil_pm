@@ -27,6 +27,7 @@ OBJ_FILES =  \
 	regcoil_validate_input.o \
 	regcoil_variables.o \
 	regcoil_write_input.o \
+	regcoil_write_mgrid.o \
 	regcoil_write_output.o \
 	regcoil_write_nescin.o
 
@@ -58,5 +59,6 @@ regcoil_update_d.o: regcoil_variables.o
 regcoil_validate_input.o: regcoil_variables.o
 regcoil_variables.o: 
 regcoil_write_input.o: regcoil_variables.o
+regcoil_write_mgrid.o: regcoil_variables.o
 regcoil_write_output.o: regcoil_variables.o
 regcoil_write_nescin.o: regcoil_variables.o

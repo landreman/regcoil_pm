@@ -290,7 +290,10 @@ fig.patch.set_facecolor('white')
 
 for whichPlot in range(numPlots):
     plt.subplot(numRows,numCols,whichPlot+1)
-    plt.contourf(zeta_coil, theta_coil, np.transpose(d[isaved_to_plot[whichPlot]-1,:,:]), contours)
+    if nsaved == nlambda:
+        plt.contourf(zeta_coil, theta_coil, np.transpose(d[isaved_to_plot[whichPlot]-1,:,:]), numContours)
+    else:
+        plt.contourf(zeta_coil, theta_coil, np.transpose(d[isaved_to_plot[whichPlot]-1,:,:]), contours)
     plt.colorbar()
     plt.xlabel('zeta (coil)',fontsize='x-small')
     plt.ylabel('theta (coil)',fontsize='x-small')

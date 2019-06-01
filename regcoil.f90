@@ -40,6 +40,8 @@ program regcoil
   total_time = real(toc-tic)/countrate
 
   call regcoil_write_output()
+
+  if (write_mgrid) call regcoil_write_mgrid()
  
   print *,"REGCOIL_PM complete. Total time=",total_time,"sec."
   print *,"You can run regcoilPlot ",trim(output_filename)," to plot results."

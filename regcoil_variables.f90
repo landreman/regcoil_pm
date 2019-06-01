@@ -77,9 +77,10 @@ module regcoil_variables
   real(dp) :: area_plasma, area_coil, volume_plasma, volume_coil
   real(dp), dimension(:), allocatable :: volume_magnetization
 
-  logical :: load_bnorm = .true.
+  logical :: load_bnorm = .false.
   character(len=200) :: bnorm_filename=""
   real(dp) :: curpol = 1  ! number which multiplies data in bnorm file.
+  real(dp) :: net_poloidal_current_Amperes = 0
   integer :: nbf ! number of Fourier harmonics in FOCUS format boundary.
   integer, dimension(:), allocatable :: bfn, bfm
   real(dp), dimension(:), allocatable :: bfs, bfc
@@ -143,6 +144,18 @@ module regcoil_variables
   real(dp) :: Picard_alpha = 1
   real(dp) :: min_d = 0
 
+  logical :: write_mgrid = .false.
+  integer :: mgrid_ir = 99
+  integer :: mgrid_jz = 101
+  integer :: mgrid_kp = 20
+  real(dp) :: mgrid_rmin = 0.9
+  real(dp) :: mgrid_rmax = 2.0
+  real(dp) :: mgrid_zmin = -0.75
+  real(dp) :: mgrid_zmax = 0.75
+  logical :: include_Bnormal_from_TF = .false.
+  real(dp), dimension(:), allocatable :: cos_zetal, sin_zetal
+  real(dp), dimension(:,:,:), allocatable :: d_times_unit_normal_coil
+
   namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &
        R0_plasma, R0_coil, a_plasma, a_coil, &
@@ -155,7 +168,9 @@ module regcoil_variables
        shape_filename_plasma, nlambda, lambda_min, lambda_max, lambda_option, verbose, &
        target_option, target_value, lambda_search_tolerance, &
        ns_magnetization, ns_integration, d_initial, s_integration_option, lambda_single, sign_normal, &
-       d_option, nd, target_mu0_M, Anderson_depth, Anderson_alpha, Picard_alpha, min_d
+       d_option, nd, target_mu0_M, Anderson_depth, Anderson_alpha, Picard_alpha, min_d, &
+       write_mgrid, mgrid_ir, mgrid_jz, mgrid_kp, mgrid_rmin, mgrid_rmax, mgrid_zmin, mgrid_zmax, &
+       include_bnormal_from_TF, net_poloidal_current_Amperes
 
 end module regcoil_variables
 

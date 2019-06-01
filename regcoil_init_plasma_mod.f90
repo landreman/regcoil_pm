@@ -495,12 +495,17 @@ contains
     
     select case (geometry_option_plasma)
     case (2,3,4)
-       ! A VMEC wout file is available
-       ! VMEC stores the toroidal Boozer component B_zeta as "bvco", using the HALF mesh
-       !net_poloidal_current_Amperes = 2*pi/mu0*(1.5_dp*bvco(ns)-0.5_dp*bvco(ns-1))
-       ! curpol is a number which multiplies the data in the bnorm file.
-       curpol = (2*pi/nfp)*(1.5_dp*bsubvmnc(1,ns) - 0.5_dp*bsubvmnc(1,ns-1))
+       ! A VMEC wout file is available                                                                                                                                           
+       ! VMEC stores the toroidal Boozer component B_zeta as "bvco", using the HALF mesh                                                                                         
+       if (net_poloidal_current_Amperes == 0) then
+          net_poloidal_current_Amperes = 2*pi/mu0*(1.5_dp*bvco(ns)-0.5_dp*bvco(ns-1))
+          ! curpol is a number which multiplies the data in the bnorm file.                                                                                                         
+          curpol = (2*pi/nfp)*(1.5_dp*bsubvmnc(1,ns) - 0.5_dp*bsubvmnc(1,ns-1))
 
+          if (verbose) print "(a)"," Obtaining net_poloidal_current_Amperes from the VMEC wout file."
+       else
+          if (verbose) print "(a)"," Ignoring net_poloidal_current_Amperes from the VMEC wout file; using user-provided value instead."
+       end if
     case default
 !!$       if (abs(net_poloidal_current_Amperes-1)<1e-12) then
 !!$          if (verbose) print *,"No VMEC file is available, and the default value of net_poloidal_current_Amperes (=1) will be used."
@@ -508,6 +513,7 @@ contains
 !!$          if (verbose) print *,"No VMEC file is available, so net_poloidal_current_Amperes will be taken from the bdistrib input file."
 !!$       end if
     end select
+    if (verbose) print *,"G = ", net_poloidal_current_Amperes, " ; curpol = ", curpol
 
     call system_clock(toc)
     if (verbose) print *,"Done initializing plasma surface. Took ",real(toc-tic)/countrate," sec."

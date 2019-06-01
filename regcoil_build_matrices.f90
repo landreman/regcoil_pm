@@ -19,8 +19,7 @@ subroutine regcoil_build_matrices()
   integer :: js, ks, ls, row_offset, col_offset, j_RZetaZ, k_RZetaZ, k_RZetaZ_max, block_size
   real(dp), dimension(:,:), allocatable :: regularization_block, temp_matrix, Jacobian_coil_2D, regularization_without_RZetaZ
   real(dp), dimension(:,:), allocatable :: basis_functions_times_d
-  real(dp), dimension(:), allocatable :: cos_zetal, sin_zetal, Bnormal_to_cancel_1D
-  real(dp), dimension(:,:,:), allocatable :: d_times_unit_normal_coil
+  real(dp), dimension(:), allocatable :: Bnormal_to_cancel_1D
 
   ! Variables needed by BLAS DGEMM:
   character :: TRANSA, TRANSB
