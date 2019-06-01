@@ -234,8 +234,14 @@ numContours = 20
 # Plot |M|
 ########################################################
 
-cmin = np.min(abs_M)
-cmax = np.max(abs_M)
+if nsaved>2:
+    # Skip the first few iterations, which may have very different values
+    cmin = np.min(abs_M[2:,:,:,:])
+    cmax = np.max(abs_M[2:,:,:,:])
+else:
+    cmin = np.min(abs_M)
+    cmax = np.max(abs_M)
+
 contours = np.linspace(cmin,cmax,numContours)
 
 num_abs_M_figures = 1
@@ -280,8 +286,14 @@ for js in range(num_abs_M_figures):
 # Plot d
 ########################################################
 
-cmin = np.min(d)
-cmax = np.max(d)
+if nsaved>2:
+    # Skip the first few iterations, which may have very different values
+    cmin = np.min(d[2:,:,:])
+    cmax = np.max(d[2:,:,:])
+else:
+    cmin = np.min(d)
+    cmax = np.max(d)
+
 contours = np.linspace(cmin,cmax,numContours)
 
 figureNum += 1

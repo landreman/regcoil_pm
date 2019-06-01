@@ -69,7 +69,7 @@ subroutine regcoil_update_d(jd,isaved)
         print *,"jd:",jd,"  Anderson_depth:",Anderson_depth,"  Anderson_size:",Anderson_size
         print *,"Anderson_matrix:"
         do j = 1,Anderson_size
-           print *,Anderson_matrix(j,:)
+           print "(*(es10.3,2x))",Anderson_matrix(j,:)
         end do
 
         ! Compute solution = matrix \ RHS.

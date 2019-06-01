@@ -107,7 +107,7 @@ subroutine regcoil_write_mgrid()
   !$omp parallel do default(none) private(i,j,k,rad,phi,zee) shared(br,bp,bz,delr,delp,delz,ir,jz,kp,kp2,jz2,kp_odd,jz_odd,rmin,zmin,lstell_sym,d_times_unit_normal_coil,cos_zetal,sin_zetal,constants)
   DO i=1,ir
      rad = rmin + (i-1)*delr
-     print "(a,i4,a,i5)","  thread",omp_get_thread_num()," handling i=",i
+     !print "(a,i4,a,i5)","  thread",omp_get_thread_num()," handling i=",i
      k = 1                     ! this is always a symmetry plane
      phi = (k-1)*delp
      DO j=1,jz2 + jz_odd
@@ -240,6 +240,8 @@ subroutine regcoil_write_mgrid()
 
   DEALLOCATE (vn_br, vn_bz, vn_bp)
 
+  call system_clock(toc)
+  if (verbose) print "(a,f8.3,a)"," Done writing mgrid. Took ",real(toc-tic)/countrate,' sec.'
 
 end subroutine regcoil_write_mgrid
 
