@@ -1,8 +1,11 @@
 %regcoil_out_filename = 'examples/compareToMatlab1/regcoil_out.compareToMatlab1.nc';
-regcoil_out_filename = 'examples/NCSX_vv_randomResolution1_iterate_d/regcoil_out.NCSX_vv_randomResolution1_iterate_d.nc';
+%regcoil_out_filename = 'examples/NCSX_vv_randomResolution1_iterate_d/regcoil_out.NCSX_vv_randomResolution1_iterate_d.nc';
+regcoil_out_filename = '/Users/mattland/Box Sync/work19/regcoil_out.20190531-15_mgrid_lambda_1e-14.nc';
 %regcoil_out_filename = '/Users/mattland/Box Sync/work19/20190526-01-testing_regcoil_pm/20190526-01-044-vv_thetaZeta64_mpolNtor12_sMagnetization2_sIntegration2_d0.15/regcoil_out.NCSX.nc';
 
-ilambda = 12;
+ilambda = 8;
+
+decimate = 2;
 
 nfp = ncread(regcoil_out_filename,'nfp');
 sign_normal = double(ncread(regcoil_out_filename,'sign_normal'));
@@ -104,4 +107,5 @@ for js = 1:ns_magnetization
     Z(:,:,js) = squeeze(r_coil(3,1:end-1,:)) + sign_normal * s_magnetization(js) * big_d .* squeeze(unit_normal_coil(3,:,:));
 end
 scale = 2;
-quiver3(X,Y,Z,MX,MY,MZ,scale,'k')
+quiver3(X(1:decimate:end,1:decimate:end,:),Y(1:decimate:end,1:decimate:end,:),Z(1:decimate:end,1:decimate:end,:), ...
+    MX(1:decimate:end,1:decimate:end,:),MY(1:decimate:end,1:decimate:end,:),MZ(1:decimate:end,1:decimate:end,:),scale,'k')

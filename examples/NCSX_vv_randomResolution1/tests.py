@@ -33,9 +33,11 @@ numFailures += compareToReference(referenceFile,outputFile,'s_weights',absoluteT
 numFailures += compareToReference(referenceFile,outputFile,'RHS_B',absoluteTolerance=absoluteTolerance,relativeTolerance=relativeTolerance)
 numFailures += compareToReference(referenceFile,outputFile,'mean_curvature_coil',absoluteTolerance=absoluteTolerance,relativeTolerance=relativeTolerance)
 numFailures += compareToReference(referenceFile,outputFile,'Jacobian_coil',absoluteTolerance=absoluteTolerance,relativeTolerance=relativeTolerance)
+relativeTolerance = 1e-6
 numFailures += compareToReference(referenceFile,outputFile,'chi2_M',absoluteTolerance=absoluteTolerance,relativeTolerance=relativeTolerance,skipFirstElement=True)
 numFailures += compareToReference(referenceFile,outputFile,'chi2_B',absoluteTolerance=absoluteTolerance,relativeTolerance=relativeTolerance,skipFirstElement=True)
 numFailures += compareToReference(referenceFile,outputFile,'max_M',absoluteTolerance=absoluteTolerance,relativeTolerance=relativeTolerance,skipFirstElement=True)
+relativeTolerance = 1e-5
 numFailures += compareToReference(referenceFile,outputFile,'min_M',absoluteTolerance=absoluteTolerance,relativeTolerance=relativeTolerance,skipFirstElement=True)
 
 outputFile.close()
