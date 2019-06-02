@@ -37,18 +37,10 @@ but it is available for completeness.\\
 
 {\ttfamily save\_level} = 1: Do not save the matrix $g$ that relates each degree of freedom of $\vect{M}$ to $B_{normal}$ at each point on the plasma surface.\\
 
-{\ttfamily save\_level} = 3: Also do not save the normal vector or derivatives of the position vector, or the matrices representing $\chi_B^2$ or $\chi_M^2$.
+{\ttfamily save\_level} = 3: Also do not save the plasma normal vector or derivatives of the position vector, or the matrices representing $\chi_B^2$ or $\chi_M^2$.
 }
 
 \myhrule
-
-\param{bnorm\_filename}
-{string}
-{{\ttfamily ""}}
-{When \parlink{geometry\_option\_plasma} is not 7.}
-{Output file from the \bnorm~code which contains the magnetic field normal to the target
-plasma surface associated with current inside the plasma and with coils such as planar TF coils.}
-
 
 \section{Resolution parameters}
 
@@ -167,6 +159,8 @@ This parameter affects the time required to compute constant-offset surfaces,
 but does not affect the time for other calculations.
 }
 
+\myhrule
+
 \section{Geometry parameters for the plasma surface}
 
 \param{geometry\_option\_plasma}
@@ -272,28 +266,12 @@ A value of 1 corresponds to the last closed flux surface, and 0 corresponds to t
 the plasma surface. Each of these functions will be expanded in a sum of functions $\sin(m\theta)$ and $\cos(m\theta)$,
 where $m$ ranges from 0 to {\ttfamily efit\_num\_modes}$-1$.}
 
+\myhrule
+
 \section{Geometry parameters for the magnetization region}
 
 For greater code consistency with standard REGCOIL, many variables describing the magnetization region include the word {\ttfamily coil}
 even though they describe a region of magnetization rather than coils.
-
-\myhrule
-
-\param{d\_initial}
-{real}
-{0.01}
-{Always}
-{Uniform thickness of the magnetization region, in meters.}
-
-\myhrule
-
-\param{sign\_normal}
-{integer}
-{1}
-{Always}
-{If equal to $+1$, the magnetization region is obtained from the magnetization boundary surface by extending in the direction 
-$(\partial \vect{r}/\partial\zeta) \times (\partial \vect{r}/\partial\theta)$. If equal to $-1$, the magnetization region
-is obtained by extending the boundary surface in the opposite direction.}
 
 \myhrule
 
@@ -370,6 +348,120 @@ into a file with this name.}
 {Only when \parlink{geometry\_option\_coil} is 2, 3, or 4.}
 {Terms in the Fourier series for $R(\theta,\zeta)$ and $Z(\theta,\zeta)$ describing the magnetization surface will be dropped if the toroidal mode number is larger than {\ttfamily ntor\_coil\_filter}. Specify 1, 2, 3, $\ldots$ rather than {\ttfamily nfp}, 2$\times${\ttfamily nfp}, 3$\times${\ttfamily nfp}, etc.}
 
+\myhrule
+
+\section{Parameters related to the thickness of the magnetization region}
+
+\param{d\_option}
+{string}
+{{\ttfamily "uniform"}}
+{Always}
+{Determines how the thickness $d$ of the magnetization layer is computed.\\
+
+{\ttfamily d\_option} = {\ttfamily uniform}: The magnetization layer will have a uniform thickness set by \parlink{d\_initial}. As a result, the 
+magnetization will have nonuniform mangitude. This option is the fastest since only a single linear solve is required.\\
+
+{\ttfamily d\_option} = {\ttfamily Picard}: Solve for the thickness $d$ such that the $s$-averaged $|M|$ is uniform and equal to \parlink{target\_mu0\_M}$/\mu_0$,
+ using Picard iteration. 
+This option is not recommended since convergence for this method is slower than with the {\ttfamily Anderson} option.\\
+
+{\ttfamily d\_option} = {\ttfamily Anderson}: Solve for the thickness $d$ such that the $s$-averaged $|M|$ is uniform and equal to \parlink{target\_mu0\_M}$/\mu_0$, using Anderson-accelerated
+fixed-point iteration \cite{Tonatiuh}.
+}
+
+\myhrule
+
+\param{nd}
+{integer}
+{1}
+{When \parlink{d\_option} is not "uniform".}
+{Number of iterations of Picard or Anderson iteration that will be performed to determine the thickness $d$.}
+
+\myhrule
+
+\param{d\_initial}
+{real}
+{0.01}
+{Always}
+{When \parlink{d\_option}={\ttfamily "uniform"}, this parameter sets the uniform thickness of the magnetization region.
+When \parlink{d\_option} is not {\ttfamily "uniform"}, this parameter sets the initial guess for the thickness of the magnetization region. Units = meters.}
+
+\myhrule
+
+\param{target\_mu0\_M}
+{real}
+{1.4}
+{When \parlink{d\_option} is not ``uniform''.}
+{Magnitude of the magnetization that will be used to determine the thickness of the magnetization layer. Units = Tesla.}
+
+\myhrule
+
+\param{sign\_normal}
+{integer}
+{1}
+{Always}
+{If equal to $+1$, the magnetization region is obtained from the magnetization boundary surface by extending in the direction 
+$(\partial \vect{r}/\partial\zeta) \times (\partial \vect{r}/\partial\theta)$. If equal to $-1$, the magnetization region
+is obtained by extending the boundary surface in the opposite direction.}
+
+\myhrule
+
+\param{Anderson\_depth}
+{integer}
+{2}
+{When \parlink{d\_option}={\ttfamily "Anderson"}}
+{Depth parameter for the Anderson iteration. See \cite{Tonatiuh}.}
+
+\myhrule
+
+\section{Parameters determining the normal magnetic field on the plasma surface}
+
+There are three ways to specify $B_{normal}$: (1) by assuming the existence of TF coils that create a purely toroidal axisymmetric field
+(set \parlink{include\_Bnormal\_from\_TF} = {\ttfamily .true.}), (2) by loading data from a bnorm file (set \parlink{load\_bnorm}={\ttfamily .true.}), or
+(3) by loading data from a FOCUS file (set \parlink{geometry\_option\_plasma}=7).
+
+\myhrule
+
+\param{include\_Bnormal\_from\_TF}
+{logical}
+{{\ttfamily .false.}}
+{Always}
+{If true, the contribution to $B_{normal}$ from a perfectly axisymmetric field $\vect{B} = \vect{e}_{\zeta} \mu_0 G /(2\pi R)$
+will be added to the total $B_{normal}$. The net poloidal current $G$ for this field is determined by \parlink{net\_poloidal\_current\_Amperes}
+(if it is set to a nonzero value) or by the value corresponding to the vmec file \parlink{wout\_filename}.}
+
+\myhrule
+
+\param{net\_poloidal\_current\_Amperes}
+{real}
+{0.0}
+{If \parlink{include\_Bnormal\_from\_TF}={\ttfamily .true.}}
+{Net poloidal current $G$ linking the plasma poloidally. If this value is 0.0 and a VMEC wout file is used to determine the plasma surface shape,
+then $G$ will be determined by the value corresponding to that VMEC configuration. If {\ttfamily net\_poloidal\_current\_Amperes} is nonzero,
+this value will override the value from the VMEC configuration. This provides a method to scale the magnitude of $B$ for a VMEC configuration.}
+
+\myhrule
+
+\param{load\_bnorm}
+{logical}
+{\false}
+{When \parlink{general\_option} is not 7.}
+{Whether or not an output file from the \bnorm~code is to be loaded.
+Set this option to \true~if there is significant current in the plasma,
+meaning the coils will need to cancel the associated magnetic field component normal
+to the target plasma surface.
+}
+
+\myhrule
+
+\param{bnorm\_filename}
+{string}
+{{\ttfamily ""}}
+{When \parlink{geometry\_option\_plasma} is not 7 and \parlink{load\_bnorm}={\ttfamily .true.}.}
+{Output file from the \bnorm~code which contains the magnetic field normal to the target
+plasma surface associated with current inside the plasma and with coils such as planar TF coils.}
+
+\myhrule
 
 \section{Parameters related to the regularization weight}
 
@@ -454,3 +546,73 @@ by varying $\lambda$.
 {1.0e-5}
 {Only when \parlink{lambda\_option} = {\ttfamily "search"}.}
 {Relative tolerance for the lambda root-finding.}
+
+\myhrule
+
+\section{Parameters related to saving mgrid files}
+
+\param{write\_mgrid}
+{logical}
+{{\ttfamily .false.}}
+{Always}
+{If true, an mgrid file (for use with free-boundary VMEC) will be saved using the last configuration computed, i.e. the last values of $\lambda$ and $d$.
+Typically you would set this parameter to true only when setting \parlink{lambda\_option}={\ttfamily "single"}, so you know which value of lambda will be used.}
+
+\myhrule
+
+\param{mgrid\_rmin}
+{real}
+{0.9}
+{Only when \parlink{write\_mgrid} = {\ttfamily .true.}.}
+{Minimum major radius at which $\vect{B}$ will be saved in the mgrid file, corresponding to the usual {\ttfamily rmin} parameter of {\ttfamily makegrid}.}
+
+\myhrule
+
+\param{mgrid\_rmax}
+{real}
+{2.0}
+{Only when \parlink{write\_mgrid} = {\ttfamily .true.}.}
+{Maximum major radius at which $\vect{B}$ will be saved in the mgrid file, corresponding to the usual {\ttfamily rmax} parameter of {\ttfamily makegrid}.}
+
+\myhrule
+
+\param{mgrid\_zmin}
+{real}
+{-0.75}
+{Only when \parlink{write\_mgrid} = {\ttfamily .true.}.}
+{Minimum cylindrical coordinate $z$ at which $\vect{B}$ will be saved in the mgrid file, corresponding to the usual {\ttfamily zmin} parameter of {\ttfamily makegrid}.}
+
+\myhrule
+
+\param{mgrid\_zmax}
+{real}
+{0.75}
+{Only when \parlink{write\_mgrid} = {\ttfamily .true.}.}
+{Maximum cylindrical coordinate $z$ at which $\vect{B}$ will be saved in the mgrid file, corresponding to the usual {\ttfamily zmax} parameter of {\ttfamily makegrid}.}
+
+\myhrule
+
+\param{mgrid\_ir}
+{integer}
+{99}
+{Only when \parlink{write\_mgrid} = {\ttfamily .true.}.}
+{Number of grid points in major radius at which $\vect{B}$ will be saved in the mgrid file, corresponding to the usual {\ttfamily ir} parameter of {\ttfamily makegrid}.}
+
+\myhrule
+
+\param{mgrid\_jz}
+{integer}
+{101}
+{Only when \parlink{write\_mgrid} = {\ttfamily .true.}.}
+{Number of grid points in the cylindrical coordinate $z$ at which $\vect{B}$ will be saved in the mgrid file, corresponding to the usual {\ttfamily jz} parameter of {\ttfamily makegrid}.}
+
+\myhrule
+
+\param{mgrid\_kp}
+{integer}
+{20}
+{Only when \parlink{write\_mgrid} = {\ttfamily .true.}.}
+{Number of grid points (per field period) in toroidal angle at which $\vect{B}$ will be saved in the mgrid file, corresponding to the usual {\ttfamily kp} parameter of {\ttfamily makegrid}.}
+
+
+
