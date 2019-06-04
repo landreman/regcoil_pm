@@ -135,6 +135,7 @@ module regcoil_variables
   character(len=*), parameter :: &
        d_option_uniform = "uniform", &
        d_option_Picard = "Picard", &
+       d_option_Anderson_old = "Anderson_old", &
        d_option_Anderson = "Anderson"
   character(len=200) :: d_option = d_option_uniform
 
