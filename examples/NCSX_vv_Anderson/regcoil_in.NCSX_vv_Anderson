@@ -1,0 +1,31 @@
+&regcoil_nml
+
+  lambda_option='single'
+  lambda_single = 1.0d-14
+
+  ntheta_plasma = 64
+  ntheta_coil   = 64
+  nzeta_plasma  = 64
+  nzeta_coil    = 64
+  mpol_magnetization = 12
+  ntor_magnetization = 12
+
+  ns_magnetization=1
+  ns_integration=2
+
+  geometry_option_plasma = 2
+  wout_filename = '../../equilibria/wout_c09r00_fixedBoundary_0.5T_vacuum_ns201.nc'
+
+  geometry_option_coil=3
+  nescin_filename = '../../equilibria/NCSX.vv'
+
+  include_Bnormal_from_TF = T
+
+  d_option='Anderson'
+  nd = 6
+
+!  write_mgrid=T
+  mgrid_ir = 101
+  mgrid_jz = 102
+  mgrid_kp = 20
+/
