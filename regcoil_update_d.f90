@@ -6,11 +6,11 @@ subroutine regcoil_update_d(jd,isaved)
   implicit none
 
   integer, intent(in) :: jd, isaved
-  integer :: Anderson_size, Anderson_k, i, j
+  integer :: Anderson_size, Anderson_k, i, j, itheta, izeta
   real(dp), dimension(:), allocatable :: Anderson_RHS, Anderson_solution
   real(dp), dimension(:,:), allocatable :: Anderson_matrix
   integer :: M, N, NRHS, RANK, Anderson_LWORK, Anderson_LIWORK
-  real(dp) :: RCOND
+  real(dp) :: RCOND, diff
   real(dp), dimension(:), allocatable :: singular_values, Anderson_WORK
   integer, dimension(:), allocatable :: Anderson_IWORK
 
@@ -18,6 +18,11 @@ subroutine regcoil_update_d(jd,isaved)
   ! Update thickness:
   last_d = d
   d = last_d * s_averaged_abs_M(:,:,isaved) / (target_mu0_M / mu0)
+
+  ! Truncate d wherever it becomes too large:
+  diff = maxval(d - max_d_before_singularity)
+  if (diff>0) print "(a,es12.4,a)"," Note: lowering d (at step 1) since maxval(d - max_d_before_singularity) =",diff," is positive."
+  d = min(d,max_d_before_singularity)
 
   if (min_d > 0) then
      if (verbose) print *,"Applying min_d=",min_d
@@ -148,6 +153,7 @@ subroutine regcoil_update_d(jd,isaved)
         Anderson_LWORK = -1
         allocate(Anderson_WORK(1))
         allocate(Anderson_IWORK(1))
+        ! DGELSD is a LAPACK subroutine for solving potentially-rank-deficient linear-least-squares problems.
         call DGELSD( M, N, NRHS, Anderson_matrix, M, Anderson_RHS, M, singular_values, RCOND, RANK, Anderson_WORK, Anderson_LWORK, Anderson_IWORK, LAPACK_INFO)
         if (LAPACK_INFO /= 0) then
            print *, "!!!!!! Error in LAPACK DGELSD determining work array sizes: INFO = ", LAPACK_INFO
@@ -184,6 +190,20 @@ subroutine regcoil_update_d(jd,isaved)
 
      end if
   end select
+
+  ! Once again, truncate d wherever it becomes too large:
+  diff = maxval(d - max_d_before_singularity)
+  if (diff>0) print "(a,es12.4,a)"," Note: lowering d (at step 2) since maxval(d - max_d_before_singularity) =",diff," is positive."
+  d = min(d,max_d_before_singularity)
+
+  ! Force d to be positive:
+  diff = minval(d)
+  if (diff <= 0) print "(a,es12.4,a)"," Note: increasing d since min(d) =",diff," is negative."
+  do izeta = 1, nzeta_coil
+     do itheta = 1, ntheta_coil
+        d(itheta,izeta) = max(d(itheta,izeta), 1.0d-14)
+     end do
+  end do
 
   if (verbose) print *,"Updated d. ||d_old - d_new|| = ",dtheta_coil*dzeta_coil*sum((d - last_d) **2)
 

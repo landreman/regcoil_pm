@@ -21,6 +21,7 @@ subroutine regcoil_evaluate_coil_surface()
   real(dp), dimension(:,:), allocatable :: fundamental_form_E, fundamental_form_F, fundamental_form_G
   real(dp), dimension(:,:), allocatable :: fundamental_form_L, fundamental_form_M, fundamental_form_P
   real(dp), dimension(:,:), allocatable :: temp_matrix
+  real(dp) :: a, temp, d1, d2
 
   call system_clock(tic,countrate)
 
@@ -248,6 +249,35 @@ subroutine regcoil_evaluate_coil_surface()
   allocate(Jacobian_ssquared_term(ntheta_coil, nzeta_coil))
   ! We wll need this quantity later to generate the Jacobian of the (s, theta, zeta) coordinates in the magnetization region:
   Jacobian_ssquared_term = (fundamental_form_M * fundamental_form_M - fundamental_form_L * fundamental_form_P) / norm_normal_coil
+
+  allocate(max_d_before_singularity(ntheta_coil, nzeta_coil))
+  do izeta = 1, nzeta_coil
+     do itheta = 1, ntheta_coil
+        ! Use quadratic formula to find when Jacobain=0 for s=1:
+        a = (fundamental_form_M(itheta,izeta) * fundamental_form_M(itheta,izeta) - fundamental_form_L(itheta,izeta) * fundamental_form_P(itheta,izeta)) &
+             / (norm_normal_coil(itheta,izeta) * norm_normal_coil(itheta,izeta))
+        temp = sqrt(4 * mean_curvature_coil(itheta,izeta) * mean_curvature_coil(itheta,izeta) + 4 * a)
+        d1 = (-2 * sign_normal * mean_curvature_coil(itheta,izeta) + temp) / (2 * a)
+        d2 = (-2 * sign_normal * mean_curvature_coil(itheta,izeta) - temp) / (2 * a)
+        if (d1 < 0) then
+           if (d2 >= 0) then
+              max_d_before_singularity(itheta,izeta) = d2
+           else
+              max_d_before_singularity(itheta,izeta) = 1.0d+200
+           end if
+        else
+           if ((d2 < d1) .and. (d2 >= 0)) then
+              max_d_before_singularity(itheta,izeta) = d2
+           else
+              max_d_before_singularity(itheta,izeta) = d1
+           end if
+        end if
+        !print "(3(a,es10.2))","d1:",d1,"  d2:",d2,"  max_d:",max_d_before_singularity(itheta,izeta)
+     end do
+  end do
+
+  print "(a,es12.4)"," Maximum allowed uniform d before singularity:",minval(max_d_before_singularity)
+  if (d_initial >= minval(max_d_before_singularity)) stop "Error! d_initial is too large. Jacobian is singular."
 
   deallocate(fundamental_form_E, fundamental_form_F, fundamental_form_G, fundamental_form_L, fundamental_form_M, fundamental_form_P)
   

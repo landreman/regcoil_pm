@@ -156,6 +156,7 @@ module regcoil_variables
   logical :: include_Bnormal_from_TF = .false.
   real(dp), dimension(:), allocatable :: cos_zetal, sin_zetal
   real(dp), dimension(:,:,:), allocatable :: d_times_unit_normal_coil
+  real(dp), dimension(:,:), allocatable :: max_d_before_singularity
 
   namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &

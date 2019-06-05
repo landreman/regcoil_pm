@@ -105,7 +105,18 @@ subroutine regcoil_build_matrices()
      Jacobian_coil(:,:,js) = d * (-norm_normal_coil + sign_normal * s_integration(js) * d * 2 * norm_normal_coil * mean_curvature_coil + s_integration(js) * s_integration(js) * (d * d * Jacobian_ssquared_term))
   end do
   if (any(Jacobian_coil >= 0)) then
-     print *,"Error! Jacobian for the magnetization region is not negative-definite."
+     print *,"Error! Jacobian for the magnetization region is not negative-definite. max=",maxval(Jacobian_coil)
+     print *,"maxval(d - max_d_before_singularity): ",maxval(d - max_d_before_singularity)
+     do js = 1, ns_integration
+        do izeta_coil = 1, nzeta_coil
+           do itheta_coil = 1, ntheta_coil
+              if (Jacobian_coil(itheta_coil,izeta_coil,js) >= 0) then
+                 print "(3(a,i3),5(a,es12.4))","itheta=",itheta_coil,"  izeta=",izeta_coil,"  js=",js,"  Jacobian_coil=",Jacobian_coil(itheta_coil,izeta_coil,js), &
+                      "  d=",d(itheta_coil,izeta_coil),"  max_d=",max_d_before_singularity(itheta_coil,izeta_coil),"  mean_curvature_coil=",mean_curvature_coil(itheta_coil,izeta_coil),"  ssquared_term=",Jacobian_ssquared_term(itheta_coil,izeta_coil)
+              end if
+           end do
+        end do
+     end do
      print *,Jacobian_coil
      stop
   end if

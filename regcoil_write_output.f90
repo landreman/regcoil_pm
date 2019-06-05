@@ -92,7 +92,8 @@ subroutine regcoil_write_output
        vn_mean_curvature_coil = "mean_curvature_coil", &
        vn_matrix_B = "matrix_B", &
        vn_matrix_regularization = "matrix_regularization", &
-       vn_interpolate_magnetization_to_integration = "interpolate_magnetization_to_integration"
+       vn_interpolate_magnetization_to_integration = "interpolate_magnetization_to_integration", &
+       vn_max_d_before_singularity = "max_d_before_singularity"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -425,6 +426,9 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_interpolate_magnetization_to_integration,  interpolate_magnetization_to_integration,  dimname=ns_integration_ns_magnetization_dim)
   call cdf_setatt(ncid, vn_interpolate_magnetization_to_integration,  "Matrix to transfer quantities from the s_magnetization radial grid to the s_integration radial grid. Dimensionless.")
 
+  call cdf_define(ncid, vn_max_d_before_singularity,  max_d_before_singularity,  dimname=ntheta_nzeta_coil_dim)
+  call cdf_setatt(ncid, vn_max_d_before_singularity, 'Maximum thickness before the Jacobian goes to 0.')
+
   ! Arrays with dimension 3
 
   call cdf_define(ncid, vn_r_plasma,  r_plasma,  dimname=xyz_ntheta_nzetal_plasma_dim)
@@ -571,6 +575,7 @@ subroutine regcoil_write_output
      call cdf_write(ncid, vn_matrix_regularization, matrix_regularization)
   end if
   call cdf_write(ncid, vn_interpolate_magnetization_to_integration,  interpolate_magnetization_to_integration)
+  call cdf_write(ncid, vn_max_d_before_singularity,  max_d_before_singularity)
 
   ! Arrays with dimension 3
 
