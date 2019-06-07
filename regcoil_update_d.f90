@@ -160,7 +160,7 @@ subroutine regcoil_update_d(jd,isaved)
            stop
         end if
         Anderson_LWORK = Anderson_WORK(1) * 2  ! Documentation says "For good performance, LWORK should generally be larger" than the minimum.
-        Anderson_LIWORK = Anderson_IWORK(1)
+        Anderson_LIWORK = max(1000, 3 * N * MAX( 0, INT( LOG( N/(100+1.0) ) / log(2.0) ) + 1 )  + 11 * N)
         print *,"Anderson_LWORK:",Anderson_LWORK," Anderson_LIWORK:",Anderson_LIWORK
         deallocate(Anderson_WORK, Anderson_IWORK)
         allocate(Anderson_WORK(Anderson_LWORK))
@@ -173,6 +173,7 @@ subroutine regcoil_update_d(jd,isaved)
            stop
         end if
         Anderson_solution = Anderson_RHS(1:Anderson_k)
+        print *,"Anderson_LIWORK:",Anderson_IWORK(1)
         print *,"Anderson solution:",Anderson_solution,1-sum(Anderson_solution)
         print *,"Numerical rank:",RANK
         print *,"Singular values:",singular_values

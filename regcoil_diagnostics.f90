@@ -18,15 +18,15 @@ subroutine regcoil_diagnostics(isaved)
   do js = 1, ns_magnetization
      offset = 0*ns_magnetization*num_basis_functions + (js-1) * num_basis_functions
      magnetization_vector_mn(:,js,1,isaved) = solution(offset+1:offset+num_basis_functions)
-     magnetization_vector( :,:,js,1,isaved) = reshape(matmul(basis_functions, solution(offset+1:offset+num_basis_functions)), (/ ntheta_coil, nzeta_coil /))
+     magnetization_vector( :,:,js,1,isaved) = reshape(matmul(basis_functions_R, solution(offset+1:offset+num_basis_functions)), (/ ntheta_coil, nzeta_coil /))
 
      offset = 1*ns_magnetization*num_basis_functions + (js-1) * num_basis_functions
      magnetization_vector_mn(:,js,2,isaved) = solution(offset+1:offset+num_basis_functions)
-     magnetization_vector( :,:,js,2,isaved) = reshape(matmul(basis_functions, solution(offset+1:offset+num_basis_functions)), (/ ntheta_coil, nzeta_coil /))
+     magnetization_vector( :,:,js,2,isaved) = reshape(matmul(basis_functions_zeta_Z, solution(offset+1:offset+num_basis_functions)), (/ ntheta_coil, nzeta_coil /))
 
      offset = 2*ns_magnetization*num_basis_functions + (js-1) * num_basis_functions
      magnetization_vector_mn(:,js,3,isaved) = solution(offset+1:offset+num_basis_functions)
-     magnetization_vector( :,:,js,3,isaved) = reshape(matmul(basis_functions, solution(offset+1:offset+num_basis_functions)), (/ ntheta_coil, nzeta_coil /))
+     magnetization_vector( :,:,js,3,isaved) = reshape(matmul(basis_functions_zeta_Z, solution(offset+1:offset+num_basis_functions)), (/ ntheta_coil, nzeta_coil /))
 
      abs_M(:,:,js,isaved) = sqrt(magnetization_vector(:,:,js,1,isaved) * magnetization_vector(:,:,js,1,isaved) &
           + magnetization_vector(:,:,js,2,isaved) * magnetization_vector(:,:,js,2,isaved) &

@@ -57,11 +57,11 @@ subroutine regcoil_read_input
      
      select case (symmetry_option)
      case (1)
-        print *,"Symmetry: sin(m*theta - n*zeta) modes only"
+        print *,"Assuming stellarator symmetry"
      case (2)
-        print *,"Symmetry: cos(m*theta - n*zeta) modes only"
+        print *,"Assuming stellarator symmetry, and verifying this symmetry in the inductance matrix."
      case (3)
-        print *,"Symmetry: both sin(m*theta - n*zeta) and cos(m*theta - n*zeta) modes"
+        print *,"Not assuming stellarator symmetry"
      case default
         print *,"Error! Invalid setting for symmetry_option: ",symmetry_option
         stop

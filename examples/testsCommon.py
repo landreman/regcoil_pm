@@ -41,13 +41,15 @@ def readReferenceFile():
 
 def shouldBe(latestValue, trueValue, relativeTolerance, absoluteTolerance):
     difference = abs(latestValue-trueValue)
+    relativeDifference = 0
     if abs(trueValue) > 0:
         relativeDifference = abs(difference / trueValue)
         relativeTest = (relativeDifference <= relativeTolerance)
     else:
         relativeTest = False
     absoluteTest = (difference <= absoluteTolerance)
-    string = "Expected a value close to "+str(trueValue)+", and it was "+str(latestValue)
+    #string = "Expected a value close to "+str(trueValue)+", and it was "+str(latestValue)+". Abs diff="+str(difference)+", rel diff="+str(relativeDifference)
+    string = "Expected a value close to {:22.15e}, and it was {:22.15e}. Abs diff={:22.15e}, rel diff={:22.15e}".format(trueValue,latestValue,difference,relativeDifference)
     if relativeTest:
         if absoluteTest:
             print "    Test passed. "+string+". Both abs and rel tol met."

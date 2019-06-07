@@ -1,7 +1,7 @@
 &regcoil_nml
 
   nlambda = 20
-  lambda_min = 1e-26
+  lambda_min = 1e-20
   lambda_max = 1e-3
 
   ntheta_plasma = 30

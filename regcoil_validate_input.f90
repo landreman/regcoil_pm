@@ -206,7 +206,7 @@ subroutine regcoil_validate_input
      stop
   end select
 
-  if (symmetry_option .ne. 3) stop "Error! Presently only symmetry_option=3 works."
+  !if (symmetry_option .ne. 3) stop "Error! Presently only symmetry_option=3 works."
 
   if ((sign_normal.ne.1) .and. (sign_normal.ne.-1)) stop "Error! sign_normal must be 1 or -1."
 

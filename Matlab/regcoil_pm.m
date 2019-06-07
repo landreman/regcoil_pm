@@ -8,9 +8,9 @@ function regcoil_pm()
 clear
 
 symmetry_option = 3;
-% 1 = sines only
-% 2 = cosines only
-% 3 = both sines and cosines
+% 1 = Assume stellarator symmetry
+% 2 = Test stellarator symmetry of inductance matrix
+% 3 = Do not assume stellarator symmetry
 
 load_bnorm = true;
 %load_bnorm = false;
@@ -29,17 +29,17 @@ ntor_magnetization  = 12;
 ns_magnetization = 1;
 ns_integration = 2;
 %}
-%{
+
 ntheta_plasma = 30;
 ntheta_coil   = 33;
-nzeta_plasma = 36;
+nzeta_plasma = 35;
 nzeta_coil   = 38;
 mpol_magnetization  = 6;
 ntor_magnetization  = 8;
 ns_magnetization = 2;
 ns_integration = 3;
-%}
 
+%{
 ntheta_plasma = 38;
 ntheta_coil   = 36;
 nzeta_plasma = 33;
@@ -48,7 +48,7 @@ mpol_magnetization  = 8;
 ntor_magnetization  = 7;
 ns_magnetization = 3;
 ns_integration = 3;
-
+%}
 %{
 ntheta_plasma = 30;
 ntheta_coil   = 33;
@@ -921,6 +921,41 @@ for ks = 1:ns_magnetization
     end
 end
 inductance = inductance * (mu0/(4*pi));
+assignin('base','inductance_m',inductance)
+
+if symmetry_option==2
+    % Test symmetry of inductance matrix
+    figure(1)
+    clf
+    signs = [1,-1,-1];
+    for j_RZetaZ = 1:3
+        itheta_coil = 2;
+        izeta_coil = 3;
+        index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil;
+        
+        subplot(3,3,j_RZetaZ)
+        d1 = reshape(inductance(:,index_coil,1,j_RZetaZ),[ntheta_plasma,nzeta_plasma]);
+        imagesc(d1)
+        colorbar
+        
+        itheta_coil = ntheta_coil + 2 - itheta_coil;
+        izeta_coil = nzeta_coil + 2 - izeta_coil;
+        index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil;
+        
+        subplot(3,3,j_RZetaZ+3)
+        d2 = rot90(signs(j_RZetaZ)*reshape(inductance(:,index_coil,1,j_RZetaZ),[ntheta_plasma,nzeta_plasma]),2);
+        d2=circshift(d2,[1,1]);
+        imagesc(d2)
+        colorbar
+        
+        subplot(3,3,j_RZetaZ+6)
+        imagesc(d1-d2)
+        colorbar
+    end
+    return
+end
+
+
 fprintf('Done. Took %g sec.\n',toc)
 
 %compareVariableToFortran('inductance')

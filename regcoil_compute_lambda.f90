@@ -1,6 +1,6 @@
 subroutine regcoil_compute_lambda()
 
-  use regcoil_variables, only: nlambda, lambda_min, lambda_max, lambda, lambda_option, lambda_option_single, lambda_single, lambda_option_scan, verbose
+  use regcoil_variables, only: nlambda, lambda_min, lambda_max, lambda, lambda_option, lambda_option_single, lambda_single, lambda_option_scan, verbose, nd
   use stel_kinds
 
   implicit none
@@ -11,7 +11,7 @@ subroutine regcoil_compute_lambda()
 
   if (trim(lambda_option) == lambda_option_single) then
      nlambda = 1
-     allocate(lambda(1))
+     allocate(lambda(nd))
      lambda = lambda_single
      if (verbose) print "(a,es10.3)", " Using a single value of lambda: ",lambda_single
      return

@@ -15,12 +15,11 @@ In this section we describe all the parameters which can be included in the inpu
 {integer}
 {1}
 {Always}
-{Determines whether stellarator symmetry is imposed. At the moment, only option 3 works.\\
+{Determines whether stellarator symmetry is imposed.\\
 
 {\ttfamily symmetry\_option} = 1: Force the magnetization to be stellarator symmetric.\\
 
-{\ttfamily symmetry\_option} = 2: Force the magnetization to be stellarator-asymmetric. I'm not sure why you would ever use this option,
-but it is available for completeness.\\
+{\ttfamily symmetry\_option} = 2: Force the magnetization to be stellarator-symmetric, and a test will be done to verify symmetry of the inductance matrix, which adds some time to program execution.\\
 
 {\ttfamily symmetry\_option} = 3: No symmetry in the magnetization is imposed.
 }

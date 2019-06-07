@@ -47,7 +47,7 @@ module regcoil_variables
   real(dp), dimension(:,:,:), allocatable :: d2rdtheta2_coil, d2rdthetadzeta_coil, d2rdzeta2_coil
 
   real(dp), dimension(:,:), allocatable :: norm_normal_plasma, norm_normal_coil
-  real(dp), dimension(:,:), allocatable :: basis_functions
+  real(dp), dimension(:,:), allocatable :: basis_functions_R, basis_functions_zeta_Z
 
   real(dp) :: dtheta_plasma, dzeta_plasma, dtheta_coil, dzeta_coil
 
@@ -66,7 +66,7 @@ module regcoil_variables
   integer :: save_level = 3
   integer :: nfp_imposed = 1
 
-  integer :: symmetry_option = 3
+  integer :: symmetry_option = 1
   real(dp) :: total_time
 
   integer :: efit_num_modes = 10

@@ -20,7 +20,7 @@ subroutine regcoil_write_mgrid()
   REAL(dp), ALLOCATABLE, DIMENSION(:) :: extcur
   REAL(dp) :: rmin, rmax, zmin, zmax
   REAL(dp) :: fperiod, delr, delz, delp
-  LOGICAL     :: lstell_sym=.true.
+  LOGICAL     :: lstell_sym
   CHARACTER(LEN=1) :: mgrid_mode='S'
   CHARACTER(LEN=70) :: mgrid_file, coil_file
   CHARACTER(LEN=60) :: mgrid_ext
@@ -36,6 +36,15 @@ subroutine regcoil_write_mgrid()
   integer :: tic, toc, countrate
   integer :: ir, jz, kp
   integer :: l_coil, izeta_coil, izetal_coil, itheta_coil
+
+  select case (symmetry_option)
+  case (1,2)
+     lstell_sym = .true.
+  case (3)
+     lstell_sym = .false.
+  case default
+     stop "Should not get here!"
+  end select
 
   ir = mgrid_ir
   jz = mgrid_jz

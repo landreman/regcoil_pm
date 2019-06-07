@@ -8,11 +8,11 @@ subroutine regcoil_build_matrices()
   
   implicit none
 
-  integer :: l_coil, itheta_plasma, izeta_plasma, itheta_coil, izeta_coil, izetal_coil
+  integer :: l_coil, itheta_plasma, izeta_plasma, itheta_coil, izeta_coil, izetal_coil, izeta_max
   real(dp) :: x, y, z, dx, dy, dz, dr2inv, dr32inv
   integer :: index_plasma, index_coil, j, imn
   integer :: tic, toc, tic1, toc1, toc2, countrate, iflag
-  integer :: minSymmetry, maxSymmetry, whichSymmetry, offset
+  integer :: offset
   real(dp) :: angle, sinangle, cosangle, factor, constants, normal_plasma_dot_dr
   real(dp), dimension(:,:,:,:), allocatable :: g_over_N_plasma
   real(dp), dimension(:), allocatable :: norm_normal_plasma_inv1D
@@ -20,6 +20,8 @@ subroutine regcoil_build_matrices()
   real(dp), dimension(:,:), allocatable :: regularization_block, temp_matrix, Jacobian_coil_2D, regularization_without_RZetaZ
   real(dp), dimension(:,:), allocatable :: basis_functions_times_d
   real(dp), dimension(:), allocatable :: Bnormal_to_cancel_1D
+  real(dp) :: thresh = 1.0d-17 ! Threshold for symmetry test when symmetry_option=2
+  integer :: izeta_plasma_reflect, itheta_plasma_reflect, index_plasma_reflect, izeta_coil_reflect, itheta_coil_reflect, index_coil_reflect
 
   ! Variables needed by BLAS DGEMM:
   character :: TRANSA, TRANSB
@@ -27,73 +29,6 @@ subroutine regcoil_build_matrices()
   real(dp) :: BLAS_ALPHA=1, BLAS_BETA=0
   real(dp), dimension(:,:), allocatable :: tempMatrix
 
-
-  call system_clock(tic,countrate)
-  if (verbose) print *,"Initializing basis functions and f"
-
-  ! Initialize Fourier arrays
-  call regcoil_init_Fourier_modes(mpol_magnetization, ntor_magnetization, mnmax_magnetization, xm_magnetization, xn_magnetization, .false.)
-  xn_magnetization = xn_magnetization * nfp
-  
-  select case (symmetry_option)
-  case (1,2)
-     num_basis_functions = mnmax_magnetization
-  case (3)
-     num_basis_functions = mnmax_magnetization * 2
-  case default
-     print *,"Error! Invalid setting for symmetry_option:",symmetry_option
-     stop
-  end select
-
-  system_size = 3 * ns_magnetization * num_basis_functions
-  
-  if (allocated(basis_functions)) deallocate(basis_functions)
-  allocate(basis_functions(ntheta_coil*nzeta_coil, num_basis_functions),stat=iflag)
-  if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 1!'
-
-  select case (symmetry_option)
-  case (1)
-     minSymmetry = 1
-     maxSymmetry = 1
-  case (2)
-     minSymmetry = 2
-     maxSymmetry = 2
-  case (3)
-     minSymmetry = 1
-     maxSymmetry = 2
-  end select
-  
-  
-  ! This loop could be made faster
-  ! by using the sum-angle trig identities and pretabulating the trig functions.
-  ! But these loops are not the rate-limiting step, so I'll use the more transparent direct method here.
-  do whichSymmetry = minSymmetry, maxSymmetry
-     
-     if (whichSymmetry==2 .and. symmetry_option==3) then
-        offset = mnmax_magnetization
-     else
-        offset = 0
-     end if
-     
-     do izeta_coil = 1, nzeta_coil
-        do itheta_coil = 1, ntheta_coil
-           index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-           do imn = 1, mnmax_magnetization
-              angle = xm_magnetization(imn)*theta_coil(itheta_coil)-xn_magnetization(imn)*zeta_coil(izeta_coil)
-              sinangle = sin(angle)
-              cosangle = cos(angle)
-              if (whichSymmetry==1) then
-                 basis_functions(index_coil, imn) = sinangle
-              else
-                 basis_functions(index_coil, imn+offset) = cosangle
-              end if
-           end do
-        end do
-     end do
-  end do
-  
-  call system_clock(toc)
-  if (verbose) print *,"Done. Took",real(toc-tic)/countrate,"sec."
 
   !--------------------------------------------------------------
   ! Initialize Jacobian of the magnetization region
@@ -160,6 +95,9 @@ subroutine regcoil_build_matrices()
   ! Now compute g
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+  call system_clock(tic,countrate)
+  if (verbose) print *,"Building inductance matrix."
+
   inductance = 0
 
   allocate(cos_zetal(nzetal_coil))
@@ -179,8 +117,12 @@ subroutine regcoil_build_matrices()
      end do
   end do
 
-  call system_clock(tic,countrate)
-  if (verbose) print *,"Building inductance matrix."
+  if (symmetry_option==3 .or. symmetry_option==2) then
+     izeta_max = nzeta_plasma
+  else
+     izeta_max = nzeta_plasma / 2 + 1 ! Note integer division
+  end if
+
   !$OMP PARALLEL
 
   !$OMP MASTER
@@ -191,7 +133,7 @@ subroutine regcoil_build_matrices()
   ! This ensures the multiple threads write to different indices in h() rather than to the same indices in h(),
   ! in which case the h(index+plasma)=h(index_plasma)+... update does not work properly.
   !$OMP DO PRIVATE(index_plasma,index_coil,x,y,z,izetal_coil,dx,dy,dz,dr2inv,dr32inv,factor,normal_plasma_dot_dr)
-  do izeta_plasma = 1, nzeta_plasma
+  do izeta_plasma = 1, izeta_max
      do itheta_plasma = 1, ntheta_plasma
         index_plasma = (izeta_plasma-1)*ntheta_plasma + itheta_plasma
         x = r_plasma(1,itheta_plasma,izeta_plasma)
@@ -249,6 +191,67 @@ subroutine regcoil_build_matrices()
      end do
   end do
   !$OMP END DO
+
+
+  if (symmetry_option==1 .or. symmetry_option==2) then
+     izeta_max = nzeta_plasma / 2 + 1 ! Note integer division. We repeat this line here in case symmetry_option=2.
+     !$OMP DO PRIVATE(izeta_plasma_reflect,itheta_plasma_reflect,index_plasma,index_plasma_reflect,izeta_coil_reflect,itheta_coil_reflect,index_coil,index_coil_reflect)
+     do izeta_plasma = izeta_max+1, nzeta_plasma
+        izeta_plasma_reflect = nzeta_plasma + 2 - izeta_plasma
+        do itheta_plasma = 1, ntheta_plasma
+           if (itheta_plasma == 1) then
+              itheta_plasma_reflect = 1
+           else
+              itheta_plasma_reflect = ntheta_plasma + 2 - itheta_plasma
+           end if
+           index_plasma = (izeta_plasma-1)*ntheta_plasma + itheta_plasma
+           index_plasma_reflect = (izeta_plasma_reflect-1)*ntheta_plasma + itheta_plasma_reflect
+           do izeta_coil = 1, nzeta_coil
+              if (izeta_coil ==1) then
+                 izeta_coil_reflect = izeta_coil
+              else
+                 izeta_coil_reflect = nzeta_coil + 2 - izeta_coil
+              end if
+              do itheta_coil = 1, ntheta_coil
+                 if (itheta_coil == 1) then
+                    itheta_coil_reflect = 1
+                 else
+                    itheta_coil_reflect = ntheta_coil + 2 - itheta_coil
+                 end if
+                 index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
+                 index_coil_reflect = (izeta_coil_reflect-1)*ntheta_coil + itheta_coil_reflect
+
+                 if (symmetry_option==1) then
+                    inductance(index_plasma,index_coil,:,1) =  inductance(index_plasma_reflect,index_coil_reflect,:,1)
+                    inductance(index_plasma,index_coil,:,2) = -inductance(index_plasma_reflect,index_coil_reflect,:,2)
+                    inductance(index_plasma,index_coil,:,3) = -inductance(index_plasma_reflect,index_coil_reflect,:,3)
+                 else
+                    ! symmetry_option must be 2. Verify symmetry:
+                    do js = 1, ns_magnetization
+                       if (abs(inductance(index_plasma,index_coil,js,1) - inductance(index_plasma_reflect,index_coil_reflect,js,1)) > thresh) then
+                          print "(5(a,i3),3(a,es10.2))","discrepancy1 js:",js," izp:",izeta_plasma,' itp:',itheta_plasma,' izc:',izeta_coil,' itc:',itheta_coil, &
+                               ' i1:',inductance(index_plasma,index_coil,js,1),' i2:',inductance(index_plasma_reflect,index_coil_reflect,js,1), &
+                               ' diff:',inductance(index_plasma,index_coil,js,1) - inductance(index_plasma_reflect,index_coil_reflect,js,1)
+                       end if
+                       if (abs(inductance(index_plasma,index_coil,js,2) + inductance(index_plasma_reflect,index_coil_reflect,js,2)) > thresh) then
+                          print "(5(a,i3),3(a,es10.2))","discrepancy2 js:",js," izp:",izeta_plasma,' itp:',itheta_plasma,' izc:',izeta_coil,' itc:',itheta_coil, &
+                               ' i1:',inductance(index_plasma,index_coil,js,2),' i2:',inductance(index_plasma_reflect,index_coil_reflect,js,2), &
+                               ' diff:',inductance(index_plasma,index_coil,js,2) + inductance(index_plasma_reflect,index_coil_reflect,js,2)
+                       end if
+                       if (abs(inductance(index_plasma,index_coil,js,3) + inductance(index_plasma_reflect,index_coil_reflect,js,3)) > thresh) then
+                          print "(5(a,i3),3(a,es10.2))","discrepancy3 js:",js," izp:",izeta_plasma,' itp:',itheta_plasma,' izc:',izeta_coil,' itc:',itheta_coil, &
+                               ' i1:',inductance(index_plasma,index_coil,js,3),' i2:',inductance(index_plasma_reflect,index_coil_reflect,js,3), &
+                               ' diff:',inductance(index_plasma,index_coil,js,3) + inductance(index_plasma_reflect,index_coil_reflect,js,3)
+                       end if
+                    end do
+                 end if
+              end do
+           end do
+        end do
+     end do
+     !$OMP END DO
+  end if
+
   !$OMP END PARALLEL
 
   deallocate(cos_zetal, sin_zetal, d_times_unit_normal_coil)
@@ -291,7 +294,11 @@ subroutine regcoil_build_matrices()
         TRANSB = 'N'
         BLAS_ALPHA=dtheta_coil*dzeta_coil
         BLAS_BETA=0 ! If other elements of g get zeroed out, try 1.
-        call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,inductance(:,:,js,j_RZetaZ),LDA,basis_functions,LDB,BLAS_BETA,g(:,:,js,j_RZetaZ),LDC)
+        if (j_RZetaZ==1) then
+           call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,inductance(:,:,js,j_RZetaZ),LDA,basis_functions_R,     LDB,BLAS_BETA,g(:,:,js,j_RZetaZ),LDC)
+        else
+           call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,inductance(:,:,js,j_RZetaZ),LDA,basis_functions_zeta_Z,LDB,BLAS_BETA,g(:,:,js,j_RZetaZ),LDC)
+        end if
 
         call system_clock(toc1)
 
@@ -390,7 +397,7 @@ subroutine regcoil_build_matrices()
   do izeta_coil = 1, nzeta_coil
      do itheta_coil = 1, ntheta_coil
         index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-        basis_functions_times_d(index_coil,:) = d(itheta_coil,izeta_coil) * basis_functions(index_coil,:)
+        basis_functions_times_d(index_coil,:) = d(itheta_coil,izeta_coil) * basis_functions_R(index_coil,:)
      end do
   end do
 
@@ -400,7 +407,7 @@ subroutine regcoil_build_matrices()
      regularization_block = 0
      ! Form basis_functions^T * d * sqrt(g) * basis_functions, to do the (theta,zeta) integrations.
      do j = 1, num_basis_functions
-        temp_matrix(:,j) = Jacobian_coil_2D(:,ls) * basis_functions(:,j)
+        temp_matrix(:,j) = Jacobian_coil_2D(:,ls) * basis_functions_R(:,j)
      end do
      ! A = basis_functions_times_d
      ! B = temp_matrix
@@ -433,15 +440,81 @@ subroutine regcoil_build_matrices()
         end do
      end do
   end do
-  deallocate(regularization_block, temp_matrix, Jacobian_coil_2D)
-
-  ! Make copies for (R,Phi,Z) components of the magnetization:
+  
   block_size = ns_magnetization*num_basis_functions
-  do j_RZetaZ = 0,2
-     row_offset = j_RZetaZ*block_size
+  select case (symmetry_option)
+  case (3)
+
+     ! Make copies for (R,Phi,Z) components of the magnetization:
+     do j_RZetaZ = 0,2
+        row_offset = j_RZetaZ*block_size
+        matrix_regularization(row_offset+1:row_offset+block_size, row_offset+1:row_offset+block_size) = regularization_without_RZetaZ
+     end do
+
+  case (1,2)
+     row_offset = 0
      matrix_regularization(row_offset+1:row_offset+block_size, row_offset+1:row_offset+block_size) = regularization_without_RZetaZ
-  end do
-  deallocate(regularization_without_RZetaZ)
+
+     ! Now repeat all that for the zeta_Z basis functions:
+     do izeta_coil = 1, nzeta_coil
+        do itheta_coil = 1, ntheta_coil
+           index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
+           basis_functions_times_d(index_coil,:) = d(itheta_coil,izeta_coil) * basis_functions_zeta_Z(index_coil,:)
+        end do
+     end do
+
+     regularization_without_RZetaZ = 0
+     ! Add contributions from each integration point in s:
+     do ls = 1, ns_integration
+        regularization_block = 0
+        ! Form basis_functions^T * d * sqrt(g) * basis_functions, to do the (theta,zeta) integrations.
+        do j = 1, num_basis_functions
+           temp_matrix(:,j) = Jacobian_coil_2D(:,ls) * basis_functions_zeta_Z(:,j)
+        end do
+        ! A = basis_functions_times_d
+        ! B = temp_matrix
+        ! C = regularization_block
+        M = num_basis_functions ! # rows of A^T
+        N = num_basis_functions ! # cols of B
+        K = ntheta_coil*nzeta_coil ! Common dimension of A^T and B
+        LDA = K ! Would be M if not taking the transpose.
+        LDB = K
+        LDC = M
+        TRANSA = 'T' ! DO take a transpose!
+        TRANSB = 'N'
+        BLAS_ALPHA = dtheta_coil * dzeta_coil * s_weights(ls)
+        BLAS_BETA=0
+        call DGEMM(TRANSA,TRANSB,M,N,K,BLAS_ALPHA,basis_functions_times_d,LDA,temp_matrix,LDB,BLAS_BETA,regularization_block,LDC)           
+        do js = 1, ns_magnetization
+           do ks = 1, js
+              row_offset = (js-1)*num_basis_functions
+              col_offset = (ks-1)*num_basis_functions
+              regularization_without_RZetaZ(row_offset+1:row_offset+num_basis_functions, col_offset+1:col_offset+num_basis_functions) &
+                   = regularization_without_RZetaZ(row_offset+1:row_offset+num_basis_functions, col_offset+1:col_offset+num_basis_functions) &
+                   + regularization_block * interpolate_magnetization_to_integration(ls,js) * interpolate_magnetization_to_integration(ls,ks)
+              if (ks .ne. js) then
+                 ! For off-diagonal-in-s blocks, populate the symmetric block.
+                 ! Should I take a transpose of regularization_block in the next line? I think it doesn't matter, and it's already symmetric.
+                 regularization_without_RZetaZ(col_offset+1:col_offset+num_basis_functions, row_offset+1:row_offset+num_basis_functions) &
+                      = regularization_without_RZetaZ(col_offset+1:col_offset+num_basis_functions, row_offset+1:row_offset+num_basis_functions) &
+                      + regularization_block * interpolate_magnetization_to_integration(ls,js) * interpolate_magnetization_to_integration(ls,ks)
+              end if
+           end do
+        end do
+     end do
+
+     ! Make copies for (Phi,Z) components of the magnetization:
+     do j_RZetaZ = 1,2
+        row_offset = j_RZetaZ*block_size
+        matrix_regularization(row_offset+1:row_offset+block_size, row_offset+1:row_offset+block_size) = regularization_without_RZetaZ
+     end do
+
+  case default
+     stop "Should not get here!"
+  end select
+
+  deallocate(regularization_block, temp_matrix, Jacobian_coil_2D)
+  deallocate(regularization_without_RZetaZ, basis_functions_times_d)
 
   call system_clock(toc)
   if (verbose) print *,"Regularization term:",real(toc-tic)/countrate,"sec."

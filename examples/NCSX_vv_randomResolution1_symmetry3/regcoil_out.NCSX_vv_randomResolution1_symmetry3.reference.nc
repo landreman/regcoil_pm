@@ -1,0 +1,1 @@
+../NCSX_vv_randomResolution1/regcoil_out.NCSX_vv_randomResolution1.reference.nc
