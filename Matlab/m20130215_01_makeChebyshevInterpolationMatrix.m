@@ -48,17 +48,17 @@ x = -2*(x-xMid)/(xMax-xMin);
    w = ones(N,1).*(-1).^[0:N-1]';          % w = weights for Chebyshev formula
 w(1) = w(1)/2; w(N) = w(N)/2;
  
-x(:,ones(1,N))
-xk(:,ones(1,M))'
+%x(:,ones(1,N))
+%xk(:,ones(1,M))'
    D = x(:,ones(1,N)) - xk(:,ones(1,M))';  % Compute quantities x-x(k)
    D = 1./(D+eps*(D==0));                  % and their reciprocals.
   
    %p = D*(w.*fk)./(D*w);                   % Evaluate interpolant as
                                            % matrix-vector products.
-                                           fprintf('D:\n')
-                                           D
-                                           fprintf('w:\n')
-                                           w
-                                           fprintf('Denominator:\n')
-                                           denominator=D*w
+                                           %fprintf('D:\n')
+                                           %D
+                                           %fprintf('w:\n')
+                                           %w
+                                           %fprintf('Denominator:\n')
+	   %denominator=D*w
 matrix = diag(1./(D*w)) * D * diag(w);

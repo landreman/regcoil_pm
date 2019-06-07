@@ -32,12 +32,14 @@ ns_integration = 2;
 
 ntheta_plasma = 30;
 ntheta_coil   = 33;
-nzeta_plasma = 35;
+nzeta_plasma = 36;
 nzeta_coil   = 38;
 mpol_magnetization  = 6;
 ntor_magnetization  = 8;
 ns_magnetization = 2;
 ns_integration = 3;
+d_initial = 0.01;
+sign_normal = 1;
 
 %{
 ntheta_plasma = 38;
@@ -48,6 +50,8 @@ mpol_magnetization  = 8;
 ntor_magnetization  = 7;
 ns_magnetization = 3;
 ns_integration = 3;
+d_initial = 0.005;
+sign_normal = -1;
 %}
 %{
 ntheta_plasma = 30;
@@ -93,8 +97,6 @@ separation = 0.35;
 nescin_filename = '../equilibria/NCSX.vv';
 
 %d_initial = 0.01;
-d_initial = 0.005;
-sign_normal = -1;
 
 s_integration_option = 'Gaussian';
 %s_integration_option = 'Chebyshev';
@@ -102,7 +104,7 @@ s_integration_option = 'Gaussian';
 % Options for the regularization parameter:
 % **********************************
 nlambda = 20;
-lambda_min = 1e-26;
+lambda_min = 1e-20;
 lambda_max = 1e-3;
 
 % Plotting options:
@@ -139,7 +141,8 @@ compareToFortran = true;
 %fortranNcFilename = '../examples/NCSX_low_resolution/regcoil_out.NCSX_low_resolution.nc';
 %fortranNcFilename = '/Users/mattland/Box Sync/work19/20190526-01-testing_regcoil_pm/20190526-01-015-thetaZeta64_mpolNtor12_sMagnetization1_sIntegration2_Cheb_d0.01_1proc/regcoil_out.NCSX.nc';
 %fortranNcFilename = '/Users/mattland/Box Sync/work19/20190526-01-testing_regcoil_pm/20190526-01-038-loRes_sMagnetization2_sIntegration3_Gauss_d0.01/regcoil_out.NCSX.nc';
-fortranNcFilename = '/Users/mattland/regcoil_pm/examples/compareToMatlab2/regcoil_out.compareToMatlab2.nc';
+%fortranNcFilename = '/Users/mattland/regcoil_pm/examples/compareToMatlab2/regcoil_out.compareToMatlab2.nc';
+fortranNcFilename = '/Users/mattland/regcoil_pm/examples/compareToMatlab1_symmetry3/regcoil_out.compareToMatlab1_symmetry3.nc';
 
 fortranComparisonThreshhold_abs = 1e-11;
 
@@ -670,6 +673,8 @@ Jacobian_coil = abs(Jacobian_coil);
 
 fprintf('Done. Took %g seconds.\n',toc)
 
+compareVariableToFortran('sign_normal')
+compareVariableToFortran('d_initial')
 compareVariableToFortran('theta_coil')
 compareVariableToFortran('zeta_coil')
 compareVariableToFortran('zetal_coil')
@@ -821,34 +826,32 @@ compareVariableToFortran('Bnormal_from_TF_and_plasma_current')
 
 switch symmetry_option
     case {1,2}
-        num_basis_functions = mnmax_coil;
+        num_basis_functions = mnmax_coil + 1;
     case {3}
-        num_basis_functions = mnmax_coil * 2;
+        num_basis_functions = mnmax_coil * 2 + 1;
     otherwise
         error('Invalid value for symmetry_option')
 end
-basis_functions = zeros(ntheta_coil*nzeta_coil, num_basis_functions);
+basis_functions_R = zeros(ntheta_coil*nzeta_coil, num_basis_functions);
+basis_functions_zeta_Z = zeros(ntheta_coil*nzeta_coil, num_basis_functions);
+
+% The first basis function is the constant function:
+basis_functions_R(:,1) = 1;
+basis_functions_zeta_Z(:,1) = 1;
 
 fprintf('Computing Fourier functions.\n')
 tic
 [zeta_coil_2D, theta_coil_2D] = meshgrid(zeta_coil,theta_coil);
 zeta_coil_indices = 1:nzeta_coil;
 switch symmetry_option
-    case {1}
+    case {1,2}
         % sines only
         for imn = 1:mnmax_coil
             angle = xm_coil(imn)*theta_coil_2D - xn_coil(imn)*zeta_coil_2D;
             cosangle = cos(angle);
             sinangle = sin(angle);
-            basis_functions(:,imn) = reshape(sinangle, [ntheta_coil*nzeta_coil,1]);
-        end
-    case {2}
-        % cosines only
-        for imn = 1:mnmax_coil
-            angle = xm_coil(imn)*theta_coil_2D - xn_coil(imn)*zeta_coil_2D;
-            cosangle = cos(angle);
-            sinangle = sin(angle);
-            basis_functions(:,imn) = reshape(cosangle, [ntheta_coil*nzeta_coil,1]);
+            basis_functions_R(     :,imn+1) = reshape(sinangle, [ntheta_coil*nzeta_coil,1]);
+            basis_functions_zeta_Z(:,imn+1) = reshape(cosangle, [ntheta_coil*nzeta_coil,1]);
         end
     case {3}
         % Both sines and cosines
@@ -856,9 +859,10 @@ switch symmetry_option
             angle = xm_coil(imn)*theta_coil_2D - xn_coil(imn)*zeta_coil_2D;
             cosangle = cos(angle);
             sinangle = sin(angle);
-            basis_functions(:,imn)            = reshape(sinangle, [ntheta_coil*nzeta_coil,1]);
-            basis_functions(:,imn+mnmax_coil) = reshape(cosangle, [ntheta_coil*nzeta_coil,1]);
+            basis_functions_R(:,imn+1)            = reshape(sinangle, [ntheta_coil*nzeta_coil,1]);
+            basis_functions_R(:,imn+1+mnmax_coil) = reshape(cosangle, [ntheta_coil*nzeta_coil,1]);
         end
+        basis_functions_zeta_Z = basis_functions_R;
 end
 fprintf('Done. Took %g sec.\n',toc)
         
@@ -962,10 +966,10 @@ fprintf('Done. Took %g sec.\n',toc)
 
 tic1 = tic;
 g = zeros(ntheta_plasma*nzeta_plasma, num_basis_functions, ns_magnetization, 3);
-for j = 1:3
-    for js = 1:ns_magnetization
-        g(:,:,js,j) = (dtheta_coil * dzeta_coil) * inductance(:,:,js,j) * basis_functions;
-    end
+for js = 1:ns_magnetization
+    g(:,:,js,1) = (dtheta_coil * dzeta_coil) * inductance(:,:,js,1) * basis_functions_R;
+    g(:,:,js,2) = (dtheta_coil * dzeta_coil) * inductance(:,:,js,2) * basis_functions_zeta_Z;
+    g(:,:,js,3) = (dtheta_coil * dzeta_coil) * inductance(:,:,js,3) * basis_functions_zeta_Z;
 end
 fprintf('inductance -> g: %g\n',toc(tic1))
 
@@ -984,7 +988,7 @@ system_size = num_basis_functions * ns_magnetization * 3;
 Bnormal_from_TF_and_plasma_current_1D = reshape(Bnormal_from_TF_and_plasma_current, [ntheta_plasma*nzeta_plasma,1]);
 
 tic
-fprintf('Computing RHS_B and RHS_K.\n')
+fprintf('Computing RHS_B.\n')
 RHS_B = zeros(system_size,1);
 for j = 1:3
     for js = 1:ns_magnetization
@@ -1018,16 +1022,21 @@ compareVariableToFortran('matrix_B')
 tic
 fprintf('Computing matrix_regularization.\n')
 matrix_regularization = zeros(system_size);
-for js = 1:ns_magnetization
-    for ks = 1:ns_magnetization
-        block = zeros(num_basis_functions);
-        for ps = 1:ns_integration
-            block = block + s_weights(ps) * interpolate_magnetization_to_integration(ps,js) * interpolate_magnetization_to_integration(ps,ks) ...
-                * basis_functions' * (diag(reshape(Jacobian_coil(:,:,ps) .* d,[ntheta_coil*nzeta_coil,1])) * basis_functions);
-        end
-        for j = 1:3
-            row_indices = (j-1) * ns_magnetization*num_basis_functions + (js-1)*num_basis_functions + (1:num_basis_functions);
-            col_indices = (j-1) * ns_magnetization*num_basis_functions + (ks-1)*num_basis_functions + (1:num_basis_functions);
+for j_RZetaZ = 1:3
+    if j_RZetaZ==1
+        basis_functions = basis_functions_R;
+    else
+        basis_functions = basis_functions_zeta_Z;
+    end
+    for js = 1:ns_magnetization
+        for ks = 1:ns_magnetization
+            block = zeros(num_basis_functions);
+            for ps = 1:ns_integration
+                block = block + s_weights(ps) * interpolate_magnetization_to_integration(ps,js) * interpolate_magnetization_to_integration(ps,ks) ...
+                    * basis_functions' * (diag(reshape(Jacobian_coil(:,:,ps) .* d,[ntheta_coil*nzeta_coil,1])) * basis_functions);
+            end
+            row_indices = (j_RZetaZ-1) * ns_magnetization*num_basis_functions + (js-1)*num_basis_functions + (1:num_basis_functions);
+            col_indices = (j_RZetaZ-1) * ns_magnetization*num_basis_functions + (ks-1)*num_basis_functions + (1:num_basis_functions);
             matrix_regularization(row_indices,col_indices) = block;
         end
     end
@@ -1104,7 +1113,76 @@ compareVariableToFortran('Bnormal_total')
 compareVariableToFortran('chi2_B')
 compareVariableToFortran('chi2_M')
 
-%return
+if compareToFortran
+    RHS_B_m = RHS_B;
+    RHS_B_f = evalin('base','RHS_B_f');
+    figure(100);
+    clf;
+    subplot(1,2,1);
+    plot(RHS_B_m,'displayname','matlab');
+    hold on;
+    plot(RHS_B_f,':','displayname','fortran');
+    legend show
+    title('RHS')
+    
+    subplot(1,2,2);
+    plot(RHS_B_m-RHS_B_f)
+    title('RHS difference')
+
+    matrix_B_m = matrix_B;
+    matrix_B_f = evalin('base','matrix_B_f');
+    figure(101);
+    clf;
+    subplot(1,3,1);
+    imagesc(matrix_B_m);
+    colorbar;
+    title('matrix B matlab')
+    subplot(1,3,2);
+    imagesc(matrix_B_f);
+    colorbar;
+    title('matrix B fortran')
+    subplot(1,3,3);
+    imagesc(matrix_B_m-matrix_B_f);
+    colorbar
+    title('difference')
+    
+    
+    matrix_regularization_m = matrix_regularization;
+    matrix_regularization_f = evalin('base','matrix_regularization_f');
+    figure(102);
+    clf;
+    subplot(1,3,1);
+    imagesc(matrix_regularization_m);
+    colorbar;
+    title('matrix regularization matlab')
+    subplot(1,3,2);
+    imagesc(matrix_regularization_f);
+    colorbar;
+    title('matrix regularization fortran')
+    subplot(1,3,3);
+    imagesc(matrix_regularization_m-matrix_regularization_f);
+    colorbar
+    title('difference')
+    
+    
+    chi2_B_m = chi2_B;
+    chi2_B_f = evalin('base','chi2_B_f');
+    figure(103);
+    clf;
+    subplot(1,2,1);
+    semilogy(chi2_B_m,'displayname','matlab');
+    hold on;
+    semilogy(chi2_B_f,':','displayname','fortran');
+    title('chi2 B')
+    legend show
+    
+    subplot(1,2,2);
+    semilogy(abs(chi2_B_m-chi2_B_f))
+    title('difference')
+    
+end
+
+return
 
 
 % *********************************************
