@@ -1,11 +1,16 @@
 %regcoil_out_filename = 'examples/compareToMatlab1/regcoil_out.compareToMatlab1.nc';
 %regcoil_out_filename = 'examples/NCSX_vv_randomResolution1_iterate_d/regcoil_out.NCSX_vv_randomResolution1_iterate_d.nc';
-regcoil_out_filename = '/Users/mattland/Box Sync/work19/regcoil_out.20190531-15_mgrid_lambda_1e-14.nc';
+%regcoil_out_filename = '/Users/mattland/Box Sync/work19/regcoil_out.20190531-15_mgrid_lambda_1e-14.nc'; % Original figure I circulated
+%regcoil_out_filename = '/Users/mattland/Box Sync/work19/regcoil_out.20190607-01-043-mgrid_lambda_1e-15.nc'; % Updated figure after implementing stellarator symmetry
 %regcoil_out_filename = '/Users/mattland/Box Sync/work19/20190526-01-testing_regcoil_pm/20190526-01-044-vv_thetaZeta64_mpolNtor12_sMagnetization2_sIntegration2_d0.15/regcoil_out.NCSX.nc';
+regcoil_out_filename = '/Users/mattland/Box Sync/work19/20190709-01-regcoilPM_analytic_benchmark/20190709-01-024-coilAspect30_aOverB0.33_n3_ntheta96_nzeta4_nfp128_mpol24_sym/regcoil_out.benchmark.nc';
 
-ilambda = 8;
+ilambda = 20;
 
-decimate = 2;
+decimate = 1;
+
+quantity_for_colormap = 'd';
+%quantity_for_colormap = 'M';
 
 nfp = ncread(regcoil_out_filename,'nfp');
 sign_normal = double(ncread(regcoil_out_filename,'sign_normal'));
@@ -57,7 +62,7 @@ daspect([1,1,1])
 axis vis3d off
 set(gca,'clipping','off')
 rotate3d on
-zoom(1.6)
+zoom(1.4)
 
 big_d = repmat(d(:,:,ilambda),[1,nfp]);
 
@@ -75,9 +80,26 @@ unit_normal_coil = unit_normal_coil(:,:,1:max_zeta_index);
 abs_M_inner = abs_M_inner(:,1:max_zeta_index);
 abs_M_outer = abs_M_outer(:,1:max_zeta_index);
 big_d = big_d(:,1:max_zeta_index);
+bigger_d = [big_d; big_d(1,:)];
 
-surf(squeeze(r_coil(1,:,:)), squeeze(r_coil(2,:,:)), squeeze(r_coil(3,:,:)),abs_M_inner,'edgecolor','none','facecolor','interp','facealpha',1)
-surf(squeeze(r_coil_outer(1,:,:)), squeeze(r_coil_outer(2,:,:)), squeeze(r_coil_outer(3,:,:)),abs_M_outer,'edgecolor','none','facecolor','interp','facealpha',0.7)
+switch quantity_for_colormap
+    case 'd'
+        data = bigger_d;
+    case 'M'
+        data = abs_M_inner;
+    otherwise
+        error('Invalid quantity_for_colormap')
+end
+surf(squeeze(r_coil(1,:,:)), squeeze(r_coil(2,:,:)), squeeze(r_coil(3,:,:)),data,'edgecolor','none','facecolor','interp','facealpha',1)
+switch quantity_for_colormap
+    case 'd'
+        data = bigger_d;
+    case 'M'
+        data = abs_M_outer;
+    otherwise
+        error('Invalid quantity_for_colormap')
+end
+surf(squeeze(r_coil_outer(1,:,:)), squeeze(r_coil_outer(2,:,:)), squeeze(r_coil_outer(3,:,:)),data,'edgecolor','none','facecolor','interp','facealpha',0.7)
 lw=2;
 plot3(squeeze(r_coil(1,:,1)), squeeze(r_coil(2,:,1)), squeeze(r_coil(3,:,1)),'g','linewidth',lw)
 plot3(squeeze(r_coil(1,:,end)), squeeze(r_coil(2,:,end)), squeeze(r_coil(3,:,end)),'g','linewidth',lw)
@@ -86,6 +108,19 @@ plot3(squeeze(r_coil_outer(1,:,end)), squeeze(r_coil_outer(2,:,end)), squeeze(r_
 colorbar
 lighting gouraud
 
+switch quantity_for_colormap
+    case 'd'
+        title_string = 'Color = thickness of magnetization layer [meters]. Black arrows show direction of magnetization.';
+        set(gca,'clim',[0,max(max(big_d))])
+    case 'M'
+        title_string = 'Color = |M| [Amperes / meter]. Black arrows show direction of magnetization.';
+    otherwise
+        error('Invalid quantity_for_colormap')
+end
+annotation(gcf,'textbox',...
+    [0.00703968938740293 0.954476479514416 0.989509059534081 0.0394537177541729],...
+    'String',title_string,'linestyle','none','horizontalalignment','center','fontsize',16,...
+    'FitBoxToText','off');
 magnetization_vector = repmat(magnetization_vector(:,:,:,:,ilambda),[1,nfp,1,1]);
 magnetization_vector = magnetization_vector(:,1:max_zeta_index,:,:);
 MZ = magnetization_vector(:,:,:,3);
@@ -106,6 +141,6 @@ for js = 1:ns_magnetization
     Y(:,:,js) = squeeze(r_coil(2,1:end-1,:)) + sign_normal * s_magnetization(js) * big_d .* squeeze(unit_normal_coil(2,:,:));
     Z(:,:,js) = squeeze(r_coil(3,1:end-1,:)) + sign_normal * s_magnetization(js) * big_d .* squeeze(unit_normal_coil(3,:,:));
 end
-scale = 2;
+scale = 0.5;
 quiver3(X(1:decimate:end,1:decimate:end,:),Y(1:decimate:end,1:decimate:end,:),Z(1:decimate:end,1:decimate:end,:), ...
     MX(1:decimate:end,1:decimate:end,:),MY(1:decimate:end,1:decimate:end,:),MZ(1:decimate:end,1:decimate:end,:),scale,'k')

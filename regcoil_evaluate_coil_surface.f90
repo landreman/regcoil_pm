@@ -253,9 +253,20 @@ subroutine regcoil_evaluate_coil_surface()
   allocate(max_d_before_singularity(ntheta_coil, nzeta_coil))
   do izeta = 1, nzeta_coil
      do itheta = 1, ntheta_coil
-        ! Use quadratic formula to find when Jacobain=0 for s=1:
+        ! Use quadratic formula to find when Jacobian=0 for s=1:
         a = (fundamental_form_M(itheta,izeta) * fundamental_form_M(itheta,izeta) - fundamental_form_L(itheta,izeta) * fundamental_form_P(itheta,izeta)) &
              / (norm_normal_coil(itheta,izeta) * norm_normal_coil(itheta,izeta))
+        if (abs(a) < 1e-12) then
+           ! Handle the a=0 case separately
+           d1 = 1 / (2 * sign_normal * mean_curvature_coil(itheta,izeta))
+           if (d1 > 0) then
+              max_d_before_singularity(itheta,izeta) = d1
+           else
+              max_d_before_singularity(itheta,izeta) = 1.0d+200
+           end if
+           !print *,"a=0:",a,"  mean_curv:",mean_curvature_coil(itheta,izeta),"  temp:",temp,"  d1:",d1,"  d2:",d2,"  max_d:",max_d_before_singularity(itheta,izeta)
+           cycle
+        end if
         temp = sqrt(4 * mean_curvature_coil(itheta,izeta) * mean_curvature_coil(itheta,izeta) + 4 * a)
         d1 = (-2 * sign_normal * mean_curvature_coil(itheta,izeta) + temp) / (2 * a)
         d2 = (-2 * sign_normal * mean_curvature_coil(itheta,izeta) - temp) / (2 * a)
@@ -273,6 +284,7 @@ subroutine regcoil_evaluate_coil_surface()
            end if
         end if
         !print "(3(a,es10.2))","d1:",d1,"  d2:",d2,"  max_d:",max_d_before_singularity(itheta,izeta)
+        !print *,"a:",a,"  mean_curv:",mean_curvature_coil(itheta,izeta),"  temp:",temp,"  d1:",d1,"  d2:",d2,"  max_d:",max_d_before_singularity(itheta,izeta)
      end do
   end do
 

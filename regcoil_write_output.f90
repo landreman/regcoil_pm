@@ -48,7 +48,8 @@ subroutine regcoil_write_output
        vn_exit_code = "exit_code", &
        vn_chi2_B_target = "chi2_B_target", &
        vn_sign_normal = "sign_normal", &
-       vn_d_initial = "d_initial"
+       vn_d_initial = "d_initial", &
+       vn_regularization_d_exponent = 'regularization_d_exponent'
 
   ! Arrays with dimension 1
   character(len=*), parameter :: &
@@ -300,6 +301,9 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_d_initial, d_initial)
   call cdf_setatt(ncid, vn_d_initial, 'Initial thickness of the magnetization region, in meters. ' // input_parameter_text)
 
+  call cdf_define(ncid, vn_regularization_d_exponent, regularization_d_exponent)
+  call cdf_setatt(ncid, vn_regularization_d_exponent, 'Power of d used in the regularization term. ' // input_parameter_text)
+
   ! Arrays with dimension 1
 
   call cdf_define(ncid, vn_theta_plasma, theta_plasma, dimname=ntheta_plasma_dim)
@@ -525,6 +529,7 @@ subroutine regcoil_write_output
   if (trim(lambda_option)==lambda_option_search) call cdf_write(ncid, vn_chi2_B_target, chi2_B_target)
   call cdf_write(ncid, vn_sign_normal, sign_normal)
   call cdf_write(ncid, vn_d_initial, d_initial)
+  call cdf_write(ncid, vn_regularization_d_exponent, regularization_d_exponent)
 
   ! Arrays with dimension 1
 

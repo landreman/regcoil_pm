@@ -397,7 +397,7 @@ subroutine regcoil_build_matrices()
   do izeta_coil = 1, nzeta_coil
      do itheta_coil = 1, ntheta_coil
         index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-        basis_functions_times_d(index_coil,:) = d(itheta_coil,izeta_coil) * basis_functions_R(index_coil,:)
+        basis_functions_times_d(index_coil,:) = (d(itheta_coil,izeta_coil) ** regularization_d_exponent) * basis_functions_R(index_coil,:)
      end do
   end do
 
@@ -459,7 +459,7 @@ subroutine regcoil_build_matrices()
      do izeta_coil = 1, nzeta_coil
         do itheta_coil = 1, ntheta_coil
            index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-           basis_functions_times_d(index_coil,:) = d(itheta_coil,izeta_coil) * basis_functions_zeta_Z(index_coil,:)
+           basis_functions_times_d(index_coil,:) = (d(itheta_coil,izeta_coil) ** regularization_d_exponent) * basis_functions_zeta_Z(index_coil,:)
         end do
      end do
 
