@@ -1,0 +1,9 @@
+ #Nfou Nfp  Nbnf
+   2   128     1
+ #------- plasma boundary------
+ #  n   m   Rbc   Rbs    Zbc   Zbs
+    0   0    30     0      0     0
+    0   1 0.333333333333333 0 0 0.333333333333333
+ #-------Bn harmonics----------
+ #  n  m  bnc   bns
+    0  3    1     0

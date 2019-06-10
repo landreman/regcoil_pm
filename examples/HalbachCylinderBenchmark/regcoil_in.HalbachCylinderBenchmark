@@ -1,0 +1,25 @@
+&regcoil_nml
+  d_initial = 1e-3
+
+  nlambda = 40
+  lambda_min = 1e-34
+  lambda_max = 1e-8
+
+  ntheta_plasma = 96
+  ntheta_coil   = 96
+  nzeta_plasma  = 4
+  nzeta_coil    = 4
+  mpol_magnetization = 24
+  ntor_magnetization = 0
+
+  ns_magnetization=1
+  ns_integration=2
+
+  geometry_option_plasma = 7
+  shape_filename_plasma = 'plasma'
+
+  geometry_option_coil=1
+  R0_coil = 30
+  a_coil = 1
+
+/
