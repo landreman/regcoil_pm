@@ -159,6 +159,13 @@ module regcoil_variables
   real(dp), dimension(:,:), allocatable :: max_d_before_singularity
   integer :: regularization_d_exponent = 1
 
+  integer, parameter :: max_nports = 10
+  integer :: nports
+  real(dp), dimension(max_nports) :: ports_theta0, ports_zeta0, ports_theta_width, ports_zeta_width
+  real(dp) :: ports_sharpness = 5
+  real(dp) :: ports_magnitude = 1.0d+6
+  real(dp), dimension(:,:), allocatable :: ports_weight
+
   namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &
        R0_plasma, R0_coil, a_plasma, a_coil, &
@@ -173,7 +180,8 @@ module regcoil_variables
        ns_magnetization, ns_integration, d_initial, s_integration_option, lambda_single, sign_normal, &
        d_option, nd, target_mu0_M, Anderson_depth, Anderson_alpha, Picard_alpha, min_d, &
        write_mgrid, mgrid_ir, mgrid_jz, mgrid_kp, mgrid_rmin, mgrid_rmax, mgrid_zmin, mgrid_zmax, &
-       include_bnormal_from_TF, net_poloidal_current_Amperes, regularization_d_exponent
+       include_bnormal_from_TF, net_poloidal_current_Amperes, regularization_d_exponent, &
+       ports_theta0, ports_zeta0, ports_theta_width, ports_zeta_width, ports_sharpness, ports_magnitude
 
 end module regcoil_variables
 

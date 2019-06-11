@@ -22,6 +22,7 @@ program regcoil
   call regcoil_init_coil_surface()
 
   ! Initialize some of the vectors and matrices needed:
+  call regcoil_init_ports()
   call regcoil_read_bnorm()
   call regcoil_init_basis_functions()
   call regcoil_build_matrices()

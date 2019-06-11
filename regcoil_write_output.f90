@@ -94,7 +94,8 @@ subroutine regcoil_write_output
        vn_matrix_B = "matrix_B", &
        vn_matrix_regularization = "matrix_regularization", &
        vn_interpolate_magnetization_to_integration = "interpolate_magnetization_to_integration", &
-       vn_max_d_before_singularity = "max_d_before_singularity"
+       vn_max_d_before_singularity = "max_d_before_singularity", &
+       vn_ports_weight = "ports_weight"
 
   ! Arrays with dimension 3
   character(len=*), parameter :: &
@@ -433,6 +434,9 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_max_d_before_singularity,  max_d_before_singularity,  dimname=ntheta_nzeta_coil_dim)
   call cdf_setatt(ncid, vn_max_d_before_singularity, 'Maximum thickness before the Jacobian goes to 0.')
 
+  call cdf_define(ncid, vn_ports_weight,  ports_weight,  dimname=ntheta_nzeta_coil_dim)
+  call cdf_setatt(ncid, vn_ports_weight,  "Weight appearing in the regularization term to penalize regions where you want ports.")
+
   ! Arrays with dimension 3
 
   call cdf_define(ncid, vn_r_plasma,  r_plasma,  dimname=xyz_ntheta_nzetal_plasma_dim)
@@ -575,6 +579,7 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_norm_normal_coil,  norm_normal_coil)
   call cdf_write(ncid, vn_Bnormal_from_TF_and_plasma_current, Bnormal_from_TF_and_plasma_current)
   call cdf_write(ncid, vn_mean_curvature_coil, mean_curvature_coil)
+  call cdf_write(ncid, vn_ports_weight, ports_weight)
   if (save_level < 3) then
      call cdf_write(ncid, vn_matrix_B, matrix_B)
      call cdf_write(ncid, vn_matrix_regularization, matrix_regularization)

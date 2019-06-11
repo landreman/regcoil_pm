@@ -9,6 +9,11 @@ subroutine regcoil_read_input
   integer :: fileUnit, didFileAccessWork, i
   integer, parameter :: uninitialized = -9999
 
+  ports_theta0 = -1
+  ports_zeta0 = -1
+  ports_theta_width = -1
+  ports_zeta_width = -1
+
   ! getcarg is in LIBSTELL
   call getcarg(1, inputFilename, numargs)
 
@@ -67,5 +72,25 @@ subroutine regcoil_read_input
         stop
      end select
   end if
+
+  ! Handle arrays for the ports.
+  do i = max_nports,1,-1
+     if (ports_theta_width(i) > 0 .and. ports_zeta_width(i) > 0) then
+        nports = i
+        exit
+     end if
+  end do
+  if (nports > 0) then
+     print "(a,i3,a)"," Detected",nports," ports specified:"
+     print *,"ports_theta0:     ",ports_theta0(1:nports)
+     print *,"ports_zeta0:      ",ports_zeta0(1:nports)
+     print *,"ports_theta_width:",ports_theta_width(1:nports)
+     print *,"ports_zeta_width: ",ports_zeta_width(1:nports)
+     print *,"ports_sharpness:",ports_sharpness
+     print *,"ports_magnitude:",ports_magnitude
+  else
+     print *,"No ports specified."
+  end if
+     
 
 end subroutine regcoil_read_input

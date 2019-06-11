@@ -46,7 +46,7 @@ subroutine regcoil_diagnostics(isaved)
   chi2_M_alt = 0
   do itheta = 1, ntheta_coil
      do izeta = 1, nzeta_coil
-        chi2_M_alt = chi2_M_alt + (d(itheta,izeta) ** regularization_d_exponent) * dot_product(s_weights * Jacobian_coil(itheta,izeta,:), &
+        chi2_M_alt = chi2_M_alt + (d(itheta,izeta) ** regularization_d_exponent) * ports_weight(itheta,izeta) * dot_product(s_weights * Jacobian_coil(itheta,izeta,:), &
              matmul(interpolate_magnetization_to_integration, magnetization_vector(itheta,izeta,:,1,isaved)) ** 2 &
              + matmul(interpolate_magnetization_to_integration, magnetization_vector(itheta,izeta,:,2,isaved)) ** 2 &
              + matmul(interpolate_magnetization_to_integration, magnetization_vector(itheta,izeta,:,3,isaved)) ** 2)

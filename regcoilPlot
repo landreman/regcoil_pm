@@ -39,6 +39,7 @@ chi2_M = f.variables['chi2_M'][()]
 max_M = f.variables['max_M'][()]
 min_M = f.variables['min_M'][()]
 abs_M = f.variables['abs_M'][()]
+ports_weight = f.variables['ports_weight'][()]
 d = f.variables['d'][()]
 ns_magnetization = f.variables['ns_magnetization'][()]
 Bnormal_from_TF_and_plasma_current = f.variables['Bnormal_from_TF_and_plasma_current'][()]
@@ -213,6 +214,13 @@ else:
     plt.ylabel('chi2_M [A^2 m^2]')
     for j in range(numPlots):
         plt.plot(d_iterations[isaved_to_plot[j]-1], chi2_M[isaved_to_plot[j]-1],'ob')
+
+plt.subplot(numRows,numCols,3)
+plt.contourf(zeta_coil, theta_coil, np.transpose(ports_weight), 20)
+plt.colorbar()
+plt.xlabel('zeta (coil)',fontsize='x-small')
+plt.ylabel('theta (coil)',fontsize='x-small')
+plt.title('ports_weight',fontsize='x-small')
 
 plt.tight_layout()
 plt.subplots_adjust(top=0.95)
