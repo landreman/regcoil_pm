@@ -41,6 +41,7 @@ program regcoil
   call system_clock(toc)
   total_time = real(toc-tic)/countrate
 
+  call regcoil_evaluate_outer_surface()
   call regcoil_write_output()
 
   if (write_mgrid) call regcoil_write_mgrid()

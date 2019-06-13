@@ -245,6 +245,7 @@ subroutine regcoil_evaluate_coil_surface()
   ! For now, just set d=constant. We'll improve this eventually.
   allocate(d(ntheta_coil, nzeta_coil))
   d = d_initial
+  d0 = d_initial
 
   allocate(Jacobian_ssquared_term(ntheta_coil, nzeta_coil))
   ! We wll need this quantity later to generate the Jacobian of the (s, theta, zeta) coordinates in the magnetization region:

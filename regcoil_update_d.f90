@@ -11,10 +11,9 @@ subroutine regcoil_update_d(jd,isaved)
   real(dp), dimension(:,:), allocatable :: Anderson_matrix
   integer :: M, N, NRHS, RANK, Anderson_LWORK, Anderson_LIWORK
   real(dp) :: RCOND, diff
-  real(dp) :: d0, factor, factor2, angle, sinangle, cosangle
+  real(dp) :: factor, factor2, angle, sinangle, cosangle
   real(dp), dimension(:), allocatable :: singular_values, Anderson_WORK
   integer, dimension(:), allocatable :: Anderson_IWORK
-  real(dp), dimension(:), allocatable :: dmnc, dmns
 
   ! Update thickness:
   last_d = d
@@ -40,8 +39,6 @@ subroutine regcoil_update_d(jd,isaved)
 !!$  do j=1,ntheta_coil
 !!$     print "(*(f7.4))",d(j,:)
 !!$  end do
-  allocate(dmnc(mnmax_magnetization))
-  allocate(dmns(mnmax_magnetization))
   d0 = sum(d)/(ntheta_coil*nzeta_coil)
   dmnc=0
   dmns=0

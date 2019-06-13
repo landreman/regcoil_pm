@@ -83,7 +83,11 @@ subroutine regcoil_write_output
        vn_max_Bnormal = "max_Bnormal", &
        vn_max_M = "max_M", &
        vn_min_M = "min_M", &
-       vn_volume_magnetization = "volume_magnetization"
+       vn_volume_magnetization = "volume_magnetization", &
+       vn_rmnc_outer = "rmnc_outer", &
+       vn_rmns_outer = "rmns_outer", &
+       vn_zmnc_outer = "zmnc_outer", &
+       vn_zmns_outer = "zmns_outer"
 
   ! Arrays with dimension 2
   character(len=*), parameter :: &
@@ -404,6 +408,26 @@ subroutine regcoil_write_output
   call cdf_define(ncid, vn_volume_magnetization, volume_magnetization(1:nlambda), dimname=nlambda_dim)
   call cdf_setatt(ncid, vn_volume_magnetization, 'Volume of the magnetization region, in meters^3.')
 
+  call cdf_define(ncid, vn_rmnc_outer, rmnc_outer, dimname=mnmax_coil_dim)
+  call cdf_setatt(ncid, vn_rmnc_outer, 'Amplitudes of the cosine(m*theta-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
+       'R(theta,zeta) defining the outer boundary of the magnetization region, for the last saved configuration. Indices refer to xm_coil and xn_coil.' // &
+       'Here, zeta refers to the local standard toroidal angle, not to the toroidal angle at the corresponding point of the inner magnetization surface.')
+
+  call cdf_define(ncid, vn_rmns_outer, rmns_outer, dimname=mnmax_coil_dim)
+  call cdf_setatt(ncid, vn_rmns_outer, 'Amplitudes of the sine(m*theta-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
+       'R(theta,zeta) defining the outer boundary of the magnetization region, for the last saved configuration. Indices refer to xm_coil and xn_coil.' // &
+       'Here, zeta refers to the local standard toroidal angle, not to the toroidal angle at the corresponding point of the inner magnetization surface.')
+
+  call cdf_define(ncid, vn_zmnc_outer, zmnc_outer, dimname=mnmax_coil_dim)
+  call cdf_setatt(ncid, vn_zmnc_outer, 'Amplitudes of the cosine(m*theta-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
+       'Z(theta,zeta) defining the outer boundary of the magnetization region, for the last saved configuration. Indices refer to xm_coil and xn_coil.' // &
+       'Here, zeta refers to the local standard toroidal angle, not to the toroidal angle at the corresponding point of the inner magnetization surface.')
+
+  call cdf_define(ncid, vn_zmns_outer, zmns_outer, dimname=mnmax_coil_dim)
+  call cdf_setatt(ncid, vn_zmns_outer, 'Amplitudes of the sine(m*theta-n*zeta) terms in a Fourier expansion of the cylindrical coordinate ' // &
+       'Z(theta,zeta) defining the outer boundary of the magnetization region, for the last saved configuration. Indices refer to xm_coil and xn_coil.' // &
+       'Here, zeta refers to the local standard toroidal angle, not to the toroidal angle at the corresponding point of the inner magnetization surface.')
+
   ! Arrays with dimension 2
 
   call cdf_define(ncid, vn_norm_normal_plasma,  norm_normal_plasma,  dimname=ntheta_nzeta_plasma_dim)
@@ -572,6 +596,10 @@ subroutine regcoil_write_output
   call cdf_write(ncid, vn_max_M, max_M(1:nsaved))
   call cdf_write(ncid, vn_min_M, min_M(1:nsaved))
   call cdf_write(ncid, vn_volume_magnetization, volume_magnetization(1:nlambda))
+  call cdf_write(ncid, vn_rmnc_outer, rmnc_outer)
+  call cdf_write(ncid, vn_rmns_outer, rmns_outer)
+  call cdf_write(ncid, vn_zmnc_outer, zmnc_outer)
+  call cdf_write(ncid, vn_zmns_outer, zmns_outer)
 
   ! Arrays with dimension 2
 

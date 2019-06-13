@@ -45,6 +45,7 @@ module regcoil_variables
   real(dp), dimension(:), allocatable :: theta_coil, zeta_coil, zetal_coil
   real(dp), dimension(:,:,:), allocatable :: r_coil, drdtheta_coil, drdzeta_coil, normal_coil
   real(dp), dimension(:,:,:), allocatable :: d2rdtheta2_coil, d2rdthetadzeta_coil, d2rdzeta2_coil
+  real(dp), dimension(:), allocatable :: rmnc_outer, rmns_outer, zmnc_outer, zmns_outer
 
   real(dp), dimension(:,:), allocatable :: norm_normal_plasma, norm_normal_coil
   real(dp), dimension(:,:), allocatable :: basis_functions_R, basis_functions_zeta_Z
@@ -158,6 +159,8 @@ module regcoil_variables
   real(dp), dimension(:,:,:), allocatable :: d_times_unit_normal_coil
   real(dp), dimension(:,:), allocatable :: max_d_before_singularity
   integer :: regularization_d_exponent = 1
+  real(dp) :: d0
+  real(dp), dimension(:), allocatable :: dmnc, dmns
 
   integer, parameter :: max_nports = 10
   integer :: nports

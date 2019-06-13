@@ -17,6 +17,11 @@ subroutine regcoil_init_basis_functions()
   ! Initialize Fourier arrays
   call regcoil_init_Fourier_modes(mpol_magnetization, ntor_magnetization, mnmax_magnetization, xm_magnetization, xn_magnetization, .false.)
   xn_magnetization = xn_magnetization * nfp
+
+  allocate(dmnc(mnmax_magnetization))
+  allocate(dmns(mnmax_magnetization))
+  dmnc = 0
+  dmns = 0
   
   select case (symmetry_option)
   case (1,2)

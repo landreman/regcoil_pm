@@ -3,11 +3,14 @@
 %regcoil_out_filename = '/Users/mattland/Box Sync/work19/regcoil_out.20190531-15_mgrid_lambda_1e-14.nc'; % Original figure I circulated
 %regcoil_out_filename = '/Users/mattland/Box Sync/work19/regcoil_out.20190607-01-043-mgrid_lambda_1e-15.nc'; % Updated figure after implementing stellarator symmetry
 %regcoil_out_filename = '/Users/mattland/Box Sync/work19/20190526-01-testing_regcoil_pm/20190526-01-044-vv_thetaZeta64_mpolNtor12_sMagnetization2_sIntegration2_d0.15/regcoil_out.NCSX.nc';
-regcoil_out_filename = '/Users/mattland/Box Sync/work19/20190709-01-regcoilPM_analytic_benchmark/20190709-01-024-coilAspect30_aOverB0.33_n3_ntheta96_nzeta4_nfp128_mpol24_sym/regcoil_out.benchmark.nc';
+%regcoil_out_filename = '/Users/mattland/Box Sync/work19/20190709-01-regcoilPM_analytic_benchmark/20190709-01-024-coilAspect30_aOverB0.33_n3_ntheta96_nzeta4_nfp128_mpol24_sym/regcoil_out.benchmark.nc';
+%regcoil_out_filename = '/Users/mattland/Box Sync/work19/regcoil_out.20190611-01-025_c09r00_withPorts_lambda1e-15_Picard_thetaZeta128_mpolNtor32_ns2_mgrid.nc';
+%regcoil_out_filename = '/Users/mattland/Box Sync/work19/regcoil_out.20190611-01-027_c09r00_withPorts_lambda1e-15_Picard_thetaZeta128_mpolNtor32_ns2_mgrid_1T.nc';
+regcoil_out_filename = '/Users/mattland/Box Sync/work19/regcoil_out.20190611-01-028_c09r00_noPorts_lambda1e-15_Picard_thetaZeta128_mpolNtor32_ns2_1T.nc';
 
-ilambda = 20;
+ilambda = 8;
 
-decimate = 1;
+decimate = 2;
 
 quantity_for_colormap = 'd';
 %quantity_for_colormap = 'M';
@@ -48,7 +51,7 @@ size(abs_M)
 abs_M_inner = repmat(abs_M(:,:,  1,ilambda),[1,nfp]);
 abs_M_outer = repmat(abs_M(:,:,end,ilambda),[1,nfp]);
 
-figure(1)
+figure(10)
 clf
 
 % Close plasma surface in theta and zeta:
@@ -65,6 +68,17 @@ rotate3d on
 zoom(1.4)
 
 big_d = repmat(d(:,:,ilambda),[1,nfp]);
+
+%{
+% Shift in theta to hide the seam
+shift_amount = round(ntheta_coil * 0.25);
+r_coil = circshift(r_coil,[0,shift_amount,0]);
+r_coil_outer = circshift(r_coil_outer,[0,shift_amount,0]);
+abs_M_inner = circshift(abs_M_inner,[shift_amount,0]);
+abs_M_outer = circshift(abs_M_outer,[shift_amount,0]);
+big_d = circshift(big_d,[shift_amount,0]);
+% Need to shift M vector too!
+%}
 
 % Close surface in theta:
 r_coil(:,end+1,:) = r_coil(:,1,:);
@@ -141,6 +155,6 @@ for js = 1:ns_magnetization
     Y(:,:,js) = squeeze(r_coil(2,1:end-1,:)) + sign_normal * s_magnetization(js) * big_d .* squeeze(unit_normal_coil(2,:,:));
     Z(:,:,js) = squeeze(r_coil(3,1:end-1,:)) + sign_normal * s_magnetization(js) * big_d .* squeeze(unit_normal_coil(3,:,:));
 end
-scale = 0.5;
+scale = 2;
 quiver3(X(1:decimate:end,1:decimate:end,:),Y(1:decimate:end,1:decimate:end,:),Z(1:decimate:end,1:decimate:end,:), ...
     MX(1:decimate:end,1:decimate:end,:),MY(1:decimate:end,1:decimate:end,:),MZ(1:decimate:end,1:decimate:end,:),scale,'k')

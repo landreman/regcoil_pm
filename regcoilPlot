@@ -39,6 +39,13 @@ chi2_M = f.variables['chi2_M'][()]
 max_M = f.variables['max_M'][()]
 min_M = f.variables['min_M'][()]
 abs_M = f.variables['abs_M'][()]
+rmnc_outer = f.variables['rmnc_outer'][()]
+rmns_outer = f.variables['rmns_outer'][()]
+zmnc_outer = f.variables['zmnc_outer'][()]
+zmns_outer = f.variables['zmns_outer'][()]
+mnmax_coil = f.variables['mnmax_coil'][()]
+xm_coil = f.variables['xm_coil'][()]
+xn_coil = f.variables['xn_coil'][()]
 ports_weight = f.variables['ports_weight'][()]
 d = f.variables['d'][()]
 ns_magnetization = f.variables['ns_magnetization'][()]
@@ -110,13 +117,15 @@ def getCrossSection(rArray, zetal_old, zeta_new):
 
     ntheta = z.shape[1]
     nzeta_new = len(zeta_new)
-    R_slice = np.zeros([nzeta_new,ntheta])
-    Z_slice = np.zeros([nzeta_new,ntheta])
+    R_slice = np.zeros([nzeta_new,ntheta+1])
+    Z_slice = np.zeros([nzeta_new,ntheta+1])
     for itheta in range(ntheta):
         interpolator = interp1d(zetal_old, R[:,itheta])
         R_slice[:,itheta] = interpolator(zeta_new)
         interpolator = interp1d(zetal_old, z[:,itheta])
         Z_slice[:,itheta] = interpolator(zeta_new)
+    R_slice[:,-1] = R_slice[:,0]
+    Z_slice[:,-1] = Z_slice[:,0]
 
     return R_slice, Z_slice
 
@@ -124,29 +133,43 @@ zeta_slices = np.array([0, 0.25, 0.5, 0.75])*2*np.pi/nfp
 R_slice_plasma, Z_slice_plasma = getCrossSection(r_plasma, zetal_plasma, zeta_slices)
 R_slice_coil, Z_slice_coil = getCrossSection(r_coil, zetal_coil, zeta_slices)
 
+R_slice_outer = np.zeros((ntheta_coil+1,4))
+Z_slice_outer = np.zeros((ntheta_coil+1,4))
+theta_coil_big = np.linspace(0,2*np.pi,ntheta_coil+1)
+for imn in range(mnmax_coil):
+    for izeta in range(4):
+        angle = xm_coil[imn] * theta_coil_big - xn_coil[imn] * zeta_slices[izeta]
+        sinangle = np.sin(angle)
+        cosangle = np.cos(angle)
+        R_slice_outer[:,izeta] += rmnc_outer[imn] * cosangle + rmns_outer[imn] * sinangle
+        Z_slice_outer[:,izeta] += zmnc_outer[imn] * cosangle + zmns_outer[imn] * sinangle
+
 ########################################################
 # Now make plot of surfaces at given toroidal angle
 ########################################################
 
 figureNum = 1
-fig = plt.figure(figureNum)
+fig = plt.figure(figureNum,figsize=(10,7))
 fig.patch.set_facecolor('white')
 
 numRows = 2
 numCols = 2
 
-Rmin = R_slice_coil.min()
-Rmax = R_slice_coil.max()
-Zmin = Z_slice_coil.min()
-Zmax = Z_slice_coil.max()
+Rmin = R_slice_outer.min()
+Rmax = R_slice_outer.max()
+Zmin = Z_slice_outer.min()
+Zmax = Z_slice_outer.max()
 
+markerSize = 3
 for whichPlot in range(4):
     plt.subplot(numRows,numCols,whichPlot+1)
     zeta = zeta_slices[whichPlot]
-    plt.plot(R_slice_coil[whichPlot,:], Z_slice_coil[whichPlot,:], 'b.-', label='Inner magnetization surface')
-    plt.plot(R_slice_plasma[whichPlot,:], Z_slice_plasma[whichPlot,:], 'r.-', label='Plasma')
+    plt.plot(R_slice_outer[:,whichPlot], Z_slice_outer[:,whichPlot], 'g.-', label='Outer magnetization surface',ms=markerSize)
+    plt.plot(R_slice_coil[whichPlot,:], Z_slice_coil[whichPlot,:], 'b.-', label='Inner magnetization surface',ms=markerSize)
+    plt.plot(R_slice_plasma[whichPlot,:], Z_slice_plasma[whichPlot,:], 'r.-', label='Plasma',ms=markerSize)
     plt.gca().set_aspect('equal',adjustable='box')
-    plt.legend(fontsize='x-small')
+    if whichPlot==1:
+        plt.legend(fontsize=7)
     plt.title('zeta='+str(zeta))
     plt.xlabel('R [meters]')
     plt.ylabel('Z [meters]')
