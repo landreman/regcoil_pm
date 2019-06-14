@@ -161,6 +161,8 @@ module regcoil_variables
   integer :: regularization_d_exponent = 1
   real(dp) :: d0
   real(dp), dimension(:), allocatable :: dmnc, dmns
+  logical :: filter_d = .true.
+  logical :: include_constant_basis_function = .true.
 
   integer, parameter :: max_nports = 10
   integer :: nports
@@ -184,7 +186,8 @@ module regcoil_variables
        d_option, nd, target_mu0_M, Anderson_depth, Anderson_alpha, Picard_alpha, min_d, &
        write_mgrid, mgrid_ir, mgrid_jz, mgrid_kp, mgrid_rmin, mgrid_rmax, mgrid_zmin, mgrid_zmax, &
        include_bnormal_from_TF, net_poloidal_current_Amperes, regularization_d_exponent, &
-       ports_theta0, ports_zeta0, ports_theta_width, ports_zeta_width, ports_sharpness, ports_magnitude
+       ports_theta0, ports_zeta0, ports_theta_width, ports_zeta_width, ports_sharpness, ports_magnitude, &
+       filter_d, include_constant_basis_function
 
 end module regcoil_variables
 

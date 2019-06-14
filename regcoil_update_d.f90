@@ -35,45 +35,47 @@ subroutine regcoil_update_d(jd,isaved)
   end if
 
   ! Fourier-filter d. First we transform from real to Fourier space:
+  if (filter_d) then
 !!$  print *,"d before filtering:"
 !!$  do j=1,ntheta_coil
 !!$     print "(*(f7.4))",d(j,:)
 !!$  end do
-  d0 = sum(d)/(ntheta_coil*nzeta_coil)
-  dmnc=0
-  dmns=0
-  factor = (2.0d+0) / (ntheta_coil * nzeta_coil)
-  do izeta = 1, nzeta_coil
-     do itheta = 1, ntheta_coil
-        do j = 1, mnmax_magnetization
-           angle = xm_magnetization(j) * theta_coil(itheta) - xn_magnetization(j) * zeta_coil(izeta)
-           sinangle = sin(angle)
-           cosangle = cos(angle)
-           factor2 = factor
-           ! The next 2 lines ensure inverse Fourier transform(Fourier transform) = identity
-           if (mod(ntheta_coil,2) == 0 .and.     xm_magnetization(j)  ==    (ntheta_coil/2)) factor2 = factor2 / 2
-           if (mod( nzeta_coil,2) == 0 .and. abs(xn_magnetization(j)) == nfp*(nzeta_coil/2)) factor2 = factor2 / 2
-           dmnc(j) = dmnc(j) + d(itheta, izeta) * cosangle * factor2
-           dmns(j) = dmns(j) + d(itheta, izeta) * sinangle * factor2
+     d0 = sum(d)/(ntheta_coil*nzeta_coil)
+     dmnc=0
+     dmns=0
+     factor = (2.0d+0) / (ntheta_coil * nzeta_coil)
+     do izeta = 1, nzeta_coil
+        do itheta = 1, ntheta_coil
+           do j = 1, mnmax_magnetization
+              angle = xm_magnetization(j) * theta_coil(itheta) - xn_magnetization(j) * zeta_coil(izeta)
+              sinangle = sin(angle)
+              cosangle = cos(angle)
+              factor2 = factor
+              ! The next 2 lines ensure inverse Fourier transform(Fourier transform) = identity
+              if (mod(ntheta_coil,2) == 0 .and.     xm_magnetization(j)  ==    (ntheta_coil/2)) factor2 = factor2 / 2
+              if (mod( nzeta_coil,2) == 0 .and. abs(xn_magnetization(j)) == nfp*(nzeta_coil/2)) factor2 = factor2 / 2
+              dmnc(j) = dmnc(j) + d(itheta, izeta) * cosangle * factor2
+              dmns(j) = dmns(j) + d(itheta, izeta) * sinangle * factor2
+           end do
         end do
      end do
-  end do
-  ! Now inverse transform:
-  d = d0
-  do izeta = 1, nzeta_coil
-     do itheta = 1, ntheta_coil
-        do j = 1, mnmax_magnetization
-           angle = xm_magnetization(j)*theta_coil(itheta)-xn_magnetization(j)*zeta_coil(izeta)
-           sinangle = sin(angle)
-           cosangle = cos(angle)
-           d(itheta,izeta) = d(itheta,izeta) + dmnc(j)*cosangle + dmns(j)*sinangle
+     ! Now inverse transform:
+     d = d0
+     do izeta = 1, nzeta_coil
+        do itheta = 1, ntheta_coil
+           do j = 1, mnmax_magnetization
+              angle = xm_magnetization(j)*theta_coil(itheta)-xn_magnetization(j)*zeta_coil(izeta)
+              sinangle = sin(angle)
+              cosangle = cos(angle)
+              d(itheta,izeta) = d(itheta,izeta) + dmnc(j)*cosangle + dmns(j)*sinangle
+           end do
         end do
      end do
-  end do
 !!$  print *,"d after filtering:"
 !!$  do j=1,ntheta_coil
 !!$     print "(*(f7.4))",d(j,:)
 !!$  end do
+  end if
 
   ! Take a mixture of the new and old depths:
   d = Picard_alpha * d + (1 - Picard_alpha) * last_d
