@@ -39,7 +39,9 @@ OBJ_FILES =  \
 # Dependencies:
 regcoil.o: regcoil_variables.o regcoil_init_plasma_mod.o
 regcoil_auto_regularization_solve.o: regcoil_variables.o
-regcoil_build_matrices.o: regcoil_variables.o
+# khammond commented original line and added regcoil_init_Fourier_modes_mod
+#regcoil_build_matrices.o: regcoil_variables.o
+regcoil_build_matrices.o: regcoil_variables.o regcoil_init_Fourier_modes_mod.o
 regcoil_Chebyshev_grid.o:
 regcoil_Chebyshev_interpolation_matrix.o:
 regcoil_compute_lambda.o: regcoil_variables.o
