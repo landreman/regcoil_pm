@@ -19,7 +19,16 @@ program regcoil
 
   ! Define the position vector and normal vector at each grid point for the surfaces:
   call regcoil_init_plasma()
-  call regcoil_init_coil_surface()
+
+  ! Define the magnets
+  select case (magnet_type)
+  case ('continuous')
+     call regcoil_init_coil_surface()
+  case ('qhex')
+     call magpie_init_qhex_set()
+  case default
+     print *, "Invalid magnet_type option: ", magnet_type
+  end select
 
   ! Initialize some of the vectors and matrices needed:
   call regcoil_init_ports()
