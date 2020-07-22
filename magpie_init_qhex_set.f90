@@ -73,6 +73,7 @@ subroutine magpie_init_qhex_set()
   do i = 1, nzeta_coil
      d(1,i) = qhex_arr_base(i)%height
   end do
+  print '(a,es10.3,a,es10.3)', "Max d = ", maxval(d), "; Min d = ", minval(d)
 
   ! Forbid d from exceeding the initialized height of each hexahedron
   max_d_before_singularity = d

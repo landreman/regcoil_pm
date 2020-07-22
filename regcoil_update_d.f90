@@ -46,7 +46,7 @@ subroutine regcoil_update_d(jd,isaved)
 !!$     print "(*(f7.4))",d(j,:)
 !!$  end do
      if (trim(magnet_type) == 'qhex') then
-        print *, "Warning: Fourier filtering of d is not intended for hexahedral magnets. It is recommended to set filter_d = .false."
+        print *, "Error: Fourier filtering of d is not supported for hexahedral magnets. Please set filter_d = .false."
      end if
      d0 = sum(d)/(ntheta_coil*nzeta_coil)
      dmnc=0
@@ -277,6 +277,7 @@ subroutine regcoil_update_d(jd,isaved)
      end do
 
      ! Extend the base magnet array to the full array (around the torus)
+     if (allocated(qhex_arr)) deallocate(qhex_arr)  
      call geometry_repetition_qhex('torus', nfp, stell_symm, tor_symm, &
               nzeta_coil, qhex_arr_base, nzetal_coil, qhex_arr)
 

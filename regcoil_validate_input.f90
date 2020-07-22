@@ -218,9 +218,14 @@ subroutine regcoil_validate_input
      if (ns_magnetization /= 1) then
         print *, "Warning: ns_magnetization > 1 is not supported for qhex geometry. Overriding input value."
         ns_magnetization = 1
-     else if (ns_integration /= 1) then
+     end if
+     if (ns_integration /= 1) then
         print *, "Warning: ns_integration > 1 is not supported for qhex geometry. Overriding input/default value."
         ns_integration = 1
+     end if
+     if (filter_d) then
+        print *, "Warning: Fourier filtering of d is not supported for qhex geometry. Setting filter_d to .false."
+        filter_d = .false.
      end if
   end if
 

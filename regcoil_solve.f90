@@ -45,6 +45,7 @@ subroutine regcoil_solve(ilambda)
         isaved = ilambda
      end if
      call regcoil_diagnostics(isaved)
+     print *, "Finished call to regcoil_diagnostics."
 
      if (jd < num_iterations) then
         call regcoil_update_d(jd,isaved)
@@ -61,7 +62,7 @@ subroutine regcoil_solve(ilambda)
      end do
   case ('qhex')
      do j = 1, nzetal_coil
-        volume_magnetization(ilambda) = volume_magnetization(ilambda) + qhex_arr(i)%vol
+        volume_magnetization(ilambda) = volume_magnetization(ilambda) + qhex_arr(j)%vol
      end do
   end select
   if (verbose) print "(a,es10.2,a)"," Volume of magnetization region:",volume_magnetization(ilambda)," meters^3."

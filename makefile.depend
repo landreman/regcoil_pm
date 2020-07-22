@@ -72,7 +72,7 @@ regcoil_Chebyshev_interpolation_matrix.o:
 regcoil_compute_lambda.o: regcoil_variables.o
 regcoil_compute_offset_surface_mod.o: regcoil_variables.o
 regcoil_compute_outer_surface_mod.o: regcoil_variables.o
-regcoil_diagnostics.o: regcoil_variables.o
+regcoil_diagnostics.o: regcoil_variables.o $(MAGPIE_DIR)magpie_globals.o
 regcoil_evaluate_coil_surface.o: regcoil_variables.o regcoil_Gaussian_quadrature.o
 regcoil_evaluate_outer_surface.o: regcoil_variables.o regcoil_compute_outer_surface_mod.o 
 regcoil_expand_coil_surface.o: regcoil_variables.o
