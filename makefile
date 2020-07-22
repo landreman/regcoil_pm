@@ -69,7 +69,7 @@ all: $(TARGET)
 include makefile.depend
 
 %.o: %.f90 $(LIBSTELL_DIR)/mini_libstell.a
-	$(FC) $(EXTRA_COMPILE_FLAGS) -I $(LIBSTELL_DIR) -c $<
+	$(FC) $(EXTRA_COMPILE_FLAGS) -I $(LIBSTELL_DIR) -c $< -o $@
 
 %.o: %.f $(LIBSTELL_DIR)/mini_libstell.a
 	$(FC) $(EXTRA_COMPILE_FLAGS) -I $(LIBSTELL_DIR) -c $<
@@ -87,6 +87,7 @@ $(LIBSTELL_DIR)/mini_libstell.a:
 clean:
 	rm -f *.o *.mod *.MOD *~ $(TARGET) *.a
 	cd mini_libstell; rm -f *.o *.mod *.MOD *.a
+	cd magpie; rm -f *.o *.mod *.MOD *.a
 
 test: $(TARGET)
 	@echo "Beginning functional tests." && cd examples && export REGCOIL_RETEST=no && ./runExamples.py

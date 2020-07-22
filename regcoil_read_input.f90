@@ -1,6 +1,7 @@
 subroutine regcoil_read_input
 
   use regcoil_variables
+  use magpie_globals, only: magpie
 
   implicit none
 
@@ -45,6 +46,18 @@ subroutine regcoil_read_input
         stop
      end if
      if (verbose) print *,"Successfully read parameters from regcoil_nml namelist in ", trim(inputFilename), "."
+  end if
+  if (trim(magnet_type) == 'qhex') then
+     read(fileUnit, nml=magpie, iostat=didFileAccessWork)
+     if (didFileAccessWork /= 0) then
+        print *,"Error!  I was able to open the file ", trim(inputFilename), &
+               " but not read data from the magpie namelist in it."
+        if (didFileAccessWork==-1) then
+           print *,"Make sure there is a carriage return after the / at the end of the namelist!"
+        end if
+        stop
+     end if
+     if (verbose) print *,"Successfully read parameters from magpie namelist in ", trim(inputFilename), "."
   end if
   close(unit = fileUnit)
 
@@ -91,6 +104,6 @@ subroutine regcoil_read_input
   else
      print *,"No ports specified."
   end if
-     
+
 
 end subroutine regcoil_read_input

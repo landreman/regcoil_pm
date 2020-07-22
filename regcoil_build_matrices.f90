@@ -5,12 +5,13 @@ subroutine regcoil_build_matrices()
   use stel_kinds
   use omp_lib
   use regcoil_init_Fourier_modes_mod
+  use magpie_globals, only: stell_symm, tor_symm
   
   implicit none
 
-  integer :: l_coil, l_mag, itheta_plasma, izeta_plasma, itheta_coil, izeta_coil, izetal_coil, index_mag, indexl_mag, izeta_max
-  real(dp) :: zetal_coil, x, y, z, dx, dy, dz, dr2inv, dr32inv
-  integer :: index_plasma, index_mag, index_coil, j, imn
+  integer :: l_coil, l_mag, itheta_plasma, izeta_plasma, itheta_coil, izeta_coil, izetal_coil, indexl_mag, izeta_max
+  real(dp) :: x, y, z, dx, dy, dz, dr2inv, dr32inv, reg_matrix_factor
+  integer :: index_plasma, index_coil, j, imn
   integer :: tic, toc, tic1, toc1, toc2, countrate, iflag
   integer :: offset
   real(dp) :: angle, sinangle, cosangle, factor, constants, normal_plasma_dot_dr
@@ -34,7 +35,7 @@ subroutine regcoil_build_matrices()
   ! Initialize Jacobian of the magnetization region (if continuous)
   !--------------------------------------------------------------
 
-  select case (magnet_type)
+  select case (trim(magnet_type))
   case ('continuous')
      if (allocated(Jacobian_coil)) deallocate(Jacobian_coil)
      allocate(Jacobian_coil(ntheta_coil, nzeta_coil, ns_integration))
@@ -93,7 +94,7 @@ subroutine regcoil_build_matrices()
   allocate(norm_normal_plasma_inv1D(ntheta_plasma*nzeta_plasma),stat=iflag)
   if (iflag .ne. 0) stop 'regcoil_build_matrices Allocation error 17!'
 
-  if (magnet_type == 'continuous') &
+  if (trim(magnet_type) == 'continuous') &
       allocate(d_times_unit_normal_coil(3,ntheta_coil,nzetal_coil))
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -105,35 +106,25 @@ subroutine regcoil_build_matrices()
 
   inductance = 0
 
-  select case (magnet_type)
-
-     case ('continuous')
-        allocate(cos_zetal(nzetal_coil))
-        allocate(sin_zetal(nzetal_coil))
-        do izetal_coil = 1, nzetal_coil
-           cos_zetal(izetal_coil) = cos(zetal_coil(izetal_coil))
-           sin_zetal(izetal_coil) = sin(zetal_coil(izetal_coil))
-        end do
-        constants = mu0 / (4 * pi)
+  allocate(cos_zetal(nzetal_coil))
+  allocate(sin_zetal(nzetal_coil))
+  do izetal_coil = 1, nzetal_coil
+     cos_zetal(izetal_coil) = cos(zetal_coil(izetal_coil))
+     sin_zetal(izetal_coil) = sin(zetal_coil(izetal_coil))
+  end do
+  constants = mu0 / (4 * pi)
       
-        do l_coil = 0, (nfp-1)
-           do izeta_coil = 1, nzeta_coil
-              izetal_coil = izeta_coil + l_coil*nzeta_coil
-              do itheta_coil = 1, ntheta_coil
-                 d_times_unit_normal_coil(:,itheta_coil,izetal_coil) = sign_normal * d(itheta_coil,izeta_coil) * normal_coil(:,itheta_coil,izetal_coil) / norm_normal_coil(itheta_coil,izeta_coil)
-              end do
+  select case (trim(magnet_type))
+  case('continuous')
+     do l_coil = 0, (nfp-1)
+        do izeta_coil = 1, nzeta_coil
+           izetal_coil = izeta_coil + l_coil*nzeta_coil
+           do itheta_coil = 1, ntheta_coil
+              d_times_unit_normal_coil(:,itheta_coil,izetal_coil) = sign_normal * d(itheta_coil,izeta_coil) * normal_coil(:,itheta_coil,izetal_coil) / norm_normal_coil(itheta_coil,izeta_coil)
            end do
         end do
-
-    case ('qhex')
-       allocate(cos_zetal(nzetal_coil))
-       allocate(sin_zetal(nzetal_coil))
-       do izetal_coil = 1, nzetal_coil
-          zetal_coil = atan2(qhex_arr(izetal_coil)%oy, qhex_arr(izetal_coil)%ox)
-          cos_zetal(indexl_magnet) = cos(zetal_coil)
-          sin_zetal(indexl_magnet) = sin(zetal_coil)
-       end do
-
+     end do
+   case('qhex')
    end select
 
   if (symmetry_option==3 .or. symmetry_option==2) then
@@ -151,7 +142,7 @@ subroutine regcoil_build_matrices()
   ! Note: the outermost loop below must be over the plasma variables rather than over the coil variables.
   ! This ensures the multiple threads write to different indices in h() rather than to the same indices in h(),
   ! in which case the h(index+plasma)=h(index_plasma)+... update does not work properly.
-  !$OMP DO PRIVATE(index_plasma,index_coil,index_mag,x,y,z,izetal_coil,dx,dy,dz,dr2inv,dr32inv,factor,normal_plasma_dot_dr)
+  !$OMP DO PRIVATE(index_plasma,index_coil,x,y,z,izetal_coil,dx,dy,dz,dr2inv,dr32inv,factor,normal_plasma_dot_dr)
   do izeta_plasma = 1, izeta_max
      do itheta_plasma = 1, ntheta_plasma
         index_plasma = (izeta_plasma-1)*ntheta_plasma + itheta_plasma
@@ -159,105 +150,67 @@ subroutine regcoil_build_matrices()
         y = r_plasma(2,itheta_plasma,izeta_plasma)
         z = r_plasma(3,itheta_plasma,izeta_plasma)
 
-        select case (magnet_type)
- 
-           ! Default Regcoil-PM behavior for the continuous toroidal magnet distribution
-           case ('continuous')
-              do ks = 1, ns_magnetization
-                 do izeta_coil = 1, nzeta_coil
-                    do itheta_coil = 1, ntheta_coil
-                       index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
-                       do l_coil = 0, (nfp-1)
-                          izetal_coil = izeta_coil + l_coil*nzeta_coil
-                          do js = 1, ns_integration
-                             dx = x - (r_coil(1,itheta_coil,izetal_coil) + s_integration(js) * d_times_unit_normal_coil(1,itheta_coil,izetal_coil))
-                             dy = y - (r_coil(2,itheta_coil,izetal_coil) + s_integration(js) * d_times_unit_normal_coil(2,itheta_coil,izetal_coil))
-                             dz = z - (r_coil(3,itheta_coil,izetal_coil) + s_integration(js) * d_times_unit_normal_coil(3,itheta_coil,izetal_coil))
-                             
-                             dr2inv = 1/(dx*dx + dy*dy + dz*dz)
-                             dr32inv = dr2inv*sqrt(dr2inv)
-                             factor = dr32inv * Jacobian_coil(itheta_coil, izeta_coil, js) * s_weights(js) &
-                                  * interpolate_magnetization_to_integration(js, ks) * constants
-      
-                             normal_plasma_dot_dr = normal_plasma(1,itheta_plasma,izeta_plasma)*dx &
-                                  + normal_plasma(2,itheta_plasma,izeta_plasma)*dy &
-                                  + normal_plasma(3,itheta_plasma,izeta_plasma)*dz
-      
-                             ! R component of magnetization
-                             ! e_R = e_X * cos(zeta) + e_Y * sin(zeta)
-                             inductance(index_plasma,index_coil,ks,1) = inductance(index_plasma,index_coil,ks,1) - &
-                                  (normal_plasma(1,itheta_plasma,izeta_plasma)*cos_zetal(izetal_coil) &
-                                  +normal_plasma(2,itheta_plasma,izeta_plasma)*sin_zetal(izetal_coil) &
-                                  - (3*dr2inv) * normal_plasma_dot_dr * &
-                                  (cos_zetal(izetal_coil)*dx &
-                                  +sin_zetal(izetal_coil)*dy )) * factor
-      
-                             ! zeta component of magnetization
-                             ! e_zeta = e_X * (-sin(zeta)) + e_Y * cos(zeta)
-                             inductance(index_plasma,index_coil,ks,2) = inductance(index_plasma,index_coil,ks,2) - &
-                                  (normal_plasma(1,itheta_plasma,izeta_plasma)*(-sin_zetal(izetal_coil)) &
-                                  +normal_plasma(2,itheta_plasma,izeta_plasma)*  cos_zetal(izetal_coil) &
-                                  - (3*dr2inv) * normal_plasma_dot_dr * &
-                                  (-sin_zetal(izetal_coil)*dx &
-                                  + cos_zetal(izetal_coil)*dy )) * factor
-      
-                             ! Z component of magnetization
-                             inductance(index_plasma,index_coil,ks,3) = inductance(index_plasma,index_coil,ks,3) - &
-                                  (normal_plasma(3,itheta_plasma,izeta_plasma) &
-                                  - (3*dr2inv) * normal_plasma_dot_dr * &
-                                  dz) * factor
-                       
-                          end do
-                       end do
+        do ks = 1, ns_magnetization
+           do izeta_coil = 1, nzeta_coil
+              do itheta_coil = 1, ntheta_coil
+                 index_coil = (izeta_coil-1)*ntheta_coil + itheta_coil
+                 do l_coil = 0, (nzetal_coil/nzeta_coil-1)
+                    izetal_coil = izeta_coil + l_coil*nzeta_coil
+                    do js = 1, ns_integration
+
+                       select case (trim(magnet_type))
+                       case ('continuous')
+                          dx = x - (r_coil(1,itheta_coil,izetal_coil) + s_integration(js) * d_times_unit_normal_coil(1,itheta_coil,izetal_coil))
+                          dy = y - (r_coil(2,itheta_coil,izetal_coil) + s_integration(js) * d_times_unit_normal_coil(2,itheta_coil,izetal_coil))
+                          dz = z - (r_coil(3,itheta_coil,izetal_coil) + s_integration(js) * d_times_unit_normal_coil(3,itheta_coil,izetal_coil))
+                          
+                          dr2inv = 1/(dx*dx + dy*dy + dz*dz)
+                          dr32inv = dr2inv*sqrt(dr2inv)
+                          factor = dr32inv * Jacobian_coil(itheta_coil, izeta_coil, js) * s_weights(js) &
+                               * interpolate_magnetization_to_integration(js, ks) * constants
+                       case ('qhex')
+                          dx = x - qhex_arr(izetal_coil)%ox
+                          dy = y - qhex_arr(izetal_coil)%oy
+                          dz = z - qhex_arr(izetal_coil)%oz
+                          
+                          dr2inv = 1/(dx*dx + dy*dy + dz*dz)
+                          dr32inv = dr2inv*sqrt(dr2inv)
+                          factor = dr32inv * qhex_arr(izetal_coil)%vol * constants
+                       end select
+
+                       normal_plasma_dot_dr = normal_plasma(1,itheta_plasma,izeta_plasma)*dx &
+                            + normal_plasma(2,itheta_plasma,izeta_plasma)*dy &
+                            + normal_plasma(3,itheta_plasma,izeta_plasma)*dz
+
+                       ! R component of magnetization
+                       ! e_R = e_X * cos(zeta) + e_Y * sin(zeta)
+                       inductance(index_plasma,index_coil,ks,1) = inductance(index_plasma,index_coil,ks,1) - &
+                            (normal_plasma(1,itheta_plasma,izeta_plasma)*cos_zetal(izetal_coil) &
+                            +normal_plasma(2,itheta_plasma,izeta_plasma)*sin_zetal(izetal_coil) &
+                            - (3*dr2inv) * normal_plasma_dot_dr * &
+                            (cos_zetal(izetal_coil)*dx &
+                            +sin_zetal(izetal_coil)*dy )) * factor
+
+                       ! zeta component of magnetization
+                       ! e_zeta = e_X * (-sin(zeta)) + e_Y * cos(zeta)
+                       inductance(index_plasma,index_coil,ks,2) = inductance(index_plasma,index_coil,ks,2) - &
+                            (normal_plasma(1,itheta_plasma,izeta_plasma)*(-sin_zetal(izetal_coil)) &
+                            +normal_plasma(2,itheta_plasma,izeta_plasma)*  cos_zetal(izetal_coil) &
+                            - (3*dr2inv) * normal_plasma_dot_dr * &
+                            (-sin_zetal(izetal_coil)*dx &
+                            + cos_zetal(izetal_coil)*dy )) * factor
+
+                       ! Z component of magnetization
+                       inductance(index_plasma,index_coil,ks,3) = inductance(index_plasma,index_coil,ks,3) - &
+                            (normal_plasma(3,itheta_plasma,izeta_plasma) &
+                            - (3*dr2inv) * normal_plasma_dot_dr * &
+                            dz) * factor
+                 
                     end do
                  end do
               end do
-
-           ! Array of quadrilaterally-faced hexahedra
-           case ('qhex')
-
-              do index_mag = 1, nzeta_coil
-                 do l_mag = 0, (nfp-1)
-                    indexl_mag = index_coil + l_mag*nzeta_coil
-                    dx = x - qhex_arr(indexl_mag)%ox
-                    dy = y - qhex_arr(indexl_mag)%oy
-                    dz = z - qhex_arr(indexl_mag)%oz
-
-                    dr2inv = 1/(dx*dx + dy*dy + dz*dz)
-                    dr32inv = dr2inv*sqrt(dr2inv)
-                    factor = dr32inv * qhex_arr(indexl_mag)%vol * constants
-                    normal_plasma_dot_dr = normal_plasma(1,itheta_plasma,izeta_plasma)*dx &
-                        + normal_plasma(2,itheta_plasma,izeta_plasma)*dy &
-                        + normal_plasma(3,itheta_plasma,izeta_plasma)*dz
-      
-                    ! R component of magnetization
-                    ! e_R = e_X * cos(zeta) + e_Y * sin(zeta)
-                    inductance(index_plasma,index_mag,1,1) = inductance(index_plasma,index_mag,ks,1) - &
-                         (normal_plasma(1,itheta_plasma,izeta_plasma)*cos_zetal(indexl_mag) &
-                         +normal_plasma(2,itheta_plasma,izeta_plasma)*sin_zetal(indexl_mag) &
-                         - (3*dr2inv) * normal_plasma_dot_dr * &
-                         (cos_zetal(indexl_mag)*dx &
-                         +sin_zetal(indexl_mag)*dy )) * factor
-      
-                    ! zeta component of magnetization
-                    ! e_zeta = e_X * (-sin(zeta)) + e_Y * cos(zeta)
-                    inductance(index_plasma,index_mag,1,2) = inductance(index_plasma,index_mag,ks,2) - &
-                         (normal_plasma(1,itheta_plasma,izeta_plasma)*(-sin_zetal(indexl_mag)) &
-                         +normal_plasma(2,itheta_plasma,izeta_plasma)*  cos_zetal(indexl_mag) &
-                         - (3*dr2inv) * normal_plasma_dot_dr * &
-                         (-sin_zetal(indexl_mag)*dx &
-                         + cos_zetal(indexl_mag)*dy )) * factor
-      
-                    ! Z component of magnetization
-                    inductance(index_plasma,index_mag,1,3) = inductance(index_plasma,index_mag,ks,3) - &
-                         (normal_plasma(3,itheta_plasma,izeta_plasma) &
-                         - (3*dr2inv) * normal_plasma_dot_dr * &
-                         dz) * factor
-
-                 end do
-              end do
-
-        end select
+           end do
+        end do
 
      end do
   end do
@@ -278,7 +231,7 @@ subroutine regcoil_build_matrices()
            index_plasma = (izeta_plasma-1)*ntheta_plasma + itheta_plasma
            index_plasma_reflect = (izeta_plasma_reflect-1)*ntheta_plasma + itheta_plasma_reflect
 
-           select case (magnet_type)
+           select case (trim(magnet_type))
 
               case ('continuous')
                  do izeta_coil = 1, nzeta_coil
@@ -324,33 +277,32 @@ subroutine regcoil_build_matrices()
                  end do
 
               case ('qhex')
-                 do index_mag = 1, nzeta_coil
-                    index_mag_reflect = n_magnets + 1 - index_mag
-      
-                       if (symmetry_option==1) then
-                          inductance(index_plasma,index_mag,:,1) =  inductance(index_plasma_reflect,index_mag_reflect,:,1)
-                          inductance(index_plasma,index_mag,:,2) = -inductance(index_plasma_reflect,index_mag_reflect,:,2)
-                          inductance(index_plasma,index_mag,:,3) = -inductance(index_plasma_reflect,index_mag_reflect,:,3)
-                       else
-                       ! symmetry_option must be 2. Verify symmetry:
-                          if (abs(inductance(index_plasma,index_coil,1,1) - inductance(index_plasma_reflect,index_coil_reflect,1,1)) > thresh) then
-                             print "(3(a,i3),3(a,es10.2))","discrepancy1 izp:",izeta_plasma,' itp:',itheta_plasma,' im:',index_mag, &
-                                  ' i1:',inductance(index_plasma,index_coil,1,1),' i2:',inductance(index_plasma_reflect,index_coil_reflect,1,1), &
-                                  ' diff:',inductance(index_plasma,index_coil,1,1) - inductance(index_plasma_reflect,index_coil_reflect,1,1)
-                          end if
-                          if (abs(inductance(index_plasma,index_coil,1,2) + inductance(index_plasma_reflect,index_coil_reflect,1,2)) > thresh) then
-                             print "(3(a,i3),3(a,es10.2))","discrepancy2 izp:",izeta_plasma,' itp:',itheta_plasma,' im:',index_mag, &
-                                  ' i1:',inductance(index_plasma,index_coil,1,2),' i2:',inductance(index_plasma_reflect,index_coil_reflect,1,2), &
-                                  ' diff:',inductance(index_plasma,index_coil,1,2) + inductance(index_plasma_reflect,index_coil_reflect,1,2)
-                          end if
-                          if (abs(inductance(index_plasma,index_coil,1,3) + inductance(index_plasma_reflect,index_coil_reflect,1,3)) > thresh) then
-                             print "(3(a,i3),3(a,es10.2))","discrepancy3 izp:",izeta_plasma,' itp:',itheta_plasma,' im:',index_mag, &
-                                  ' i1:',inductance(index_plasma,index_coil,1,3),' i2:',inductance(index_plasma_reflect,index_coil_reflect,1,3), &
-                                  ' diff:',inductance(index_plasma,index_coil,1,3) + inductance(index_plasma_reflect,index_coil_reflect,1,3)
-                          end if
+                 do izeta_coil = 1, nzeta_coil
+   
+                    if (symmetry_option==1) then
+                       inductance(index_plasma,izeta_coil,:,1) =  inductance(index_plasma_reflect,izeta_coil,:,1)
+                       inductance(index_plasma,izeta_coil,:,2) = -inductance(index_plasma_reflect,izeta_coil,:,2)
+                       inductance(index_plasma,izeta_coil,:,3) = -inductance(index_plasma_reflect,izeta_coil,:,3)
+                    else
+                    ! symmetry_option must be 2. Verify symmetry:
+                       if (abs(inductance(index_plasma,index_coil,1,1) - inductance(index_plasma_reflect,index_coil_reflect,1,1)) > thresh) then
+                          print "(3(a,i3),3(a,es10.2))","discrepancy1 izp:",izeta_plasma,' itp:',itheta_plasma,' im:',izeta_coil, &
+                               ' i1:',inductance(index_plasma,index_coil,1,1),' i2:',inductance(index_plasma_reflect,index_coil_reflect,1,1), &
+                               ' diff:',inductance(index_plasma,index_coil,1,1) - inductance(index_plasma_reflect,index_coil_reflect,1,1)
                        end if
-                    end do
-                 end do
+                       if (abs(inductance(index_plasma,index_coil,1,2) + inductance(index_plasma_reflect,index_coil_reflect,1,2)) > thresh) then
+                          print "(3(a,i3),3(a,es10.2))","discrepancy2 izp:",izeta_plasma,' itp:',itheta_plasma,' im:',izeta_coil, &
+                               ' i1:',inductance(index_plasma,index_coil,1,2),' i2:',inductance(index_plasma_reflect,index_coil_reflect,1,2), &
+                               ' diff:',inductance(index_plasma,index_coil,1,2) + inductance(index_plasma_reflect,index_coil_reflect,1,2)
+                       end if
+                       if (abs(inductance(index_plasma,index_coil,1,3) + inductance(index_plasma_reflect,index_coil_reflect,1,3)) > thresh) then
+                          print "(3(a,i3),3(a,es10.2))","discrepancy3 izp:",izeta_plasma,' itp:',itheta_plasma,' im:',izeta_coil, &
+                               ' i1:',inductance(index_plasma,index_coil,1,3),' i2:',inductance(index_plasma_reflect,index_coil_reflect,1,3), &
+                               ' diff:',inductance(index_plasma,index_coil,1,3) + inductance(index_plasma_reflect,index_coil_reflect,1,3)
+                       end if
+                    end if
+
+              end do
            
            end select
 
@@ -362,7 +314,7 @@ subroutine regcoil_build_matrices()
   !$OMP END PARALLEL
 
   deallocate(cos_zetal, sin_zetal)
-  if (magnet_type == 'continuous') deallocate(d_times_unit_normal_coil)
+  if (trim(magnet_type) == 'continuous') deallocate(d_times_unit_normal_coil)
 
   call system_clock(toc)
   if (verbose) print *,"Done. Took",real(toc-tic)/countrate,"sec."
@@ -389,7 +341,7 @@ subroutine regcoil_build_matrices()
 
         call system_clock(tic1)
 
-        select case (magnet_type)
+        select case (trim(magnet_type))
    
            case ('continuous')
 
@@ -508,7 +460,7 @@ subroutine regcoil_build_matrices()
   RHS_regularization = 0
   matrix_regularization = 0
 
-  select case (magnet_type)
+  select case (trim(magnet_type))
   case ('continuous')
    
      allocate(regularization_block(num_basis_functions,num_basis_functions))
@@ -647,13 +599,21 @@ subroutine regcoil_build_matrices()
 
   case ('qhex')
 
+    ! If the solution represents only one half-period's worth of magnets, multiply by 2 to
+    ! weight correctly relative to chiSq_B
+    if (stell_symm) then
+        reg_matrix_factor = 2._dp
+    else
+        reg_matrix_factor = 1._dp
+    end if
+
     do j_RZetaZ = 1, 3
 
        offset = (j_RZetaZ-1)*num_basis_functions
 
        do j = 1, num_basis_functions
-
-          matrix_regularization(offset+j,offset+j) = qhex_arr(j)%vol * d_qhex(j) ** regularization_d_exponent
+          matrix_regularization(offset+j,offset+j) = reg_matrix_factor * qhex_arr(j)%vol * d(1,j) ** regularization_d_exponent
+       end do
 
     end do
 

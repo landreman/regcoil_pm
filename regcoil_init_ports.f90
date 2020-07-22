@@ -11,6 +11,15 @@ subroutine regcoil_init_ports()
   allocate(ports_weight(ntheta_coil, nzeta_coil))
 
   ports_weight = 0
+
+  if (trim(magnet_type) == 'qhex') then
+     ports_weight = 1
+     if (nports /= 0) then
+        print *, "Warning: regcoil_pm ports are not supported for qhex magnets and will be ignored."
+     end if
+     return
+  end if
+
   do itheta = 1, ntheta_coil
      do izeta = 1, nzeta_coil
         do j_sign = 1,2 ! Adds a stellarator-symmetric copy of the port

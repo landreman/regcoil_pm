@@ -214,4 +214,14 @@ subroutine regcoil_validate_input
 
   if (target_mu0_M < 0) stop "target_mu0_M must be positive."
 
+  if (trim(magnet_type) == 'qhex') then
+     if (ns_magnetization /= 1) then
+        print *, "Warning: ns_magnetization > 1 is not supported for qhex geometry. Overriding input value."
+        ns_magnetization = 1
+     else if (ns_integration /= 1) then
+        print *, "Warning: ns_integration > 1 is not supported for qhex geometry. Overriding input/default value."
+        ns_integration = 1
+     end if
+  end if
+
 end subroutine regcoil_validate_input

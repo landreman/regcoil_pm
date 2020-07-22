@@ -7,7 +7,7 @@ subroutine regcoil_solve(ilambda)
 
   integer, intent(in) :: ilambda
   integer :: iflag, tic, toc, countrate, isaved
-  integer :: jd, num_iterations, j
+  integer :: jd, num_iterations, j, i
 
   num_iterations = nd
   if (trim(d_option)==d_option_uniform) num_iterations = 1
@@ -54,9 +54,16 @@ subroutine regcoil_solve(ilambda)
   end do
   
   volume_magnetization(ilambda) = 0
-  do j = 1, ns_integration
-     volume_magnetization(ilambda) = volume_magnetization(ilambda) + nfp * dtheta_coil * dzeta_coil * sum(Jacobian_coil(:,:,j)) * s_weights(j)
-  end do
+  select case (trim(magnet_type))
+  case ('continuous')
+     do j = 1, ns_integration
+        volume_magnetization(ilambda) = volume_magnetization(ilambda) + nfp * dtheta_coil * dzeta_coil * sum(Jacobian_coil(:,:,j)) * s_weights(j)
+     end do
+  case ('qhex')
+     do j = 1, nzetal_coil
+        volume_magnetization(ilambda) = volume_magnetization(ilambda) + qhex_arr(i)%vol
+     end do
+  end select
   if (verbose) print "(a,es10.2,a)"," Volume of magnetization region:",volume_magnetization(ilambda)," meters^3."
 
 end subroutine regcoil_solve

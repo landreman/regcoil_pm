@@ -32,7 +32,7 @@ subroutine regcoil_write_mgrid()
   REAL(dp) :: rad, zee, phi
   INTEGER :: k, j, i
 
-  real(dp) :: constants
+  real(dp) :: constants, constants_qhex
   integer :: tic, toc, countrate
   integer :: ir, jz, kp
   integer :: l_coil, izeta_coil, izetal_coil, itheta_coil
@@ -284,18 +284,30 @@ end subroutine regcoil_write_mgrid
     y = rr * sinphi
     do ks = 1, ns_magnetization
        do izeta_coil = 1, nzeta_coil
-          do l_coil = 0, (nfp-1)
+          do l_coil = 0, (nzetal_coil/nzeta_coil-1)
              izetal_coil = izeta_coil + l_coil*nzeta_coil
              do itheta_coil = 1, ntheta_coil
                 do js = 1, ns_integration
-                   dx = x - (r_coil(1,itheta_coil,izetal_coil) + s_integration(js) * d_times_unit_normal_coil(1,itheta_coil,izetal_coil))
-                   dy = y - (r_coil(2,itheta_coil,izetal_coil) + s_integration(js) * d_times_unit_normal_coil(2,itheta_coil,izetal_coil))
-                   dz = z - (r_coil(3,itheta_coil,izetal_coil) + s_integration(js) * d_times_unit_normal_coil(3,itheta_coil,izetal_coil))
-                   
-                   dr2inv = 1/(dx*dx + dy*dy + dz*dz)
-                   dr32inv = dr2inv*sqrt(dr2inv)
-                   factor = dr32inv * Jacobian_coil(itheta_coil, izeta_coil, js) * s_weights(js) &
-                        * interpolate_magnetization_to_integration(js, ks) * constants
+
+                   select case (trim(magnet_type))
+                   case ('continuous')
+                      dx = x - (r_coil(1,itheta_coil,izetal_coil) + s_integration(js) * d_times_unit_normal_coil(1,itheta_coil,izetal_coil))
+                      dy = y - (r_coil(2,itheta_coil,izetal_coil) + s_integration(js) * d_times_unit_normal_coil(2,itheta_coil,izetal_coil))
+                      dz = z - (r_coil(3,itheta_coil,izetal_coil) + s_integration(js) * d_times_unit_normal_coil(3,itheta_coil,izetal_coil))
+                      
+                      dr2inv = 1/(dx*dx + dy*dy + dz*dz)
+                      dr32inv = dr2inv*sqrt(dr2inv)
+                      factor = dr32inv * Jacobian_coil(itheta_coil, izeta_coil, js) * s_weights(js) &
+                           * interpolate_magnetization_to_integration(js, ks) * constants
+                   case ('qhex')
+                      dx = x - qhex_arr(izetal_coil)%ox
+                      dy = y - qhex_arr(izetal_coil)%oy
+                      dz = z - qhex_arr(izetal_coil)%oz
+                      
+                      dr2inv = 1/(dx*dx + dy*dy + dz*dz)
+                      dr32inv = dr2inv*sqrt(dr2inv)
+                      factor = dr32inv * qhex_arr(izetal_coil)%vol * constants
+                   end select
                    
                    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                    ! R component of magnetization

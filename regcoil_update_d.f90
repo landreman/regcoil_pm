@@ -2,6 +2,10 @@ subroutine regcoil_update_d(jd,isaved)
 
   use regcoil_variables
   use stel_constants
+  use magpie_globals, only: stell_symm, tor_symm
+  use qhex_properties, only: quad_hexahedron, iBASE
+  use repetition, only: geometry_repetition_qhex
+  use qhex_adjust, only: adjust_face
 
   implicit none
 
@@ -14,6 +18,7 @@ subroutine regcoil_update_d(jd,isaved)
   real(dp) :: factor, factor2, angle, sinangle, cosangle
   real(dp), dimension(:), allocatable :: singular_values, Anderson_WORK
   integer, dimension(:), allocatable :: Anderson_IWORK
+  type(quad_hexahedron) :: qhex_temp
 
   ! Update thickness:
   last_d = d
@@ -40,6 +45,9 @@ subroutine regcoil_update_d(jd,isaved)
 !!$  do j=1,ntheta_coil
 !!$     print "(*(f7.4))",d(j,:)
 !!$  end do
+     if (trim(magnet_type) == 'qhex') then
+        print *, "Warning: Fourier filtering of d is not intended for hexahedral magnets. It is recommended to set filter_d = .false."
+     end if
      d0 = sum(d)/(ntheta_coil*nzeta_coil)
      dmnc=0
      dmns=0
@@ -249,6 +257,35 @@ subroutine regcoil_update_d(jd,isaved)
         d(itheta,izeta) = max(d(itheta,izeta), 1.0d-14)
      end do
   end do
+
+  ! For hexahedral magnets, update qhex structs with the new d values
+  if (trim(magnet_type) == 'qhex') then
+
+     do i = 1, nzeta_coil
+
+        qhex_temp = qhex_arr_base(i)
+        call adjust_face(qhex_temp, iBASE, d(1,i) - last_d(1,i))
+        if (qhex_temp%err) then
+           print "(a,i0,a)", " Note: change to d for hexahedron ", i, " results in erroneous geometry. Previous value of d will be retained."
+        else
+           qhex_arr_base(i) = qhex_temp
+        end if
+
+        ! Update the zeta value, as these change in general with the location of the centroid
+        zeta_coil(i) = atan2(qhex_arr_base(i)%oy, qhex_arr_base(i)%ox)
+
+     end do
+
+     ! Extend the base magnet array to the full array (around the torus)
+     call geometry_repetition_qhex('torus', nfp, stell_symm, tor_symm, &
+              nzeta_coil, qhex_arr_base, nzetal_coil, qhex_arr)
+
+     ! Update the zeta values of the full-length array
+     do i = 1, nzetal_coil
+        zeta_coil = atan2(qhex_arr(i)%oy, qhex_arr(i)%ox)
+     end do
+
+  end if
 
   if (verbose) print *,"Updated d. ||d_old - d_new|| = ",dtheta_coil*dzeta_coil*sum((d - last_d) **2)
 

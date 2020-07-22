@@ -21,7 +21,7 @@ program regcoil
   call regcoil_init_plasma()
 
   ! Define the magnets
-  select case (magnet_type)
+  select case (trim(magnet_type))
   case ('continuous')
      call regcoil_init_coil_surface()
   case ('qhex')
@@ -33,7 +33,15 @@ program regcoil
   ! Initialize some of the vectors and matrices needed:
   call regcoil_init_ports()
   call regcoil_read_bnorm()
-  call regcoil_init_basis_functions()
+
+  select case (trim(magnet_type))
+  case ('continuous') 
+     call regcoil_init_basis_functions()
+  case ('qhex')
+     num_basis_functions = nzeta_coil
+     system_size = 3 * num_basis_functions
+  end select
+
   call regcoil_build_matrices()
   call regcoil_prepare_solve()
 
@@ -52,6 +60,7 @@ program regcoil
 
   call regcoil_evaluate_outer_surface()
   call regcoil_write_output()
+  if (trim(magnet_type) == 'qhex') call magpie_write_output()
 
   if (write_mgrid) call regcoil_write_mgrid()
  

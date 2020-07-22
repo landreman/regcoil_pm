@@ -1,5 +1,7 @@
 # -*- mode: makefile -*-
 
+MAGPIE_DIR = magpie/
+
 OBJ_FILES =  \
 	regcoil_auto_regularization_solve.o \
 	regcoil_build_matrices.o \
@@ -34,14 +36,37 @@ OBJ_FILES =  \
 	regcoil_write_input.o \
 	regcoil_write_mgrid.o \
 	regcoil_write_output.o \
-	regcoil_write_nescin.o
+	regcoil_write_nescin.o \
+        magpie_init_qhex_set.o \
+        magpie_write_output.o \
+        $(MAGPIE_DIR)algebra.o \
+        $(MAGPIE_DIR)base_grid.o \
+        $(MAGPIE_DIR)build_qhex.o \
+        $(MAGPIE_DIR)cbrick_properties.o \
+        $(MAGPIE_DIR)geometry.o \
+        $(MAGPIE_DIR)input.o \
+        $(MAGPIE_DIR)intersections.o \
+        $(MAGPIE_DIR)magnet_properties.o \
+        $(MAGPIE_DIR)magpie_globals.o \
+        $(MAGPIE_DIR)output.o \
+        $(MAGPIE_DIR)ports_ncsx_eval.o \
+        $(MAGPIE_DIR)ports_ncsx_globals.o \
+        $(MAGPIE_DIR)ports_ncsx_load.o \
+        $(MAGPIE_DIR)qhex_adjust.o \
+        $(MAGPIE_DIR)qhex_array.o \
+        $(MAGPIE_DIR)qhex_overlap.o \
+        $(MAGPIE_DIR)qhex_properties.o \
+        $(MAGPIE_DIR)repetition.o \
+        $(MAGPIE_DIR)surface_calc.o \
+        $(MAGPIE_DIR)surface_solve.o \
+        $(MAGPIE_DIR)trec_properties.o 
 
 # Dependencies:
-regcoil.o: regcoil_variables.o regcoil_init_plasma_mod.o
+regcoil.o: regcoil_variables.o regcoil_init_plasma_mod.o magpie_init_qhex_set.o magpie_write_output.o
 regcoil_auto_regularization_solve.o: regcoil_variables.o
 # khammond commented original line and added regcoil_init_Fourier_modes_mod
 #regcoil_build_matrices.o: regcoil_variables.o
-regcoil_build_matrices.o: regcoil_variables.o regcoil_init_Fourier_modes_mod.o
+regcoil_build_matrices.o: regcoil_variables.o regcoil_init_Fourier_modes_mod.o $(MAGPIE_DIR)magpie_globals.o
 regcoil_Chebyshev_grid.o:
 regcoil_Chebyshev_interpolation_matrix.o:
 regcoil_compute_lambda.o: regcoil_variables.o
@@ -63,14 +88,38 @@ regcoil_lambda_scan.o: regcoil_variables.o
 regcoil_prepare_solve.o: regcoil_variables.o
 regcoil_read_bnorm.o: regcoil_variables.o
 regcoil_read_efit_mod.o: regcoil_splines.o
-regcoil_read_input.o: regcoil_variables.o
+regcoil_read_input.o: regcoil_variables.o $(MAGPIE_DIR)magpie_globals.o
 regcoil_read_nescin.o: regcoil_variables.o
 regcoil_solve.o: regcoil_variables.o
 regcoil_splines.o:
-regcoil_update_d.o: regcoil_variables.o
+regcoil_update_d.o: regcoil_variables.o $(MAGPIE_DIR)qhex_properties.o $(MAGPIE_DIR)qhex_adjust.o $(MAGPIE_DIR)repetition.o 
 regcoil_validate_input.o: regcoil_variables.o
-regcoil_variables.o: 
+regcoil_variables.o: $(MAGPIE_DIR)qhex_properties.o
 regcoil_write_input.o: regcoil_variables.o
 regcoil_write_mgrid.o: regcoil_variables.o
 regcoil_write_output.o: regcoil_variables.o
 regcoil_write_nescin.o: regcoil_variables.o
+magpie_init_qhex_set.o: regcoil_variables.o $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)input.o $(MAGPIE_DIR)surface_calc.o $(MAGPIE_DIR)intersections.o $(MAGPIE_DIR)build_qhex.o
+magpie_write_output.o: regcoil_variables.o $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)qhex_properties.o $(MAGPIE_DIR)output.o $(MAGPIE_DIR)magnet_properties.o $(MAGPIE_DIR)repetition.o
+$(MAGPIE_DIR)algebra.o: $(MAGPIE_DIR)magpie_globals.o
+$(MAGPIE_DIR)build_qhex.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)surface_calc.o $(MAGPIE_DIR)base_grid.o $(MAGPIE_DIR)qhex_properties.o $(MAGPIE_DIR)qhex_overlap.o $(MAGPIE_DIR)qhex_array.o $(MAGPIE_DIR)magnet_properties.o
+$(MAGPIE_DIR)base_grid.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)algebra.o $(MAGPIE_DIR)geometry.o $(MAGPIE_DIR)surface_calc.o $(MAGPIE_DIR)surface_solve.o
+$(MAGPIE_DIR)cbrick_properties.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)geometry.o $(MAGPIE_DIR)surface_calc.o $(MAGPIE_DIR)surface_solve.o $(MAGPIE_DIR)intersections.o
+$(MAGPIE_DIR)geometry.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)algebra.o
+$(MAGPIE_DIR)input.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)surface_calc.o
+$(MAGPIE_DIR)intersections.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)ports_ncsx_eval.o
+$(MAGPIE_DIR)magnet_properties.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)qhex_properties.o $(MAGPIE_DIR)cbrick_properties.o $(MAGPIE_DIR)trec_properties.o
+$(MAGPIE_DIR)output.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)qhex_properties.o $(MAGPIE_DIR)cbrick_properties.o $(MAGPIE_DIR)trec_properties.o $(MAGPIE_DIR)magnet_properties.o $(MAGPIE_DIR)base_grid.o
+$(MAGPIE_DIR)ports_ncsx_globals.o: $(MAGPIE_DIR)magpie_globals.o 
+$(MAGPIE_DIR)ports_ncsx_eval.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)ports_ncsx_globals.o $(MAGPIE_DIR)ports_ncsx_load.o
+$(MAGPIE_DIR)ports_ncsx_load.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)ports_ncsx_globals.o
+$(MAGPIE_DIR)qhex_adjust.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)geometry.o $(MAGPIE_DIR)surface_calc.o $(MAGPIE_DIR)surface_solve.o $(MAGPIE_DIR)qhex_properties.o $(MAGPIE_DIR)qhex_overlap.o
+$(MAGPIE_DIR)qhex_array.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)geometry.o $(MAGPIE_DIR)surface_calc.o $(MAGPIE_DIR)surface_solve.o $(MAGPIE_DIR)base_grid.o $(MAGPIE_DIR)qhex_properties.o $(MAGPIE_DIR)qhex_overlap.o $(MAGPIE_DIR)qhex_adjust.o
+$(MAGPIE_DIR)qhex_overlap.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)geometry.o $(MAGPIE_DIR)intersections.o $(MAGPIE_DIR)qhex_properties.o
+$(MAGPIE_DIR)qhex_properties.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)geometry.o
+$(MAGPIE_DIR)repetition.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)qhex_properties.o $(MAGPIE_DIR)qhex_adjust.o $(MAGPIE_DIR)input.o
+$(MAGPIE_DIR)surface_calc.o: $(MAGPIE_DIR)magpie_globals.o 
+$(MAGPIE_DIR)surface_solve.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)algebra.o $(MAGPIE_DIR)surface_calc.o
+$(MAGPIE_DIR)magpie_globals.o:
+$(MAGPIE_DIR)trec_properties.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)geometry.o $(MAGPIE_DIR)surface_calc.o $(MAGPIE_DIR)surface_solve.o $(MAGPIE_DIR)intersections.o
+
