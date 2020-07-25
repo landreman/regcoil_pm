@@ -31,6 +31,13 @@ subroutine magpie_init_qhex_set()
 
   ! Construct the qhex array
   call build_qhex_set_wrap(limiting_surf, nzeta_coil, qhex_arr_base)
+  nzeta_coil_inv = 1.0 / real(nzeta_coil, dp)
+
+  ! Maximum allowable dipole moment
+  allocate(qhex_max_moment(nzeta_coil))
+  do i = 1, nzeta_coil
+     qhex_max_moment(i) = qhex_arr_base(i)%vol * target_mu0_M / mu0
+  end do
 
   ! Extend the array to wrap around the torus
   call geometry_repetition_qhex('torus', nfp, stell_symm, tor_symm, &

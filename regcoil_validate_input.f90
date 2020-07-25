@@ -227,6 +227,14 @@ subroutine regcoil_validate_input
         print *, "Warning: Fourier filtering of d is not supported for qhex geometry. Setting filter_d to .false."
         filter_d = .false.
      end if
+
+     select case (regularization_type)
+     case (1,2)
+        ! These are OK
+     case default
+        print *, "Error! regularization_type must be 1 or 2"
+        stop
+     end select
   end if
 
 end subroutine regcoil_validate_input

@@ -612,7 +612,12 @@ subroutine regcoil_build_matrices()
        offset = (j_RZetaZ-1)*num_basis_functions
 
        do j = 1, num_basis_functions
-          matrix_regularization(offset+j,offset+j) = reg_matrix_factor * qhex_arr(j)%vol * d(1,j) ** regularization_d_exponent
+          select case (regularization_type)
+          case (1)
+             matrix_regularization(offset+j,offset+j) = reg_matrix_factor * qhex_arr(j)%vol * d(1,j) ** regularization_d_exponent
+          case (2)
+             matrix_regularization(offset+j,offset+j) = reg_matrix_factor * nzeta_coil_inv * ( qhex_arr(j)%vol / qhex_max_moment(j) ) ** 2
+          end select
        end do
 
     end do

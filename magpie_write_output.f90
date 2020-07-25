@@ -54,8 +54,8 @@ subroutine magpie_write_output
      Mz = magnetization_vector(1,i,1,3,nsaved)
 
      ! Polar and azimuthal angle of the magnetization vector
-     m_theta = atan2(My, Mx)
-     m_phi = atan2(sqrt(Mx*Mx + My*My), Mz)
+     m_phi   = atan2(My, Mx)
+     m_theta = atan2(sqrt(Mx*Mx + My*My), Mz)
 
      magnets(i)%phi = m_phi
      magnets(i)%theta = m_theta
