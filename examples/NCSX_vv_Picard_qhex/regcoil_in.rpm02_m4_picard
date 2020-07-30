@@ -1,0 +1,99 @@
+&regcoil_nml
+
+  lambda_option='single'
+  lambda_single = 1.0d-4
+
+  ntheta_plasma = 64
+  ntheta_coil   = 64
+  nzeta_plasma  = 64
+  nzeta_coil    = 64
+  mpol_magnetization = 12
+  ntor_magnetization = 12
+
+  ns_magnetization=1
+  ns_integration=1
+
+  geometry_option_plasma = 2
+  wout_filename = '../../equilibria/wout_c09r00_fixedBoundary_0.5T_vacuum_ns201.nc'
+
+  geometry_option_coil=1
+  nescin_filename = '../../equilibria/NCSX.vv'
+
+  include_Bnormal_from_TF = T
+
+  d_option='Picard'
+  d_initial=0.25
+  nd = 10
+
+!  write_mgrid=F
+  mgrid_ir = 101
+  mgrid_jz = 102
+  mgrid_kp = 20
+
+  magnet_type = 'qhex'
+  regularization_type = 2
+/
+&MAGPIE
+!------ General parameters -----------------------------------------------------
+    magnet_type            = 'qhex'
+    stell_symm             = T
+    tor_symm               = T
+    nfp                    = 3
+    limiting_surf_file     = '/Users/khammond/Documents/SAStellarator/MagnetLayout/vesselCoeffs.txt'
+    limiting_surf_phi_sign = 1
+    radial_extent          = 0.25
+    gap_lim                = 0.02
+!------ Q-hex parameters -------------------------------------------------------
+    qhex_nTheta            = 40
+    qhex_nPhi              = 12
+    qhex_unif_poloidal     = T
+    qhex_incl_upper        = F
+    qhex_nSplitLo          = 1
+    qhex_nSplitUp          = 1
+    qhex_poloidally_closed = T
+    qhex_toroidally_closed = T
+    qhex_adj_interval      = 0.001
+    qhex_cust_vert_theta   = F
+    qhex_cust_vert_phi     = F
+    qhex_cust_vert_sep     = F
+    qhex_grid_theta0       = 0.0
+    qhex_grid_theta1       = 6.283185307179586
+    qhex_grid_phi0         = 0.0
+    qhex_grid_phi1         = 1.0471975511965976
+    qhex_max_ht            = 0.0
+    qhex_nBoxPol           = 2
+    qhex_nBoxTor           = 0
+    gap_qhx                = 0.01
+    gap_rad                = 0.0001
+!------ Parameters relevant for FOCUS input ------------------------------------
+    M_max                  = 1.1E6
+    rho_free               = T
+    rho_initial            = 0.0
+    axis_free              = T
+!------ Parameters for output files --------------------------------------------
+    output_base_name       = 'rpm02_m4_picard'
+    focus_file             = T
+    corners_file           = T
+    base_grid_file         = T
+    repeat_to_fill         = 'none'
+    incl_err_corners       = F
+    incl_ovl_corners       = F
+!------ Parameters for object intersection checking ----------------------------
+    port_gap               = 0.02
+    dir_ncsx_param         = '/Users/khammond/Documents/Repositories/MAGPIE/sources/port_geometry/'
+    incl_port_ncsx_nb      = F
+    incl_port_ncsx_02      = F
+    incl_port_ncsx_04      = F
+    incl_port_ncsx_05      = F
+    incl_port_ncsx_06      = F
+    incl_port_ncsx_07      = F
+    incl_port_ncsx_08      = F
+    incl_port_ncsx_09      = F
+    incl_port_ncsx_10      = F
+    incl_port_ncsx_11      = F
+    incl_port_ncsx_12      = F
+    incl_port_ncsx_15      = F
+    incl_port_ncsx_17      = F
+    incl_port_ncsx_18      = F
+    incl_port_ncsx_dome    = F
+/
