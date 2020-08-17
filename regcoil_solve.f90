@@ -7,7 +7,8 @@ subroutine regcoil_solve(ilambda)
 
   integer, intent(in) :: ilambda
   integer :: iflag, tic, toc, countrate, isaved
-  integer :: jd, num_iterations, j, i
+  integer :: jd, num_iterations, j, i, jru, nru
+  real(dp) :: max_rel_moment, chi2_M_new
 
   num_iterations = nd
   if (trim(d_option)==d_option_uniform) num_iterations = 1
@@ -15,37 +16,59 @@ subroutine regcoil_solve(ilambda)
   do jd = 1, num_iterations
      if ((verbose) .and. (trim(d_option).ne.d_option_uniform)) print "(a,i4,a,i4,a)", " ------ Beginning d iteration",jd," of",num_iterations," ------"
 
-     call system_clock(tic,countrate)
-  
-     ! The scaling of the terms below by 1/(1+lambda) ensures that matrix and RHS are O(1) regardless of whether lambda is >> 1 or << 1.
-     matrix = (1 / (1 + lambda(ilambda))) * matrix_B + (lambda(ilambda) / (1 + lambda(ilambda))) * matrix_regularization
-     RHS    = (1 / (1 + lambda(ilambda))) *    RHS_B + (lambda(ilambda) / (1 + lambda(ilambda))) *    RHS_regularization
+     nru = n_reg_adaptations
+
+     do jru = 0, nru
+        if (verbose .and. adapt_regularization) &
+            print "(a,i4,a,i4,a)", "     ------ Regularization adaptation ", &
+                  jru, " of ", nru, " ------"
+
+        call system_clock(tic,countrate)
      
-     call system_clock(toc)
-     if (verbose) print *,"  Additions: ",real(toc-tic)/countrate," sec."
-     call system_clock(tic)
-     
-     ! Compute solution = matrix \ RHS.
-     ! Use LAPACK's DSYSV since matrix is symmetric.
-     ! Note: RHS will be over-written with the solution.
-     call DSYSV('U',system_size, 1, matrix, system_size, LAPACK_IPIV, RHS, system_size, LAPACK_WORK, LAPACK_LWORK, LAPACK_INFO)
-     if (LAPACK_INFO /= 0) then
-        print *, "!!!!!! Error in LAPACK DSYSV: INFO = ", LAPACK_INFO
-        !stop
-     end if
-     solution = RHS
-     
-     call system_clock(toc)
-     if (verbose) print *,"  DSYSV: ",real(toc-tic)/countrate," sec."
-     call system_clock(tic)
-  
-     if (trim(lambda_option)==lambda_option_single) then
-        isaved = jd
-     else
-        isaved = ilambda
-     end if
-     call regcoil_diagnostics(isaved)
-     print *, "Finished call to regcoil_diagnostics."
+        ! The scaling of the terms below by 1/(1+lambda) ensures that matrix and RHS are O(1) regardless of whether lambda is >> 1 or << 1.
+        matrix = (1 / (1 + lambda(ilambda))) * matrix_B + (lambda(ilambda) / (1 + lambda(ilambda))) * matrix_regularization
+        RHS    = (1 / (1 + lambda(ilambda))) *    RHS_B + (lambda(ilambda) / (1 + lambda(ilambda))) *    RHS_regularization
+        
+        call system_clock(toc)
+        if (verbose) print *,"  Additions: ",real(toc-tic)/countrate," sec."
+        call system_clock(tic)
+        
+        ! Compute solution = matrix \ RHS.
+        ! Use LAPACK's DSYSV since matrix is symmetric.
+        ! Note: RHS will be over-written with the solution.
+        call DSYSV('U',system_size, 1, matrix, system_size, LAPACK_IPIV, RHS, system_size, LAPACK_WORK, LAPACK_LWORK, LAPACK_INFO)
+        if (LAPACK_INFO /= 0) then
+           print *, "!!!!!! Error in LAPACK DSYSV: INFO = ", LAPACK_INFO
+           !stop
+        end if
+        solution = RHS
+        
+        call system_clock(toc)
+        if (verbose) print *,"  DSYSV: ",real(toc-tic)/countrate," sec."
+        call system_clock(tic)
+
+        if (trim(lambda_option)==lambda_option_single) then
+           isaved = jd
+        else
+           isaved = ilambda
+        end if
+
+        call regcoil_diagnostics(isaved)
+
+        if (adapt_regularization) then
+           max_rel_moment = maxval(qhex_rel_moment)
+           if (verbose) print "(a,f0.3)", "    Ratio of highest moment to allowable moment = ", max_rel_moment
+           if (jru < nru .and. max_rel_moment > 1.0d0) then
+              call regcoil_adapt_regularization(isaved)
+              chi2_M_new = dot_product(solution, matmul(matrix_regularization, solution)) * nfp
+              lambda(ilambda) = lambda(ilambda) * chi2_M(isaved) / chi2_M_new
+              if (verbose) print "(a,es10.3)", "    Rescaled lambda to ", lambda(ilambda)
+           else
+              exit
+           end if
+        end if
+
+     end do
 
      if (jd < num_iterations) then
         call regcoil_update_d(jd,isaved)

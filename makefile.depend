@@ -39,6 +39,7 @@ OBJ_FILES =  \
 	regcoil_write_nescin.o \
         magpie_init_qhex_set.o \
         magpie_write_output.o \
+        regcoil_adapt_regularization.o \
         $(MAGPIE_DIR)algebra.o \
         $(MAGPIE_DIR)base_grid.o \
         $(MAGPIE_DIR)build_qhex.o \
@@ -101,6 +102,7 @@ regcoil_write_output.o: regcoil_variables.o
 regcoil_write_nescin.o: regcoil_variables.o
 magpie_init_qhex_set.o: regcoil_variables.o $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)input.o $(MAGPIE_DIR)surface_calc.o $(MAGPIE_DIR)intersections.o $(MAGPIE_DIR)build_qhex.o
 magpie_write_output.o: regcoil_variables.o $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)qhex_properties.o $(MAGPIE_DIR)output.o $(MAGPIE_DIR)magnet_properties.o $(MAGPIE_DIR)repetition.o
+regcoil_adapt_regularization.o: regcoil_variables.o $(MAGPIE_DIR)magpie_globals.o
 $(MAGPIE_DIR)algebra.o: $(MAGPIE_DIR)magpie_globals.o
 $(MAGPIE_DIR)build_qhex.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)surface_calc.o $(MAGPIE_DIR)base_grid.o $(MAGPIE_DIR)qhex_properties.o $(MAGPIE_DIR)qhex_overlap.o $(MAGPIE_DIR)qhex_array.o $(MAGPIE_DIR)magnet_properties.o
 $(MAGPIE_DIR)base_grid.o: $(MAGPIE_DIR)magpie_globals.o $(MAGPIE_DIR)algebra.o $(MAGPIE_DIR)geometry.o $(MAGPIE_DIR)surface_calc.o $(MAGPIE_DIR)surface_solve.o

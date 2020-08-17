@@ -54,8 +54,6 @@ subroutine regcoil_diagnostics(isaved)
      end do
   end do
 
-  print *, "    Calculated s_averaged_abs_M."
-
   chi2_M(isaved) = dot_product(solution, matmul(matrix_regularization, solution)) * nfp
   ! Compute chi2_M a second way, as a sanity test. This second method is probably slower, so it could eventually be commented out.
   chi2_M_alt = 0
@@ -73,7 +71,7 @@ subroutine regcoil_diagnostics(isaved)
            else
               reg_matrix_factor = 1._dp
            end if
-           chi2_M_alt = chi2_M_alt + reg_matrix_factor * (d(itheta,izeta) ** regularization_d_exponent) * ports_weight(itheta,izeta) &
+           chi2_M_alt = chi2_M_alt + reg_matrix_factor * adaptation_factor(izeta) * (d(itheta,izeta) ** regularization_d_exponent) * ports_weight(itheta,izeta) &
               * qhex_arr(izeta)%vol &
               * ( magnetization_vector(itheta,izeta,1,1,isaved)**2 + magnetization_vector(itheta,izeta,1,2,isaved)**2 &
                                                                    + magnetization_vector(itheta,izeta,1,3,isaved)**2)
@@ -83,8 +81,6 @@ subroutine regcoil_diagnostics(isaved)
   chi2_M_alt = chi2_M_alt * nfp * dtheta_coil * dzeta_coil
   if (verbose) print "(3(a,es22.14))","   2 methods of computing chi2_M that should agree: method 1 =",chi2_M(isaved),", method 2 =",chi2_M_alt,", relative difference =",(chi2_M(isaved) - chi2_M_alt) / (abs(chi2_M(isaved)) + abs(chi2_M_alt))
 
-
-  print *, "   Calculated chi2_M."
 
   allocate(temp_array(ntheta_plasma * nzeta_plasma))
   temp_array = 0
@@ -111,9 +107,15 @@ subroutine regcoil_diagnostics(isaved)
   chi2_B_alt = nfp * dot_product(solution, matmul(matrix_B, solution)) - 2 * nfp * dot_product(RHS_B, solution) &
        + nfp * dtheta_plasma * dzeta_plasma * sum(norm_normal_plasma * Bnormal_from_TF_and_plasma_current * Bnormal_from_TF_and_plasma_current)
   if (verbose) print "(3(a,es22.14))","   2 methods of computing chi2_B that should agree: method 1 =",chi2_B(isaved),", method 2 =",chi2_B_alt,", relative difference =",(chi2_B(isaved) - chi2_B_alt) / (abs(chi2_B(isaved)) + abs(chi2_B_alt))
-  
-  print *, "   Calculated chi2_B."
 
+  if (trim(magnet_type)=='qhex') then
+     do izeta = 1, nzeta_coil
+        qhex_rel_moment(izeta) = &
+            abs_M(1,izeta,1,isaved) * qhex_arr_base(izeta)%vol &
+                                / qhex_max_moment(izeta)
+     end do
+  end if
+  
   call system_clock(toc)
   if (verbose) print *,"  Diagnostics: ",real(toc-tic)/countrate," sec."
   if (verbose) print "(2(a,es10.3))","   chi2_B:",chi2_B(isaved),",  chi2_M:",chi2_M(isaved)

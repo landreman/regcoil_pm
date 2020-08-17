@@ -34,9 +34,16 @@ subroutine magpie_init_qhex_set()
   nzeta_coil_inv = 1.0 / real(nzeta_coil, dp)
 
   ! Maximum allowable dipole moment
-  allocate(qhex_max_moment(nzeta_coil))
+  allocate(qhex_max_moment(nzeta_coil), qhex_rel_moment(nzeta_coil))
   do i = 1, nzeta_coil
      qhex_max_moment(i) = qhex_arr_base(i)%vol * target_mu0_M / mu0
+     qhex_rel_moment(i) = 0.d0
+  end do
+
+  ! Initialize the adaptation factors to unity
+  allocate(adaptation_factor(nzeta_coil))
+  do i = 1, nzeta_coil
+     adaptation_factor(i) = 1.0d+0
   end do
 
   ! Extend the array to wrap around the torus

@@ -175,8 +175,12 @@ module regcoil_variables
   character(len=200) :: magnet_type = 'continuous'
   integer :: regularization_type = 1
   type(quad_hexahedron), dimension(:), allocatable :: qhex_arr_base, qhex_arr
-  real(dp), dimension(:), allocatable :: qhex_max_moment
+  real(dp), dimension(:), allocatable :: qhex_max_moment, qhex_rel_moment
   real(dp) :: nzeta_coil_inv
+  logical :: adapt_regularization = .false.
+  real(dp), dimension(:), allocatable :: adaptation_factor
+  integer :: n_reg_adaptations = 0
+  real(dp) :: adaptation_alpha = 1.0
 
   namelist / regcoil_nml / ntheta_plasma, nzeta_plasma, ntheta_coil, nzeta_coil, &
        geometry_option_plasma, geometry_option_coil, &
@@ -194,7 +198,7 @@ module regcoil_variables
        write_mgrid, mgrid_ir, mgrid_jz, mgrid_kp, mgrid_rmin, mgrid_rmax, mgrid_zmin, mgrid_zmax, &
        include_bnormal_from_TF, net_poloidal_current_Amperes, regularization_d_exponent, &
        ports_theta0, ports_zeta0, ports_theta_width, ports_zeta_width, ports_sharpness, ports_magnitude, &
-       filter_d, include_constant_basis_function, magnet_type, regularization_type
+       filter_d, include_constant_basis_function, magnet_type, regularization_type, adapt_regularization, n_reg_adaptations, adaptation_alpha
 
 end module regcoil_variables
 

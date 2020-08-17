@@ -614,9 +614,9 @@ subroutine regcoil_build_matrices()
        do j = 1, num_basis_functions
           select case (regularization_type)
           case (1)
-             matrix_regularization(offset+j,offset+j) = reg_matrix_factor * qhex_arr(j)%vol * d(1,j) ** regularization_d_exponent
+             matrix_regularization(offset+j,offset+j) = reg_matrix_factor * adaptation_factor(j) * qhex_arr(j)%vol * d(1,j) ** regularization_d_exponent
           case (2)
-             matrix_regularization(offset+j,offset+j) = reg_matrix_factor * nzeta_coil_inv * ( qhex_arr(j)%vol / qhex_max_moment(j) ) ** 2
+             matrix_regularization(offset+j,offset+j) = reg_matrix_factor * adaptation_factor(j) * nzeta_coil_inv * ( qhex_arr(j)%vol / qhex_max_moment(j) ) ** 2
           end select
        end do
 

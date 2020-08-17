@@ -237,4 +237,12 @@ subroutine regcoil_validate_input
      end select
   end if
 
+  if (trim(magnet_type) == 'continuous' .and. adapt_regularization) then
+     print *, "Warning: adaptation of the regularization matrix is not supported for continuous magnetization. Adaptation will be turned off."
+     adapt_regularization = .false.
+     n_reg_adaptations = 0
+  elseif (.not. adapt_regularization) then
+     n_reg_adaptations = 0
+  end if
+
 end subroutine regcoil_validate_input
