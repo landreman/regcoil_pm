@@ -16,12 +16,13 @@ subroutine regcoil_evaluate_coil_surface()
   real(dp) :: angle2, sinangle2, cosangle2, dsinangle2dzeta, dcosangle2dzeta, d2sinangle2dzeta2, d2cosangle2dzeta2
   real(dp), dimension(:,:), allocatable :: major_R_squared
   integer :: itheta, izeta
-  integer :: tic, toc, countrate
+  integer :: tic, toc, countrate, clock
   real(dp), dimension(:,:), allocatable :: sin_m_theta, cos_m_theta, sin_n_zeta, cos_n_zeta
   real(dp), dimension(:,:), allocatable :: fundamental_form_E, fundamental_form_F, fundamental_form_G
   real(dp), dimension(:,:), allocatable :: fundamental_form_L, fundamental_form_M, fundamental_form_P
   real(dp), dimension(:,:), allocatable :: temp_matrix
   real(dp) :: a, temp, d1, d2
+  INTEGER, DIMENSION(:), ALLOCATABLE :: seed
 
   call system_clock(tic,countrate)
 
@@ -242,10 +243,50 @@ subroutine regcoil_evaluate_coil_surface()
      print *,interpolate_magnetization_to_integration(j,:)
   end do
 
-  ! For now, just set d=constant. We'll improve this eventually.
+  ! Initialize d, the magnet thickness
   allocate(d(ntheta_coil, nzeta_coil))
   d = d_initial
   d0 = d_initial
+  if (random_d_initial) then
+     ! Set random seed based on system time
+     ! https://gcc.gnu.org/onlinedocs/gcc-4.6.4/gfortran/RANDOM_005fSEED.html
+
+     CALL RANDOM_SEED(size = n)
+     ALLOCATE(seed(n))
+          
+     CALL SYSTEM_CLOCK(COUNT=clock)
+          
+     seed = clock + 37 * (/ (j - 1, j = 1, n) /)
+     CALL RANDOM_SEED(PUT = seed)
+     print *,"Setting random seed:", seed
+          
+     DEALLOCATE(seed)
+
+     ! Each point of d is random in the interval [0, d_initial]:
+!!$     do izeta = 1, nzeta_coil
+!!$        do itheta = 1, ntheta_coil
+!!$           call random_number(temp)
+!!$           d(itheta, izeta) = temp * d_initial
+!!$        end do
+!!$     end do
+
+     d = 0
+     ! Add some low-order Fourier modes with random amplitudes
+     do m = 0, 4
+        do n = -4, 4
+           call random_number(temp)
+           do izeta = 1, nzeta_coil
+              do itheta = 1, ntheta_coil
+                 d(itheta, izeta) = d(itheta, izeta) + (temp - 0.5) * cos(m * theta_coil(itheta) - n * nfp * zeta_coil(izeta))
+              end do
+           end do
+        end do
+     end do
+     ! Shift and scale d so it lies between [delta*d_initial, d_initial]:
+     d = d - minval(d)
+     d = (d / maxval(d) * 0.99 + 0.01) * d_initial
+  end if
+
 
   allocate(Jacobian_ssquared_term(ntheta_coil, nzeta_coil))
   ! We wll need this quantity later to generate the Jacobian of the (s, theta, zeta) coordinates in the magnetization region:

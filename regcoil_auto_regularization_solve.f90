@@ -46,7 +46,7 @@ subroutine regcoil_auto_regularization_solve()
 !!$
 !!$        lambda(ilambda) = chi2_B(ilambda) / chi2_K(ilambda) / 1000
 
-        lambda(ilambda) = 1 ! Silly guess.
+        lambda(ilambda) = 1e-14 ! Silly guess.
 
         next_stage = 2
 

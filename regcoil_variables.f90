@@ -111,6 +111,7 @@ module regcoil_variables
   integer :: ns_magnetization = 1
   integer :: ns_integration = 2
   real(dp) :: d_initial = 0.01d+0
+  logical :: random_d_initial = .false.
   integer :: nd = 10
   real(dp), dimension(:), allocatable :: s_integration, s_weights, s_magnetization, s_magnetization_weights
   real(dp), dimension(:,:), allocatable :: interpolate_magnetization_to_integration
@@ -187,7 +188,7 @@ module regcoil_variables
        write_mgrid, mgrid_ir, mgrid_jz, mgrid_kp, mgrid_rmin, mgrid_rmax, mgrid_zmin, mgrid_zmax, &
        include_bnormal_from_TF, net_poloidal_current_Amperes, regularization_d_exponent, &
        ports_theta0, ports_zeta0, ports_theta_width, ports_zeta_width, ports_sharpness, ports_magnitude, &
-       filter_d, include_constant_basis_function
+       filter_d, include_constant_basis_function, random_d_initial
 
 end module regcoil_variables
 
